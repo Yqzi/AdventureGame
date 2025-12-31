@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tes/pages/map_page.dart';
 import 'package:tes/splash_screen.dart';
 import 'app.dart';
 
@@ -29,6 +30,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return SplashScreen();
+    return MapPage();
   }
 }
