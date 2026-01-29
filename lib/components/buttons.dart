@@ -3,6 +3,7 @@ import 'package:tes/colors.dart';
 
 OutlinedButton customOutlinedButton({
   required String title,
+  required Function onpressed,
   IconData? icon,
   double fontsize = 20,
   double height = 60,
@@ -18,7 +19,7 @@ OutlinedButton customOutlinedButton({
     fixedSize: Size(0, height),
     splashFactory: NoSplash.splashFactory,
   ),
-  onPressed: () {},
+  onPressed: () => onpressed,
   child: Row(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [

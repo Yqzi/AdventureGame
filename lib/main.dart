@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tes/pages/map_page.dart';
+import 'package:tes/pages/start_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,6 +24,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return MapPage();
+    return StartPage();
   }
 }
