@@ -1,0 +1,22 @@
+import 'package:flutter/material.dart';
+import 'package:tes/pages/map_page.dart';
+import 'package:tes/pages/start_page.dart';
+
+class AppRouter {
+  static const start = '/start';
+  static const map = '/map';
+
+  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case start:
+        return MaterialPageRoute(builder: (_) => const StartPage());
+      case map:
+        return MaterialPageRoute(builder: (_) => const MapPage());
+      default:
+        return MaterialPageRoute(
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('404 – Page not found'))),
+        );
+    }
+  }
+}

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/components/buttons.dart';
+import 'package:tes/router.dart';
 import '/colors.dart';
 
 class StartPage extends StatefulWidget {
@@ -140,7 +141,9 @@ class _StartPageState extends State<StartPage> {
                       color: Color(0xFFFF6B00),
                       letterSpacing: 1,
                       icon: Icons.style,
-                      onpressed: () {},
+                      onpressed: () {
+                        Navigator.pushReplacementNamed(context, AppRouter.map);
+                      },
                     ),
                   ),
                   SizedBox(
