@@ -171,7 +171,13 @@ class _StartPageState extends State<StartPage> {
                           title: 'SETTINGS',
                           letterSpacing: 1,
                           fontsize: 16,
-                          onpressed: () {},
+                          // temporary redirect
+                          onpressed: () {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRouter.inventory,
+                            );
+                          },
                         ),
                       ),
                     ],
