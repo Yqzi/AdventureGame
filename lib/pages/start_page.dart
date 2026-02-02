@@ -138,9 +138,10 @@ class _StartPageState extends State<StartPage> {
                     width: double.infinity,
                     child: customOutlinedButton(
                       title: 'START NEW GAME',
-                      color: Color(0xFFFF6B00),
+                      color: orangeText,
+                      glow: true,
                       letterSpacing: 1,
-                      icon: Icons.style,
+                      icon: Icon(Icons.style, color: Colors.white),
                       onpressed: () {
                         Navigator.pushReplacementNamed(context, AppRouter.map);
                       },
@@ -150,6 +151,7 @@ class _StartPageState extends State<StartPage> {
                     width: double.infinity,
                     child: customOutlinedButton(
                       title: 'CONTINUE',
+                      glow: true,
                       letterSpacing: 1,
                       onpressed: () {},
                     ),
@@ -161,6 +163,7 @@ class _StartPageState extends State<StartPage> {
                       Expanded(
                         child: customOutlinedButton(
                           title: 'ARCHIVES',
+                          glow: true,
                           letterSpacing: 1,
                           fontsize: 16,
                           // Temporary redirect
@@ -175,6 +178,7 @@ class _StartPageState extends State<StartPage> {
                       Expanded(
                         child: customOutlinedButton(
                           title: 'SETTINGS',
+                          glow: true,
                           letterSpacing: 1,
                           fontsize: 16,
                           // temporary redirect

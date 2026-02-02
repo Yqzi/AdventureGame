@@ -4,7 +4,8 @@ import 'package:tes/colors.dart';
 OutlinedButton customOutlinedButton({
   required String title,
   required VoidCallback onpressed,
-  IconData? icon,
+  Widget? icon,
+  bool glow = false,
   double fontsize = 20,
   double height = 60,
   double letterSpacing = 0,
@@ -14,7 +15,7 @@ OutlinedButton customOutlinedButton({
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     side: BorderSide(color: borderGrey),
     backgroundColor: color,
-    shadowColor: color,
+    shadowColor: glow ? color : null,
     elevation: 12,
     fixedSize: Size(0, height),
     splashFactory: NoSplash.splashFactory,
@@ -23,10 +24,7 @@ OutlinedButton customOutlinedButton({
   child: Row(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      if (icon != null)
-        Icon(icon, color: Colors.white)
-      else
-        const SizedBox.shrink(),
+      icon ?? const SizedBox.shrink(),
       SizedBox(width: icon != null ? 8 : 0),
       Text(
         title,
