@@ -163,7 +163,13 @@ class _StartPageState extends State<StartPage> {
                           title: 'ARCHIVES',
                           letterSpacing: 1,
                           fontsize: 16,
-                          onpressed: () {},
+                          // Temporary redirect
+                          onpressed: () {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRouter.game,
+                            );
+                          },
                         ),
                       ),
                       Expanded(

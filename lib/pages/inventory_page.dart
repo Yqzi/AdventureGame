@@ -14,7 +14,21 @@ class InventoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(title: 'CHARACTER INVENTORY'),
+      appBar: TopBar(
+        title: 'CHARACTER INVENTORY',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          color: Colors.white,
+          onPressed: () {},
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            color: Colors.white,
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
