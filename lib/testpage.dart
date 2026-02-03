@@ -8,7 +8,7 @@ class TestPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Component Test Page')),
-      body: CardModel(
+      body: ShopCardModel(
         rarity: 'title',
         title: 'subtitle',
         description: 'description',

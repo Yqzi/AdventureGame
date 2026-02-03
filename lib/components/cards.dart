@@ -3,49 +3,183 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/colors.dart';
 
-class CardModel extends StatelessWidget {
-  final String rarity;
-  final String title;
-  final String description;
-  final String cost;
-  final ImageProvider? image;
+enum Rarity { common, rare, epic, mythic }
 
-  const CardModel({
+extension RarityExtension on Rarity {
+  String get label {
+    switch (this) {
+      case Rarity.common:
+        return 'COMMON';
+      case Rarity.rare:
+        return 'RARE';
+      case Rarity.epic:
+        return 'EPIC';
+      case Rarity.mythic:
+        return 'MYTHIC';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case Rarity.common:
+        return Colors.white;
+      case Rarity.rare:
+        return Colors.blue;
+      case Rarity.epic:
+        return Colors.purple;
+      case Rarity.mythic:
+        return Colors.red;
+    }
+  }
+}
+
+class ShopCardModel extends StatelessWidget {
+  final Rarity rarity;
+  final String title;
+  final String stats;
+  final String cost;
+  final String imageUrl;
+  final VoidCallback onPressed;
+
+  const ShopCardModel({
     required this.rarity,
     required this.title,
-    required this.description,
+    required this.stats,
     required this.cost,
-    this.image,
+    required this.imageUrl,
+    required this.onPressed,
+    super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cardHeight = MediaQuery.of(context).size.height / 5;
     return Container(
+      height: cardHeight,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: borderGrey, width: 2),
-        borderRadius: BorderRadius.circular(8),
+        color: const Color.fromARGB(255, 39, 30, 28),
+        borderRadius: BorderRadius.circular(4),
       ),
-      padding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-      height: MediaQuery.of(context).size.height / 4.5,
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  rarity,
-                  style: GoogleFonts.epilogue(fontWeight: FontWeight.bold),
-                ),
-                Text(title, style: GoogleFonts.epilogue()),
-                Text(description, style: GoogleFonts.epilogue()),
-                Text(cost, style: GoogleFonts.epilogue()),
-              ],
+          // Left side color border
+          Container(
+            width: 4,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: rarity.color,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(2),
+                bottomLeft: Radius.circular(2),
+              ),
             ),
           ),
-          // Image(image: image),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Rarity
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: rarity.color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      rarity.label.toUpperCase(),
+                      style: GoogleFonts.epilogue(
+                        color: rarity.color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Title
+                  Text(
+                    title,
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Stats
+                  Text(
+                    stats,
+                    style: GoogleFonts.epilogue(color: greyText, fontSize: 14),
+                  ),
+                  const SizedBox(height: 10),
+                  // Cost
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: onPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: orangeText,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              cost,
+                              style: GoogleFonts.epilogue(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(
+                              FontAwesomeIcons.cartShopping,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Right side image
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  imageUrl,
+                  height: cardHeight * 0.7,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.grey,
+                    size: 40,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

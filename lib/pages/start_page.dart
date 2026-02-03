@@ -143,7 +143,7 @@ class _StartPageState extends State<StartPage> {
                       letterSpacing: 1,
                       icon: Icon(Icons.style, color: Colors.white),
                       onpressed: () {
-                        Navigator.pushReplacementNamed(context, AppRouter.map);
+                        Navigator.pushReplacementNamed(context, AppRouter.shop);
                       },
                     ),
                   ),

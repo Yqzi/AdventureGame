@@ -3,6 +3,7 @@ import 'package:tes/pages/game_page.dart';
 import 'package:tes/pages/guild_page.dart';
 import 'package:tes/pages/inventory_page.dart';
 import 'package:tes/pages/map_page.dart';
+import 'package:tes/pages/shop_page.dart';
 import 'package:tes/pages/start_page.dart';
 
 class AppRouter {
@@ -11,6 +12,7 @@ class AppRouter {
   static const inventory = '/inventory';
   static const game = '/game';
   static const guild = '/guild';
+  static const shop = '/shop';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -24,6 +26,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const GamePage());
       case guild:
         return MaterialPageRoute(builder: (_) => const GuildPage());
+      case shop:
+        return MaterialPageRoute(builder: (_) => const ShopPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>
