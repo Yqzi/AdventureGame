@@ -24,7 +24,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     this.onMenuPressed,
     this.onSettingsPressed,
     this.onThirdActionPressed,
-    this.backgroundColor = const Color.fromARGB(240, 37, 21, 16),
+    this.backgroundColor = const Color.fromARGB(255, 41, 26, 20),
     this.borderColor = const Color.fromARGB(239, 88, 61, 53),
     this.textColor = Colors.white,
     this.buttonColor = Colors.white,

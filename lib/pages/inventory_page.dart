@@ -33,8 +33,8 @@ class InventoryPage extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             colors: [
-              Color.fromARGB(234, 37, 22, 16),
-              Color.fromARGB(234, 37, 21, 16),
+              Color.fromARGB(255, 48, 30, 23),
+              Color.fromARGB(255, 48, 31, 24),
             ],
             center: Alignment.center,
             radius: 1.6,

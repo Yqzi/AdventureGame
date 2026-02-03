@@ -153,7 +153,13 @@ class _StartPageState extends State<StartPage> {
                       title: 'CONTINUE',
                       glow: true,
                       letterSpacing: 1,
-                      onpressed: () {},
+                      // temporary redirect
+                      onpressed: () {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          AppRouter.guild,
+                        );
+                      },
                     ),
                   ),
                   Row(

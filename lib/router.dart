@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tes/pages/game_page.dart';
+import 'package:tes/pages/guild_page.dart';
 import 'package:tes/pages/inventory_page.dart';
 import 'package:tes/pages/map_page.dart';
 import 'package:tes/pages/start_page.dart';
@@ -9,6 +10,7 @@ class AppRouter {
   static const map = '/map';
   static const inventory = '/inventory';
   static const game = '/game';
+  static const guild = '/guild';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -20,6 +22,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const InventoryPage());
       case game:
         return MaterialPageRoute(builder: (_) => const GamePage());
+      case guild:
+        return MaterialPageRoute(builder: (_) => const GuildPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>
