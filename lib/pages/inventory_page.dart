@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/colors.dart';
+import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/containers.dart';
 import 'package:tes/components/top_bar.dart';
 
