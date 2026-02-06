@@ -28,10 +28,10 @@ class GamePage extends StatelessWidget {
         appBar: TopBar(
           title: 'FOREST OF DESPAIR',
           desc: "CHAPTER 1",
-          buttonColor: orangeText,
+          buttonColor: redText,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),
-            color: orangeText,
+            color: redText,
             onPressed: () {},
           ),
         ),
@@ -197,7 +197,7 @@ class GamePage extends StatelessWidget {
                           vertical: 12,
                         ),
                       ),
-                      cursorColor: orangeText,
+                      cursorColor: redText,
                     ),
                   ),
                   Row(
@@ -207,7 +207,7 @@ class GamePage extends StatelessWidget {
                       Expanded(
                         child: customOutlinedButton(
                           icon: Icon(Icons.gavel, color: Colors.white),
-                          color: orangeText,
+                          color: redText,
                           title: 'ATTACK',
                           fontsize: 16,
                           onpressed: () {},

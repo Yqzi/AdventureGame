@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tes/colors.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
@@ -25,15 +26,21 @@ class ShopPage extends StatelessWidget {
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
         title: 'THE MARKET',
+        textStyle: GoogleFonts.epilogue(
+          color: const Color(0xFFE3D5B8), // #e3d5b8
+          fontSize: 20, // text-xl ≈ 20px
+          fontWeight: FontWeight.bold, // font-bold
+          height: 1.25,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          color: Colors.white,
+          color: const Color(0xFFE3D5B8),
           onPressed: () {},
         ),
         actions: [
           IconButton(
             icon: const Icon(FontAwesomeIcons.coins),
-            color: Colors.white,
+            color: redText,
             onPressed: () {},
           ),
         ],
@@ -113,7 +120,7 @@ class ShopPage extends StatelessWidget {
                   Text(
                     "Merchant's Wares",
                     style: GoogleFonts.epilogue(
-                      color: Colors.white,
+                      color: const Color(0xFFE3D5B8),
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),

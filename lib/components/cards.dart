@@ -128,7 +128,7 @@ class ShopCardModel extends StatelessWidget {
                       ElevatedButton(
                         onPressed: onPressed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: orangeText,
+                          backgroundColor: redText,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
                           ),
@@ -325,8 +325,8 @@ class QuestCardModel extends StatelessWidget {
                             children: List.generate(5, (index) {
                               // controls the amount that are colored in
                               final color = index < 3
-                                  ? orangeText
-                                  : orangeText.withOpacity(0.4);
+                                  ? redText
+                                  : redText.withOpacity(0.4);
                               return Padding(
                                 padding: const EdgeInsets.only(right: 3.0),
                                 child: Icon(
@@ -421,8 +421,8 @@ class QuestCardModel extends StatelessWidget {
                             ElevatedButton(
                               onPressed: onActionPressed,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: orangeText,
-                                shadowColor: orangeText,
+                                backgroundColor: redText,
+                                shadowColor: redText,
                                 elevation: 3,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),

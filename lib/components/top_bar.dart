@@ -56,7 +56,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
             Text(
               desc!,
               style: GoogleFonts.epilogue(
-                color: orangeText,
+                color: redText,
                 fontSize: 12,
                 letterSpacing: 1,
                 fontWeight: FontWeight.bold,

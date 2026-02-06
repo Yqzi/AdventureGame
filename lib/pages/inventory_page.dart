@@ -17,9 +17,16 @@ class InventoryPage extends StatelessWidget {
     return Scaffold(
       appBar: TopBar(
         title: 'CHARACTER INVENTORY',
+        textStyle: GoogleFonts.epilogue(
+          color: const Color(0xFFE3D5B8), // #e3d5b8
+          fontSize: 20, // text-xl ≈ 20px
+          fontWeight: FontWeight.bold, // font-bold
+          height: 1.25,
+          fontStyle: FontStyle.italic,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          color: Colors.white,
+          color: const Color(0xFFE3D5B8),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -27,7 +34,7 @@ class InventoryPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
-            color: Colors.white,
+            color: const Color(0xFFE3D5B8),
             onPressed: () {},
           ),
         ],

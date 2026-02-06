@@ -17,7 +17,6 @@ class StartPage extends StatefulWidget {
 class _StartPageState extends State<StartPage> {
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Stack(
@@ -138,7 +137,7 @@ class _StartPageState extends State<StartPage> {
                     width: double.infinity,
                     child: customOutlinedButton(
                       title: 'ENTER',
-                      color: orangeText,
+                      color: redText,
                       glow: true,
                       letterSpacing: 1,
                       fontsize: 22,
@@ -190,7 +189,7 @@ class _StartPageState extends State<StartPage> {
                   SizedBox(height: 24),
                   Container(
                     decoration: BoxDecoration(
-                      color: orangeText.withOpacity(0.2),
+                      color: redText.withOpacity(0.2),
                       border: Border.all(color: Color(0xFFFF6B00), width: 0.5),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -199,7 +198,7 @@ class _StartPageState extends State<StartPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, size: 9, color: orangeText),
+                        Icon(Icons.circle, size: 9, color: redText),
                         SizedBox(width: 6),
                         Text(
                           'STORY ENGINE ACTIVE',

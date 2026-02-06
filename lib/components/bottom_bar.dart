@@ -43,14 +43,14 @@ class CustomBottomBar extends StatelessWidget {
               children: [
                 Icon(
                   item.icon,
-                  color: selected ? orangeText : Colors.white54,
+                  color: selected ? redText : Colors.white54,
                   size: 30,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   item.label,
                   style: GoogleFonts.epilogue(
-                    color: selected ? orangeText : Colors.white54,
+                    color: selected ? redText : Colors.white54,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
