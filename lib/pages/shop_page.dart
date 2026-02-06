@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
@@ -40,33 +39,97 @@ class ShopPage extends StatelessWidget {
         ],
       ),
       body: Container(
-        padding: const EdgeInsets.only(top: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "AVAILABLE NOTICES",
-                style: GoogleFonts.epilogue(
-                  color: const Color.fromARGB(200, 255, 255, 255),
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  fontSize: 12,
+            // FIX IMAGE FADE TO BACKGROUND
+            Container(
+              height: MediaQuery.of(context).size.height * 0.25,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                image: const DecorationImage(
+                  image: NetworkImage(
+                    'https://lh3.googleusercontent.com/aida-public/AB6AXuClCOV1kVgcBq2-51nor8G1KJ9OrPiMBmX2p1dNs7B6deOoAuD4Hv86MmkBWquDJzN7Ej0bxR2Jt6-8EcUwZl2UdGU6IHhOhpyH7VzQ-708aIvzHmlf7APrNgJJ8zUucA6jvPVqC560j9FP67Unt371jTsTcyUrcFXS1GMCy-Qyx91RY56h_6evt8EPVC8_3TksYGwZKowLgqvE39GGpcaTZ_h9Qk59AN-VTwpl5SwVI5y6cZDYer4xFhDJP99jAhN_DPtcJrpCMCY',
+                  ),
+                  fit: BoxFit.cover,
+                  alignment: Alignment(0, -0.5),
                 ),
               ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            const Color.fromARGB(255, 41, 26, 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 20,
+                        left: 20,
+                        right: 20,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          border: Border.all(color: Colors.white38),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Text(
+                          '"Choose wisely, traveler. My wares cost more than just gold..."',
+                          style: GoogleFonts.epilogue(
+                            color: Colors.white60,
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.left,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 2,
-                width: 45,
-                color: orangeText,
-                margin: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Merchant's Wares",
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "STOCK: ${wares.length}",
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -88,7 +151,7 @@ class ShopPage extends StatelessWidget {
                 ),
               ),
             ),
-            CustomBottomBar(currentIndex: 1, onTap: (int index) {}),
+            CustomBottomBar(currentIndex: 2),
           ],
         ),
       ),

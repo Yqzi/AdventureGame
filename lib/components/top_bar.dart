@@ -6,6 +6,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? desc;
   final Widget? leading;
+  final TextStyle? textStyle;
   final List<Widget>? actions;
   final VoidCallback? onMenuPressed;
   final VoidCallback? onSettingsPressed;
@@ -28,6 +29,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     this.borderColor = const Color.fromARGB(239, 88, 61, 53),
     this.textColor = Colors.white,
     this.buttonColor = Colors.white,
+    this.textStyle,
   });
 
   @override
@@ -40,13 +42,15 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.epilogue(
-              color: textColor,
-              fontSize: 16,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
-              fontStyle: FontStyle.italic,
-            ),
+            style:
+                textStyle ??
+                GoogleFonts.epilogue(
+                  color: textColor,
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
+                ),
           ),
           if (desc != null)
             Text(

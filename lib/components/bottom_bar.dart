@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/colors.dart';
+import 'package:tes/router.dart';
 
 class CustomBottomBar extends StatelessWidget {
   final int currentIndex;
-  final ValueChanged<int> onTap;
 
-  const CustomBottomBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const CustomBottomBar({super.key, required this.currentIndex});
 
   @override
   Widget build(BuildContext context) {
+    List pages = [
+      AppRouter.map,
+      AppRouter.guild,
+      AppRouter.shop,
+      AppRouter.inventory,
+    ];
     return Container(
       padding: EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
@@ -27,14 +29,14 @@ class CustomBottomBar extends StatelessWidget {
         children: List.generate(4, (index) {
           final List<BottomBarItem> items = [
             BottomBarItem(icon: Icons.map, label: 'Map'),
-            BottomBarItem(icon: Icons.store, label: 'Market'),
             BottomBarItem(icon: Icons.bookmark_add_rounded, label: 'Quest'),
+            BottomBarItem(icon: Icons.store, label: 'Market'),
             BottomBarItem(icon: Icons.person, label: 'Hero'),
           ];
           final selected = index == currentIndex;
           final item = items[index];
           return GestureDetector(
-            onTap: () => onTap(index),
+            onTap: () => (Navigator.pushNamed(context, pages[index])),
             behavior: HitTestBehavior.opaque,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

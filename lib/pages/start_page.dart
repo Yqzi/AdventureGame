@@ -137,23 +137,12 @@ class _StartPageState extends State<StartPage> {
                   SizedBox(
                     width: double.infinity,
                     child: customOutlinedButton(
-                      title: 'START NEW GAME',
+                      title: 'ENTER',
                       color: orangeText,
                       glow: true,
                       letterSpacing: 1,
+                      fontsize: 22,
                       icon: Icon(Icons.style, color: Colors.white),
-                      onpressed: () {
-                        Navigator.pushReplacementNamed(context, AppRouter.shop);
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: customOutlinedButton(
-                      title: 'CONTINUE',
-                      glow: true,
-                      letterSpacing: 1,
-                      // temporary redirect
                       onpressed: () {
                         Navigator.pushReplacementNamed(
                           context,
@@ -176,7 +165,7 @@ class _StartPageState extends State<StartPage> {
                           onpressed: () {
                             Navigator.pushReplacementNamed(
                               context,
-                              AppRouter.game,
+                              AppRouter.shop,
                             );
                           },
                         ),
@@ -198,10 +187,10 @@ class _StartPageState extends State<StartPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 24),
                   Container(
                     decoration: BoxDecoration(
-                      color: Color(0xFFFF6B00).withOpacity(0.2),
+                      color: orangeText.withOpacity(0.2),
                       border: Border.all(color: Color(0xFFFF6B00), width: 0.5),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -210,13 +199,13 @@ class _StartPageState extends State<StartPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, size: 9, color: Color(0xFFFF6B00)),
+                        Icon(Icons.circle, size: 9, color: orangeText),
                         SizedBox(width: 6),
                         Text(
                           'STORY ENGINE ACTIVE',
                           style: GoogleFonts.epilogue(
                             fontSize: 11,
-                            color: Color(0xFFFF6B00),
+                            color: const Color.fromARGB(255, 245, 18, 56),
                             decoration: TextDecoration.none,
                             letterSpacing: 1,
                           ),

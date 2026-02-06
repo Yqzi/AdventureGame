@@ -35,16 +35,22 @@ class GuildPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
-        title: 'GUILD QUEST BOARD',
+        title: 'The Notice Board',
+        textStyle: GoogleFonts.epilogue(
+          color: const Color(0xFFE3D5B8), // #e3d5b8
+          fontSize: 20, // text-xl ≈ 20px
+          fontWeight: FontWeight.bold, // font-bold
+          height: 1.25,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          color: Colors.white,
+          color: const Color(0xFFE3D5B8),
           onPressed: () {},
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            color: Colors.white,
+            color: const Color(0xFFE3D5B8),
             onPressed: () {},
           ),
         ],
@@ -55,31 +61,29 @@ class GuildPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                "AVAILABLE NOTICES",
+                "Open Bounties",
                 style: GoogleFonts.epilogue(
-                  color: const Color.fromARGB(200, 255, 255, 255),
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  fontSize: 12,
+                  color: const Color(0xFFE3D5B8), // text-[#e3d5b8]
+                  fontSize: 22, // text-2xl ≈ 24px
+                  fontWeight: FontWeight.bold, // font-bold
+                  height: 1.25, // leading-tight
+                  letterSpacing: 1.2, // tracking-wide (adjust as needed)
+                  shadows: [
+                    Shadow(
+                      offset: Offset(2, 2), // x=2, y=2
+                      blurRadius: 4, // blur radius
+                      color: Color.fromRGBO(0, 0, 0, 0.8), // rgba(0,0,0,0.8)
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 2,
-                width: 45,
-                color: orangeText,
-                margin: const EdgeInsets.only(bottom: 16),
-              ),
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 16),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 0),
                 child: ListView.separated(
                   itemCount: quests.length + 1,
                   separatorBuilder: (context, index) =>
@@ -87,11 +91,12 @@ class GuildPage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     if (index < quests.length) {
                       final quest = quests[index];
-                      return QuestCardModel(
+                      return PinnedCard(
                         title: quest['title'],
                         risk: quest['risk'],
                         description: quest['description'],
                         reward: quest['reward'],
+                        transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
                         onActionPressed: () {},
                         image: quest['image'],
                       );
@@ -125,7 +130,7 @@ class GuildPage extends StatelessWidget {
                 ),
               ),
             ),
-            CustomBottomBar(currentIndex: 2, onTap: (int index) {}),
+            CustomBottomBar(currentIndex: 1),
           ],
         ),
       ),

@@ -20,7 +20,9 @@ class InventoryPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           color: Colors.white,
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(

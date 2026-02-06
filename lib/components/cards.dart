@@ -1,3 +1,4 @@
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -445,6 +446,188 @@ class QuestCardModel extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class PinnedCard extends StatelessWidget {
+  final String title;
+  final String risk;
+  final String description;
+  final String reward;
+  final String image;
+  final double transformationAngle;
+  final VoidCallback onActionPressed;
+
+  const PinnedCard({
+    super.key,
+    required this.title,
+    required this.risk,
+    required this.description,
+    required this.reward,
+    required this.image,
+    required this.onActionPressed,
+    required this.transformationAngle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: RepaintBoundary(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Transform.rotate(
+              angle: transformationAngle, // subtle tilt
+              alignment: Alignment.center,
+              filterQuality: FilterQuality.high,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE3D5B8),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(2),
+                      ),
+                      child: Stack(
+                        children: [
+                          Image.network(
+                            image,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.epilogue(
+                              color: const Color(0xFF3E2723),
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '"$description"',
+                            style: GoogleFonts.epilogue(
+                              color: const Color(0xFF5D4037),
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DottedBorder(
+                            options: RectDottedBorderOptions(
+                              color: Color(0xFFA1887F),
+                              padding: EdgeInsets.zero,
+                              dashPattern: const [3, 3],
+                            ),
+                            child: Container(height: 0),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'REWARD',
+                                    style: GoogleFonts.epilogue(
+                                      color: const Color(0xFF8D6E63),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    reward,
+                                    style: GoogleFonts.epilogue(
+                                      color: const Color(0xFFBD0F2C),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3E2723),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadiusGeometry.circular(
+                                      4,
+                                    ),
+                                  ),
+                                ),
+                                onPressed: onActionPressed,
+                                icon: const Icon(
+                                  Icons.visibility,
+                                  size: 18,
+                                  color: const Color(0xFFE3D5B8),
+                                ),
+                                label: Text(
+                                  "Investigate",
+                                  style: GoogleFonts.epilogue(
+                                    color: const Color(0xFFE3D5B8),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -8,
+              left: MediaQuery.of(context).size.width / 2 - 8,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8D6E63),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF3E2723), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

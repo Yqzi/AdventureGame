@@ -25,7 +25,7 @@ class AppRouter {
       case game:
         return MaterialPageRoute(builder: (_) => const GamePage());
       case guild:
-        return MaterialPageRoute(builder: (_) => const GuildPage());
+        return MaterialPageRoute(builder: (_) => GuildPage());
       case shop:
         return MaterialPageRoute(builder: (_) => const ShopPage());
       default:
