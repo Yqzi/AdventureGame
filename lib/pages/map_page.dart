@@ -53,13 +53,15 @@ class _MapPageState extends State<MapPage> {
                     decoration: const BoxDecoration(
                       gradient: RadialGradient(
                         colors: [Colors.transparent, Color(0xFF111621)],
-                        radius: 0.9,
+                        radius: 1.2,
                         center: Alignment.center,
                       ),
                     ),
                   ),
                 ),
-
+                Positioned.fill(
+                  child: Container(color: Color(0xFF111621).withOpacity(0.7)),
+                ),
                 // Map Tokens
                 Positioned(
                   top: MediaQuery.of(context).size.height * 0.35,
@@ -88,7 +90,7 @@ class _MapPageState extends State<MapPage> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.house, color: Color(0xFFE3D5C5)),
+                          const Icon(Icons.castle, color: Color(0xFFE3D5C5)),
                         ],
                       ),
                       const SizedBox(height: 4),

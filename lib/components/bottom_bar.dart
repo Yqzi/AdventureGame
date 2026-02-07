@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/colors.dart';
 import 'package:tes/router.dart';
@@ -11,7 +12,7 @@ class CustomBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List pages = [
-      AppRouter.map,
+      AppRouter.sanctum,
       AppRouter.guild,
       AppRouter.shop,
       AppRouter.inventory,
@@ -28,33 +29,59 @@ class CustomBottomBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(4, (index) {
           final List<BottomBarItem> items = [
-            BottomBarItem(icon: Icons.map, label: 'Map'),
+            BottomBarItem(icon: Icons.public, label: 'World'),
             BottomBarItem(icon: Icons.bookmark_add_rounded, label: 'Quest'),
             BottomBarItem(icon: Icons.store, label: 'Market'),
-            BottomBarItem(icon: Icons.person, label: 'Hero'),
+            BottomBarItem(icon: FontAwesomeIcons.shieldHeart, label: 'Hero'),
           ];
           final selected = index == currentIndex;
           final item = items[index];
+          final isGoldGlow = index == 0;
           return GestureDetector(
             onTap: () => (Navigator.pushNamed(context, pages[index])),
             behavior: HitTestBehavior.opaque,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  item.icon,
-                  color: selected ? redText : Colors.white54,
-                  size: 30,
+                Container(
+                  decoration: (isGoldGlow && selected)
+                      ? BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFFD4AF37).withOpacity(0.15),
+                              blurRadius: 15,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        )
+                      : null,
+                  child: Icon(
+                    item.icon,
+                    color: selected
+                        ? (isGoldGlow ? Color(0xFFD4AF37) : redText)
+                        : Colors.white54,
+                    size: 30,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   item.label,
                   style: GoogleFonts.epilogue(
-                    color: selected ? redText : Colors.white54,
+                    color: selected
+                        ? (isGoldGlow ? Color(0xFFD4AF37) : redText)
+                        : Colors.white54,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
                     letterSpacing: 1,
+                    shadows: (isGoldGlow && selected)
+                        ? [
+                            Shadow(
+                              color: Color(0xFFD4AF37).withOpacity(0.4),
+                              blurRadius: 10,
+                            ),
+                          ]
+                        : [],
                   ),
                 ),
               ],
