@@ -12,7 +12,7 @@ class CustomBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List pages = [
-      AppRouter.sanctum,
+      AppRouter.splash,
       AppRouter.guild,
       AppRouter.shop,
       AppRouter.inventory,
@@ -60,7 +60,7 @@ class CustomBottomBar extends StatelessWidget {
                     color: selected
                         ? (isGoldGlow ? Color(0xFFD4AF37) : redText)
                         : Colors.white54,
-                    size: 30,
+                    size: index == 3 ? 25 : 30,
                   ),
                 ),
                 const SizedBox(height: 4),
