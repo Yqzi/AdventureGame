@@ -214,7 +214,7 @@ class _WorldEntranceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialButton(
       onPressed: () {
-        Navigator.pushReplacementNamed(context, AppRouter.questCreation);
+        Navigator.pushReplacementNamed(context, AppRouter.worldExplore);
       },
       child: Container(
         height: 210,
@@ -270,7 +270,7 @@ class _ForgeQuestButton extends StatelessWidget {
 
     return MaterialButton(
       onPressed: () {
-        Navigator.pushReplacementNamed(context, AppRouter.questCreation);
+        Navigator.pushReplacementNamed(context, AppRouter.worldExplore);
       },
       child: Column(
         children: [
