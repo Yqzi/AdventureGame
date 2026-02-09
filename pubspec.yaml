@@ -67,6 +67,9 @@ flutter:
   assets:
     - assets/images/bg/castle.png
     - assets/images/map.png
+    - assets/images/forest.png
+    - assets/images/cave.png
+    - assets/images/ruins.png
     - assets/icons/flower.svg
   #   - images/a_dot_ham.jpeg
 

@@ -5,6 +5,7 @@ import 'package:tes/colors.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
+import 'package:tes/router.dart';
 
 class SanctumPage extends StatelessWidget {
   const SanctumPage({super.key});
@@ -211,40 +212,45 @@ class _WorldEntranceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 210,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color.fromARGB(100, 212, 175, 55),
-          width: 2,
-        ),
-      ),
-      child: Center(
-        child: Container(
-          height: 180,
-          width: 180,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color.fromARGB(12, 212, 175, 55),
-            border: Border.all(color: const Color.fromARGB(50, 212, 175, 55)),
+    return MaterialButton(
+      onPressed: () {
+        Navigator.pushReplacementNamed(context, AppRouter.questCreation);
+      },
+      child: Container(
+        height: 210,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color.fromARGB(100, 212, 175, 55),
+            width: 2,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(FontAwesomeIcons.hourglassStart, color: primary, size: 30),
-              SizedBox(height: 12),
-              Text(
-                'ENTER WORLD',
-                style: GoogleFonts.cinzel(
-                  fontSize: 16,
-                  letterSpacing: 2.5,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w400,
+        ),
+        child: Center(
+          child: Container(
+            height: 180,
+            width: 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color.fromARGB(12, 212, 175, 55),
+              border: Border.all(color: const Color.fromARGB(50, 212, 175, 55)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(FontAwesomeIcons.hourglassStart, color: primary, size: 30),
+                SizedBox(height: 12),
+                Text(
+                  'ENTER WORLD',
+                  style: GoogleFonts.cinzel(
+                    fontSize: 16,
+                    letterSpacing: 2.5,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -253,7 +259,7 @@ class _WorldEntranceButton extends StatelessWidget {
 }
 
 class _ForgeQuestButton extends StatelessWidget {
-  const _ForgeQuestButton({Key? key}) : super(key: key);
+  const _ForgeQuestButton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -262,99 +268,109 @@ class _ForgeQuestButton extends StatelessWidget {
     const Color goldMuted = Color(0xFFD4AF37);
     const double borderRadius = 40.0;
 
-    return Column(
-      children: [
-        Stack(
-          children: [
-            // Outer glow effect
-            Container(
-              height: 150,
-              width: 300,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(borderRadius),
-                  topRight: Radius.circular(borderRadius),
-                ),
-                boxShadow: [
-                  BoxShadow(color: goldMuted.withOpacity(0.2), blurRadius: 32),
-                ],
-              ),
-            ),
-            // Main button
-            Container(
-              height: 150,
-              width: 300,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [voidBlack, zinc900],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(borderRadius),
-                  topRight: Radius.circular(borderRadius),
-                ),
-                border: Border.all(
-                  color: goldMuted.withOpacity(0.5),
-                  width: 1.5,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(borderRadius),
-                  topRight: Radius.circular(borderRadius),
-                ),
-                child: Stack(
-                  children: [
-                    // Radial gold dot pattern overlay
-                    Positioned.fill(
-                      top: 10,
-                      child: Opacity(
-                        opacity: 0.1,
-                        child: CustomPaint(painter: _RadialDotPatternPainter()),
-                      ),
-                    ),
-                    // Button content
-                    Center(
-                      child: Container(
-                        height: 140,
-                        width: 290,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(borderRadius - 4),
-                            topRight: Radius.circular(borderRadius - 4),
-                          ),
-                          color: const Color.fromARGB(8, 255, 255, 255),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.hardware,
-                              size: 32,
-                              color: goldMuted.withOpacity(0.7),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'FORGE QUEST',
-                              style: GoogleFonts.cinzel(
-                                fontSize: 11,
-                                letterSpacing: 2,
-                                color: goldMuted.withOpacity(0.8),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+    return MaterialButton(
+      onPressed: () {
+        Navigator.pushReplacementNamed(context, AppRouter.questCreation);
+      },
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              // Outer glow effect
+              Container(
+                height: 150,
+                width: 300,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(borderRadius),
+                    topRight: Radius.circular(borderRadius),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: goldMuted.withOpacity(0.2),
+                      blurRadius: 32,
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+              // Main button
+              Container(
+                height: 150,
+                width: 300,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [voidBlack, zinc900],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(borderRadius),
+                    topRight: Radius.circular(borderRadius),
+                  ),
+                  border: Border.all(
+                    color: goldMuted.withOpacity(0.5),
+                    width: 1.5,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(borderRadius),
+                    topRight: Radius.circular(borderRadius),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Radial gold dot pattern overlay
+                      Positioned.fill(
+                        top: 10,
+                        child: Opacity(
+                          opacity: 0.1,
+                          child: CustomPaint(
+                            painter: _RadialDotPatternPainter(),
+                          ),
+                        ),
+                      ),
+                      // Button content
+                      Center(
+                        child: Container(
+                          height: 140,
+                          width: 290,
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(borderRadius - 4),
+                              topRight: Radius.circular(borderRadius - 4),
+                            ),
+                            color: const Color.fromARGB(8, 255, 255, 255),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.hardware,
+                                size: 32,
+                                color: goldMuted.withOpacity(0.7),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'FORGE QUEST',
+                                style: GoogleFonts.cinzel(
+                                  fontSize: 11,
+                                  letterSpacing: 2,
+                                  color: goldMuted.withOpacity(0.8),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

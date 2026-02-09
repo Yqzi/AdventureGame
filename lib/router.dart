@@ -3,9 +3,9 @@ import 'package:tes/pages/game_page.dart';
 import 'package:tes/pages/guild_page.dart';
 import 'package:tes/pages/inventory_page.dart';
 import 'package:tes/pages/map_page.dart';
+import 'package:tes/pages/quest_creation_page.dart';
 import 'package:tes/pages/sanctum_page.dart';
 import 'package:tes/pages/shop_page.dart';
-import 'package:tes/pages/splash_screen.dart';
 import 'package:tes/pages/start_page.dart';
 
 class AppRouter {
@@ -16,7 +16,7 @@ class AppRouter {
   static const guild = '/guild';
   static const shop = '/shop';
   static const sanctum = '/sanctum';
-  static const splash = '/splash';
+  static const questCreation = '/questCreation';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -34,8 +34,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ShopPage());
       case sanctum:
         return MaterialPageRoute(builder: (_) => const SanctumPage());
-      case splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+      case questCreation:
+        return MaterialPageRoute(builder: (_) => const QuestCreationPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>
