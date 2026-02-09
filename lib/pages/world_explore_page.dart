@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
 
-class QuestCreationPage extends StatelessWidget {
-  const QuestCreationPage({super.key});
+class WorldExplorationPage extends StatelessWidget {
+  const WorldExplorationPage({super.key});
 
   final List quests = const [
     {
