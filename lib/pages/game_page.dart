@@ -18,238 +18,212 @@ class GamePage extends StatelessWidget {
     double consumedMana = 0.0;
     int health = 100;
     int mana = 100;
+    bool isInCombat = false;
 
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
-        // Temporary static title
-        appBar: TopBar(
-          title: 'FOREST OF DESPAIR',
-          desc: "CHAPTER 1",
-          buttonColor: redText,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new),
-            color: redText,
-            onPressed: () {},
-          ),
-        ),
         body: Column(
           children: [
+            // Top Row: Back button, Title, Heart icon with number
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 32,
+                left: 16,
+                right: 16,
+                bottom: 8,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button in dark container
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  // Title
+                  Text(
+                    'Adventure',
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  // Heart icon with number
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          '5', // Example number, replace with variable if needed
+                          style: GoogleFonts.epilogue(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             // insert Image
             Container(height: screenHeight / 4),
             Expanded(
               child: Container(
+                padding: EdgeInsets.all(16),
                 color: Color.fromARGB(248, 22, 18, 16),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    SingleChildScrollView(
+                      child: Column(children: [Container()]),
+                    ),
                     Row(
                       children: [
                         Expanded(
                           child: Container(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 16,
-                            ),
+                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              border: Border.symmetric(
-                                horizontal: BorderSide(color: borderGrey),
-                              ),
+                              border: Border.all(color: borderGrey),
+                              color: const Color.fromARGB(255, 63, 63, 63),
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'HEALTH',
-                                      style: GoogleFonts.epilogue(
-                                        color: const Color.fromARGB(
-                                          200,
-                                          255,
-                                          255,
-                                          255,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '$health/100',
-                                      style: GoogleFonts.epilogue(
-                                        color: const Color.fromARGB(
-                                          220,
-                                          255,
-                                          255,
-                                          255,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 6),
-                                StatBar(
-                                  consumed: consumedHealth,
-                                  color: const Color.fromARGB(255, 236, 19, 19),
-                                ),
-                              ],
+                            child: Text(
+                              'temp static text 1',
+                              style: GoogleFonts.epilogue(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Container(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 16,
-                            ),
+                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(color: borderGrey),
-                                bottom: BorderSide(color: borderGrey),
-                                left: BorderSide(color: borderGrey),
-                              ),
+                              border: Border.all(color: borderGrey),
+                              color: const Color.fromARGB(255, 63, 63, 63),
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'MANA',
-                                      style: GoogleFonts.epilogue(
-                                        color: const Color.fromARGB(
-                                          200,
-                                          255,
-                                          255,
-                                          255,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '$mana/100',
-                                      style: GoogleFonts.epilogue(
-                                        color: const Color.fromARGB(
-                                          220,
-                                          255,
-                                          255,
-                                          255,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 6),
-                                StatBar(
-                                  consumed: consumedMana,
-                                  color: const Color.fromARGB(
-                                    255,
-                                    112,
-                                    85,
-                                    233,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              'temp static text 2',
+                              style: GoogleFonts.epilogue(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    SingleChildScrollView(),
                   ],
                 ),
               ),
             ),
-            Container(
-              color: Color.fromARGB(248, 22, 18, 16),
-              padding: EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: borderGrey),
+            if (isInCombat)
+              // ignore: dead_code
+              Container(
+                color: Color.fromARGB(248, 22, 18, 16),
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: borderGrey),
+                      ),
+                      child: TextField(
+                        style: GoogleFonts.epilogue(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Type your action...',
+                          hintStyle: GoogleFonts.epilogue(
+                            color: Colors.white54,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        cursorColor: redText,
+                      ),
                     ),
-                    child: TextField(
-                      style: GoogleFonts.epilogue(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Type your action...',
-                        hintStyle: GoogleFonts.epilogue(color: Colors.white54),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 16,
+                      children: [
+                        Expanded(
+                          child: customOutlinedButton(
+                            icon: Icon(Icons.gavel, color: Colors.white),
+                            color: redText,
+                            title: 'ATTACK',
+                            fontsize: 16,
+                            onpressed: () {},
+                          ),
                         ),
-                      ),
-                      cursorColor: redText,
+                        Expanded(
+                          child: customOutlinedButton(
+                            icon: Icon(Icons.auto_awesome, color: Colors.white),
+                            color: purpleSpecial,
+                            title: 'SPECIAL',
+                            fontsize: 16,
+                            onpressed: () {},
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 16,
-                    children: [
-                      Expanded(
-                        child: customOutlinedButton(
-                          icon: Icon(Icons.gavel, color: Colors.white),
-                          color: redText,
-                          title: 'ATTACK',
-                          fontsize: 16,
-                          onpressed: () {},
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 16,
+                      children: [
+                        Expanded(
+                          child: customOutlinedButton(
+                            icon: Icon(Icons.favorite, color: Colors.green),
+                            title: 'HEAL POT',
+                            fontsize: 16,
+                            onpressed: () {},
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: customOutlinedButton(
-                          icon: Icon(Icons.auto_awesome, color: Colors.white),
-                          color: purpleSpecial,
-                          title: 'SPECIAL',
-                          fontsize: 16,
-                          onpressed: () {},
+                        Expanded(
+                          child: customOutlinedButton(
+                            icon: Icon(
+                              Icons.directions_run,
+                              color: Colors.white,
+                            ),
+                            title: 'FLEE',
+                            fontsize: 16,
+                            onpressed: () {},
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 16,
-                    children: [
-                      Expanded(
-                        child: customOutlinedButton(
-                          icon: Icon(Icons.favorite, color: Colors.green),
-                          title: 'HEAL POT',
-                          fontsize: 16,
-                          onpressed: () {},
-                        ),
-                      ),
-                      Expanded(
-                        child: customOutlinedButton(
-                          icon: Icon(Icons.directions_run, color: Colors.white),
-                          title: 'FLEE',
-                          fontsize: 16,
-                          onpressed: () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),

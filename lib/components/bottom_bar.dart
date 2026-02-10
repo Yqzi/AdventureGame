@@ -12,7 +12,7 @@ class CustomBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List pages = [
-      AppRouter.sanctum,
+      AppRouter.worldExplore,
       AppRouter.guild,
       AppRouter.shop,
       AppRouter.inventory,

@@ -5,6 +5,7 @@ import 'package:tes/colors.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
+import 'package:tes/router.dart';
 
 class GuildPage extends StatelessWidget {
   const GuildPage({super.key});
@@ -97,7 +98,12 @@ class GuildPage extends StatelessWidget {
                         description: quest['description'],
                         reward: quest['reward'],
                         transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
-                        onActionPressed: () {},
+                        onActionPressed: () {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            AppRouter.game,
+                          );
+                        },
                         image: quest['image'],
                       );
                     } else {

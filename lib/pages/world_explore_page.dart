@@ -36,25 +36,13 @@ class WorldExplorationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
-        title: 'Explore',
+        title: 'Expedition',
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8), // #e3d5b8
           fontSize: 20, // text-xl ≈ 20px
           fontWeight: FontWeight.bold, // font-bold
           height: 1.25,
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          color: const Color(0xFFE3D5B8),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            color: const Color(0xFFE3D5B8),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Container(
         padding: const EdgeInsets.only(top: 24),
