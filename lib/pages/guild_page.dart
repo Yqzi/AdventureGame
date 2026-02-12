@@ -17,6 +17,7 @@ class GuildPage extends StatelessWidget {
       'description':
           'Goblins have been spotted near the village. Eliminate the threat.',
       'reward': '100 Gold',
+      'location': 'Forest',
       'image':
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDpJTdLOrUxSMzAephPD1LZlWHsbD17xR0_z7wUN3oDdBs6zyKRC9cjhr5Z092UrNkV_VE0iJAJURZ3m5arjx8OjmVZ1KnMniu78qCPaF_VLFhXwkfxKX4hy5FisK05To6poVEe0K5hSxdKMyajfbXqIXJvnpRcemiYJ3TV77ByyDOYmvcovRxVnPM4zm7qBfNtPV_W_LcMUleRsxnHEuhuD8MaznceL42miZsuT56OJzSWI4eKUJdkbmVqGFaoS3xnPfAnqoeVaZI',
     },
@@ -26,6 +27,7 @@ class GuildPage extends StatelessWidget {
       'description':
           'Goblins have been spotted near the village. Eliminate the threat.',
       'reward': '100 Gold',
+      'location': 'Forest',
       'image':
           'https://lh3.googleusercontent.com/aida-public/AB6AXuDpJTdLOrUxSMzAephPD1LZlWHsbD17xR0_z7wUN3oDdBs6zyKRC9cjhr5Z092UrNkV_VE0iJAJURZ3m5arjx8OjmVZ1KnMniu78qCPaF_VLFhXwkfxKX4hy5FisK05To6poVEe0K5hSxdKMyajfbXqIXJvnpRcemiYJ3TV77ByyDOYmvcovRxVnPM4zm7qBfNtPV_W_LcMUleRsxnHEuhuD8MaznceL42miZsuT56OJzSWI4eKUJdkbmVqGFaoS3xnPfAnqoeVaZI',
     },
@@ -99,9 +101,17 @@ class GuildPage extends StatelessWidget {
                         reward: quest['reward'],
                         transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
                         onActionPressed: () {
-                          Navigator.pushReplacementNamed(
+                          Navigator.pushNamed(
                             context,
                             AppRouter.game,
+                            arguments: {
+                              'details': {
+                                'title': quest['title'],
+                                'location': quest['location'],
+                                'description': quest['description'],
+                                'reward': quest['reward'],
+                              },
+                            },
                           );
                         },
                         image: quest['image'],

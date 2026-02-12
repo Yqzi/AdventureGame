@@ -1,18 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/components/buttons.dart';
-import 'package:tes/components/stat_bar.dart';
-import 'package:tes/components/top_bar.dart';
+import 'package:tes/blocs/app/app_bloc.dart';
+import 'package:tes/blocs/app/app_event.dart';
+import 'package:tes/blocs/app/app_state.dart';
+// import 'package:tes/blocs/app/app_bloc.dart'; // Assuming these are not needed for AI chat logic
+// import 'package:tes/blocs/app/app_event.dart';
+// import 'package:tes/blocs/app/app_state.dart';
+import 'package:tes/colors.dart'; // Make sure this provides borderGrey and redText
+import 'package:tes/models/chat_message.dart';
+// import 'package:tes/components/buttons.dart'; // Assuming not needed for AI chat logic
+// import 'package:tes/components/stat_bar.dart';
+// import 'package:tes/components/top_bar.dart';
+// import 'package:http/http.dart' as http; // Not needed with Firebase AI SDK
+// import 'package:tes/keys/secrets.dart'; // Not needed with Firebase AI SDK for client-side Gemini
+import 'package:uuid/uuid.dart'; // For error message IDs if needed
 
-class GamePage extends StatelessWidget {
-  const GamePage({super.key});
+// Your GameBloc and Message Model
 
-  final List equipment = const [];
+class GamePage extends StatefulWidget {
+  final Map<String, dynamic> details;
+
+  const GamePage({super.key, required this.details});
+
+  @override
+  State<GamePage> createState() => _GamePageState();
+}
+
+class _GamePageState extends State<GamePage> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scroll = ScrollController();
+  // final List equipment = const []; // Assuming this is for other game logic, keep if needed
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the quest immediately when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<GameBloc>().add(StartNewQuestEvent(widget.details));
+    });
+  }
+
+  // Function to scroll to the bottom of the chat list
+  void _scrollToBottom() {
+    // Using addPostFrameCallback to ensure layout is updated before scrolling
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  // Function to send a player command
+  void _sendCommand() {
+    final command = _controller.text.trim();
+    if (command.isNotEmpty) {
+      final currentState = context.read<GameBloc>().state;
+      // Only allow sending command if the AI is not currently processing or streaming
+      if (currentState is! GameLoading &&
+          currentState is! GameStreamingNarrative) {
+        context.read<GameBloc>().add(PlayerCommandEvent(command));
+        _controller.clear(); // Clear input field after sending
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // These variables are for your custom UI elements, not directly for the chat integration
     double screenHeight = MediaQuery.of(context).size.height;
     double consumedHealth = 0.0;
     double consumedMana = 0.0;
@@ -22,12 +82,12 @@ class GamePage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        FocusScope.of(context).unfocus();
+        FocusScope.of(context).unfocus(); // Dismiss keyboard on tap outside
       },
       child: Scaffold(
         body: Column(
           children: [
-            // Top Row: Back button, Title, Heart icon with number
+            // --- Custom Top Row (Back button, Title, Heart icon) ---
             Padding(
               padding: const EdgeInsets.only(
                 top: 32,
@@ -38,20 +98,18 @@ class GamePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Back button in dark container
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
                     ),
                   ),
-                  // Title
                   Text(
                     'Adventure',
                     style: GoogleFonts.epilogue(
@@ -61,20 +119,24 @@ class GamePage extends StatelessWidget {
                       letterSpacing: 1.2,
                     ),
                   ),
-                  // Heart icon with number
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
+                      // Changed to const if content is static
                       children: [
                         Icon(Icons.favorite, color: Colors.redAccent, size: 20),
                         SizedBox(width: 4),
                         Text(
                           '5', // Example number, replace with variable if needed
-                          style: GoogleFonts.epilogue(
+                          style: TextStyle(
+                            // Changed to TextStyle if GoogleFonts not required here
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -86,146 +148,247 @@ class GamePage extends StatelessWidget {
                 ],
               ),
             ),
-            // insert Image
-            Container(height: screenHeight / 4),
+            // --- Image placeholder ---
+            // If you want an image to appear here, you'd handle it with BlocBuilder
+            // For now, it's just a space.
+            Container(height: screenHeight / 6),
+
+            // --- Main Chat/Game Area ---
             Expanded(
               child: Container(
-                padding: EdgeInsets.all(16),
-                color: Color.fromARGB(248, 22, 18, 16),
+                padding: const EdgeInsets.all(16),
+                color: const Color.fromARGB(
+                  248,
+                  22,
+                  18,
+                  16,
+                ), // Your custom background color
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    SingleChildScrollView(
-                      child: Column(children: [Container()]),
+                    // --- Gemini chat integration (narrative display) ---
+                    Expanded(
+                      child: BlocConsumer<GameBloc, GameState>(
+                        // Use BlocConsumer for listener
+                        listener: (context, state) {
+                          // Scroll to bottom whenever messages are updated
+                          if (state is GameLoaded ||
+                              state is GameStreamingNarrative) {
+                            _scrollToBottom();
+                          }
+                        },
+                        builder: (context, state) {
+                          List<ChatMessage> messages = [];
+                          String loadingMessage =
+                              "Loading..."; // Default for initial loading
+
+                          if (state is GameLoading) {
+                            loadingMessage = state.message;
+                          } else if (state is GameLoaded) {
+                            messages = state.messages;
+                          } else if (state is GameStreamingNarrative) {
+                            messages = state.messages;
+                          } else if (state is GameError) {
+                            // Add the error message to display in the list
+                            messages.add(
+                              ChatMessage(
+                                id: const Uuid()
+                                    .v4(), // Unique ID for this temporary error message
+                                sender: MessageSender
+                                    .ai, // Treat error as an AI message
+                                text: "Error: ${state.message}",
+                                timestamp: DateTime.now(),
+                                isComplete: true,
+                              ),
+                            );
+                          }
+
+                          // Display a central loading indicator if no messages yet
+                          if (messages.isEmpty &&
+                              (state is GameLoading || state is GameInitial)) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    loadingMessage,
+                                    style: GoogleFonts.epilogue(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else if (messages.isEmpty &&
+                              state is! GameLoading &&
+                              state is! GameInitial) {
+                            // Fallback if somehow no messages but not initial/loading
+                            return Center(
+                              child: Text(
+                                'No narrative yet. Type your action!',
+                                style: GoogleFonts.epilogue(
+                                  color: Colors.white54,
+                                ),
+                              ),
+                            );
+                          } else {
+                            // Display the list of AI messages
+                            return ListView.builder(
+                              controller: _scroll,
+                              itemCount: messages.length,
+                              itemBuilder: (context, index) {
+                                final msg = messages[index];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment
+                                        .centerLeft, // Always align AI messages left
+                                    child: Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width *
+                                            0.9,
+                                      ),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors
+                                            .black54, // AI message bubble color
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: borderGrey),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            msg.text,
+                                            style: GoogleFonts.epilogue(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                          // Show streaming indicator if the AI message is not yet complete
+                                          if (!msg.isComplete)
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                top: 4.0,
+                                              ),
+                                              child: SizedBox(
+                                                width:
+                                                    20, // Small width for subtle indicator
+                                                height: 2,
+                                                child: LinearProgressIndicator(
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white70),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: borderGrey),
-                              color: const Color.fromARGB(255, 63, 63, 63),
-                            ),
-                            child: Text(
-                              'temp static text 1',
-                              style: GoogleFonts.epilogue(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: borderGrey),
-                              color: const Color.fromARGB(255, 63, 63, 63),
-                            ),
-                            child: Text(
-                              'temp static text 2',
-                              style: GoogleFonts.epilogue(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // --- Input Field ---
+                    GeminiTextField(
+                      controller: _controller,
+                      onSend: _sendCommand, // Connect the onSend callback
+                      isEnabled:
+                          !(BlocProvider.of<GameBloc>(context).state
+                                  is GameLoading ||
+                              BlocProvider.of<GameBloc>(context).state
+                                  is GameStreamingNarrative), // Disable input while AI is working
                     ),
                   ],
                 ),
               ),
             ),
-            if (isInCombat)
-              // ignore: dead_code
-              Container(
-                color: Color.fromARGB(248, 22, 18, 16),
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: borderGrey),
-                      ),
-                      child: TextField(
-                        style: GoogleFonts.epilogue(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Type your action...',
-                          hintStyle: GoogleFonts.epilogue(
-                            color: Colors.white54,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        cursorColor: redText,
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 16,
-                      children: [
-                        Expanded(
-                          child: customOutlinedButton(
-                            icon: Icon(Icons.gavel, color: Colors.white),
-                            color: redText,
-                            title: 'ATTACK',
-                            fontsize: 16,
-                            onpressed: () {},
-                          ),
-                        ),
-                        Expanded(
-                          child: customOutlinedButton(
-                            icon: Icon(Icons.auto_awesome, color: Colors.white),
-                            color: purpleSpecial,
-                            title: 'SPECIAL',
-                            fontsize: 16,
-                            onpressed: () {},
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 16,
-                      children: [
-                        Expanded(
-                          child: customOutlinedButton(
-                            icon: Icon(Icons.favorite, color: Colors.green),
-                            title: 'HEAL POT',
-                            fontsize: 16,
-                            onpressed: () {},
-                          ),
-                        ),
-                        Expanded(
-                          child: customOutlinedButton(
-                            icon: Icon(
-                              Icons.directions_run,
-                              color: Colors.white,
-                            ),
-                            title: 'FLEE',
-                            fontsize: 16,
-                            onpressed: () {},
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scroll.dispose();
+    // Dispatch the dispose event for your Bloc
+    context.read<GameBloc>().add(GameDisposeEvent());
+    super.dispose();
+  }
+}
+
+// --- Your GeminiTextField needs a minor modification ---
+class GeminiTextField extends StatelessWidget {
+  const GeminiTextField({
+    super.key,
+    required TextEditingController controller,
+    this.onSend, // Added onSend callback
+    this.isEnabled = true, // Added isEnabled property
+  }) : _controller = controller;
+
+  final TextEditingController _controller;
+  final VoidCallback?
+  onSend; // Callback when send button is pressed or submitted
+  final bool isEnabled; // New property to enable/disable input
+
+  @override
+  Widget build(BuildContext context) {
+    return AbsorbPointer(
+      // Prevents interaction when not enabled
+      absorbing: !isEnabled,
+      child: TextField(
+        controller: _controller,
+        style: GoogleFonts.epilogue(
+          color: isEnabled ? Colors.white : Colors.grey,
+        ), // Grey out text if disabled
+
+        onSubmitted: (value) {
+          if (isEnabled && value.trim().isNotEmpty) {
+            // Only call onSend if enabled
+            onSend?.call();
+          }
+        },
+
+        decoration: InputDecoration(
+          hintText: 'Type your action...',
+          hintStyle: GoogleFonts.epilogue(
+            color: isEnabled ? Colors.white54 : Colors.grey.shade600,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          filled: true,
+          fillColor: isEnabled
+              ? Colors.black45
+              : Colors.black87, // Change fill color if disabled
+          suffixIcon: IconButton(
+            // Add a send icon
+            icon: Icon(
+              Icons.send,
+              color: isEnabled ? Colors.white : Colors.grey,
+            ),
+            onPressed: isEnabled ? onSend : null, // Only clickable if enabled
+          ),
+        ),
+        cursorColor: redText,
       ),
     );
   }

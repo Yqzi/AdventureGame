@@ -25,7 +25,13 @@ class AppRouter {
       case inventory:
         return MaterialPageRoute(builder: (_) => const InventoryPage());
       case game:
-        return MaterialPageRoute(builder: (_) => const GamePage());
+        final Map<String, dynamic> args =
+            settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (context) {
+            return GamePage(details: args['details']);
+          },
+        );
       case guild:
         return MaterialPageRoute(builder: (_) => GuildPage());
       case shop:

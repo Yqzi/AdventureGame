@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "272639844844",
+    "project_id": "airpg-79881",
+    "storage_bucket": "airpg-79881.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:272639844844:android:18658762f79a1e3c8f20c9",
+        "android_client_info": {
+          "package_name": "com.example.tes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkQT0SGKwLsSMfXnDMrMf3e2ROBC-yM_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
