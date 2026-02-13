@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:tes/blocs/app/app_bloc.dart';
-import 'package:tes/keys/secrets.dart';
 import 'package:tes/router.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
