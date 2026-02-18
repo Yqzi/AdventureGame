@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/colors.dart';
+import 'package:tes/models/item.dart';
 
 enum Rarity { common, rare, epic, mythic }
 
@@ -35,97 +36,97 @@ extension RarityExtension on Rarity {
 }
 
 class ShopCardModel extends StatelessWidget {
-  final Rarity rarity;
-  final String title;
-  final String stats;
-  final String cost;
-  final String imageUrl;
+  final Item item;
   final VoidCallback onPressed;
 
-  const ShopCardModel({
-    required this.rarity,
-    required this.title,
-    required this.stats,
-    required this.cost,
-    required this.imageUrl,
-    required this.onPressed,
-    super.key,
-  });
+  const ShopCardModel({required this.onPressed, super.key, required this.item});
+
+  static const double _cardHeight = 180;
 
   @override
   Widget build(BuildContext context) {
-    final cardHeight = MediaQuery.of(context).size.height / 5;
-    return Container(
-      height: cardHeight,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 39, 30, 28),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        children: [
-          // Left side color border
-          Container(
-            width: 4,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: rarity.color,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(2),
-                bottomLeft: Radius.circular(2),
+    return SizedBox(
+      height: _cardHeight,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 39, 30, 28),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            // Left accent strip
+            SizedBox(
+              width: 4,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: item.rarity.color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    bottomLeft: Radius.circular(4),
+                  ),
+                ),
+                child: const SizedBox.expand(),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Rarity
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: rarity.color.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      textAlign: TextAlign.center,
-                      rarity.label.toUpperCase(),
-                      style: GoogleFonts.epilogue(
-                        color: rarity.color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        letterSpacing: 1.2,
+            // Info column
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Rarity badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: item.rarity.color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        item.rarity.label.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.epilogue(
+                          color: item.rarity.color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Title
-                  Text(
-                    title,
-                    style: GoogleFonts.epilogue(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                    const SizedBox(height: 4),
+                    // Title
+                    Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.epilogue(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Stats
-                  Text(
-                    stats,
-                    style: GoogleFonts.epilogue(color: greyText, fontSize: 14),
-                  ),
-                  const SizedBox(height: 10),
-                  // Cost
-                  Row(
-                    children: [
-                      ElevatedButton(
+                    const SizedBox(height: 4),
+                    // Stats – takes remaining space
+                    Expanded(
+                      child: Text(
+                        item.statSummary,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.epilogue(
+                          color: greyText,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    // Buy button – anchored at bottom
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton(
                         onPressed: onPressed,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: redText,
@@ -134,54 +135,46 @@ class ShopCardModel extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
-                            vertical: 6,
+                            vertical: 0,
                           ),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              cost,
+                              item.priceLabel,
                               style: GoogleFonts.epilogue(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(width: 6),
-                            Icon(
+                            const SizedBox(width: 6),
+                            const Icon(
                               FontAwesomeIcons.cartShopping,
                               color: Colors.white,
-                              size: 16,
+                              size: 14,
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Right side image
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  imageUrl,
-                  height: cardHeight * 0.7,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.broken_image,
-                    color: Colors.grey,
-                    size: 40,
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-        ],
+            // Right side image / placeholder
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text(
+                  item.type.icon,
+                  style: const TextStyle(fontSize: 44),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

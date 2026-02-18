@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:tes/models/chat_message.dart';
+import 'package:tes/models/player.dart';
 
 abstract class AppState extends Equatable {
   const AppState();
@@ -33,29 +34,51 @@ class GeminiState extends Equatable {
 }
 
 @immutable
-abstract class GameState {}
+abstract class GameState {
+  /// Every state carries the current player so the UI can always read it.
+  Player get player;
+}
 
-class GameInitial extends GameState {}
+class GameInitial extends GameState {
+  @override
+  final Player player;
+  GameInitial({required this.player});
+}
 
 class GameLoading extends GameState {
   final String message;
-  GameLoading({this.message = 'Loading...'});
+  @override
+  final Player player;
+  GameLoading({this.message = 'Loading...', required this.player});
 }
 
 class GameLoaded extends GameState {
-  final List<ChatMessage> messages; // Now a list of messages
+  final List<ChatMessage> messages;
   final Map<String, dynamic> activeQuest;
-  GameLoaded({required this.messages, required this.activeQuest});
+  final Player player;
+  final List<String> options;
+  GameLoaded({
+    required this.messages,
+    required this.activeQuest,
+    required this.player,
+    this.options = const [],
+  });
 }
 
 class GameStreamingNarrative extends GameState {
-  final List<ChatMessage>
-  messages; // Now a list of messages (with last one being appended)
+  final List<ChatMessage> messages;
   final Map<String, dynamic> activeQuest;
-  GameStreamingNarrative({required this.messages, required this.activeQuest});
+  final Player player;
+  GameStreamingNarrative({
+    required this.messages,
+    required this.activeQuest,
+    required this.player,
+  });
 }
 
 class GameError extends GameState {
   final String message;
-  GameError(this.message);
+  @override
+  final Player player;
+  GameError(this.message, {required this.player});
 }

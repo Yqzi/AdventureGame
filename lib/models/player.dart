@@ -284,9 +284,12 @@ class Player extends Equatable {
   /// Whether the player has enough XP to level up.
   bool get canLevelUp => experience >= experienceToNextLevel;
 
+  /// Maximum level a player can reach.
+  static const int maxLevel = 100;
+
   /// Returns a new [Player] with the level incremented and stats scaled.
   Player levelUp() {
-    if (!canLevelUp) return this;
+    if (!canLevelUp || level >= maxLevel) return this;
     // Each level adds a percentage of current base stats
     final hpGain = (baseHealth * 0.12).round().clamp(1, 999);
     final manaGain = (baseMana * 0.10).round().clamp(1, 999);

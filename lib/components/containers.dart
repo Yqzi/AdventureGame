@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tes/models/item.dart';
 
 class InventorySlot extends StatelessWidget {
   final IconData icon;
@@ -15,6 +16,7 @@ class InventorySlot extends StatelessWidget {
   final double borderRadius;
   final bool showValue;
   final EdgeInsetsGeometry? margin;
+  final Item? item;
 
   const InventorySlot({
     super.key,
@@ -30,6 +32,7 @@ class InventorySlot extends StatelessWidget {
     this.borderRadius = 1,
     this.showValue = false,
     this.margin,
+    this.item,
   });
 
   @override
@@ -48,7 +51,12 @@ class InventorySlot extends StatelessWidget {
             ? MainAxisAlignment.end
             : MainAxisAlignment.center,
         children: [
-          FaIcon(icon, color: iconColor, size: iconSize),
+          item == null
+              ? FaIcon(icon, color: iconColor, size: iconSize)
+              : Text(
+                  item!.type.icon,
+                  style: TextStyle(color: iconColor, fontSize: iconSize),
+                ),
           if (label != null) const SizedBox(height: 8),
           if (label != null)
             Text(

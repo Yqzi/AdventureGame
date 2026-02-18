@@ -35,6 +35,8 @@ Player applyStoryEffects(
 
   // ── Experience & auto level-up ──
   if (effects.xpGained > 0) {
+    print("effects.xpGained");
+    print(effects.xpGained);
     player = player.gainExperience(effects.xpGained);
     while (player.canLevelUp) {
       player = player.levelUp();

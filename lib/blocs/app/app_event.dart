@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:tes/models/item.dart';
+import 'package:tes/models/player.dart';
 
 abstract class AppEvent extends Equatable {
   const AppEvent();
@@ -33,6 +35,21 @@ class StartNewQuestEvent extends GameEvent {
 class PlayerCommandEvent extends GameEvent {
   final String command;
   PlayerCommandEvent(this.command);
+}
+
+class EquipItemEvent extends GameEvent {
+  final Item item;
+  EquipItemEvent(this.item);
+}
+
+class UnequipSlotEvent extends GameEvent {
+  final ItemType slotType;
+  UnequipSlotEvent(this.slotType);
+}
+
+class BuyItemEvent extends GameEvent {
+  final Item item;
+  BuyItemEvent(this.item);
 }
 
 class GameDisposeEvent extends GameEvent {}
