@@ -23,7 +23,14 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scroll = ScrollController();
+  GameBloc? _gameBloc;
   // final List equipment = const []; // Assuming this is for other game logic, keep if needed
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _gameBloc ??= context.read<GameBloc>();
+  }
 
   @override
   void initState() {
@@ -114,7 +121,7 @@ class _GamePageState extends State<GamePage> {
                       // Title
                       Expanded(
                         child: Text(
-                          'Adventure',
+                          widget.details['title'],
                           style: GoogleFonts.epilogue(
                             color: const Color(0xFFE3D5B8),
                             fontWeight: FontWeight.bold,
@@ -621,7 +628,7 @@ class _GamePageState extends State<GamePage> {
     _controller.dispose();
     _scroll.dispose();
     // Dispatch the dispose event for your Bloc
-    context.read<GameBloc>().add(GameDisposeEvent());
+    _gameBloc?.add(GameDisposeEvent());
     super.dispose();
   }
 }

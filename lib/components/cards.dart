@@ -38,8 +38,14 @@ extension RarityExtension on Rarity {
 class ShopCardModel extends StatelessWidget {
   final Item item;
   final VoidCallback onPressed;
+  final bool isSold;
 
-  const ShopCardModel({required this.onPressed, super.key, required this.item});
+  const ShopCardModel({
+    required this.onPressed,
+    super.key,
+    required this.item,
+    this.isSold = false,
+  });
 
   static const double _cardHeight = 180;
 
@@ -47,132 +53,198 @@ class ShopCardModel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: _cardHeight,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 39, 30, 28),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
+      child: Opacity(
+        opacity: isSold ? 0.45 : 1.0,
+        child: Stack(
           children: [
-            // Left accent strip
-            SizedBox(
-              width: 4,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: item.rarity.color,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    bottomLeft: Radius.circular(4),
-                  ),
-                ),
-                child: const SizedBox.expand(),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 39, 30, 28),
+                borderRadius: BorderRadius.circular(4),
               ),
-            ),
-            // Info column
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Rarity badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
+              child: Row(
+                children: [
+                  // Left accent strip
+                  SizedBox(
+                    width: 4,
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: item.rarity.color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.rarity.label.toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.epilogue(
-                          color: item.rarity.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                          letterSpacing: 1.2,
+                        color: item.rarity.color,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          bottomLeft: Radius.circular(4),
                         ),
                       ),
+                      child: const SizedBox.expand(),
                     ),
-                    const SizedBox(height: 4),
-                    // Title
-                    Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.epilogue(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Stats – takes remaining space
-                    Expanded(
-                      child: Text(
-                        item.statSummary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.epilogue(
-                          color: greyText,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    // Buy button – anchored at bottom
-                    SizedBox(
-                      height: 36,
-                      child: ElevatedButton(
-                        onPressed: onPressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: redText,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 0,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              item.priceLabel,
+                  ),
+                  // Info column
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Rarity badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: item.rarity.color.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              item.rarity.label.toUpperCase(),
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.epilogue(
-                                color: Colors.white,
+                                color: item.rarity.color,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 11,
+                                letterSpacing: 1.2,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              FontAwesomeIcons.cartShopping,
+                          ),
+                          const SizedBox(height: 4),
+                          // Title
+                          Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.epilogue(
                               color: Colors.white,
-                              size: 14,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Stats – takes remaining space
+                          Expanded(
+                            child: Text(
+                              item.statSummary,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.epilogue(
+                                color: greyText,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          // Buy button – anchored at bottom
+                          SizedBox(
+                            height: 36,
+                            child: isSold
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[800],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'SOLD',
+                                          style: GoogleFonts.epilogue(
+                                            color: Colors.white38,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          FontAwesomeIcons.check,
+                                          color: Colors.white38,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ElevatedButton(
+                                    onPressed: onPressed,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: redText,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          item.priceLabel,
+                                          style: GoogleFonts.epilogue(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          FontAwesomeIcons.cartShopping,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  // Right side image / placeholder
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text(
+                        item.type.icon,
+                        style: const TextStyle(fontSize: 44),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Right side image / placeholder
-            Expanded(
-              flex: 1,
-              child: Center(
-                child: Text(
-                  item.type.icon,
-                  style: const TextStyle(fontSize: 44),
+            // SOLD banner overlay
+            if (isSold)
+              Positioned(
+                top: 8,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color.fromARGB(200, 60, 60, 60),
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(4),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'SOLD',
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white54,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -497,7 +569,7 @@ class PinnedCard extends StatelessWidget {
                       ),
                       child: Stack(
                         children: [
-                          Image.network(
+                          Image.asset(
                             image,
                             height: 180,
                             width: double.infinity,
@@ -521,6 +593,39 @@ class PinnedCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Text(
+                                'Difficulty: ',
+                                style: GoogleFonts.epilogue(
+                                  color: const Color(0xFF5D4037),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3E2723),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  risk.toUpperCase(),
+                                  style: GoogleFonts.epilogue(
+                                    color: const Color(0xFFE3D5B8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
                           Text(
                             '"$description"',
                             style: GoogleFonts.epilogue(

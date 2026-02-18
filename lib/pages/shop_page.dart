@@ -17,34 +17,23 @@ import 'package:tes/models/player.dart';
 class ShopPage extends StatelessWidget {
   const ShopPage({super.key});
 
-  /// Pick 4 items from allItems whose level is within range of the player's
-  /// level, excluding items the player already owns.
-  List<Item> _waresForLevel(Player player) {
-    final playerLevel = player.level;
+  /// Pick 4 items whose level is near the player's level.
+  /// Uses a day-based seed so the selection stays the same all day.
+  /// Does NOT exclude owned items — they show as "SOLD" instead.
+  List<Item> _waresForDay(int playerLevel) {
+    final now = DateTime.now();
+    final daySeed = now.year * 10000 + now.month * 100 + now.day;
 
-    // Collect IDs of all owned items (inventory + equipped)
-    final ownedIds = <String>{
-      ...player.inventory.map((i) => i.id),
-      if (player.equipment.weapon != null) player.equipment.weapon!.id,
-      if (player.equipment.armor != null) player.equipment.armor!.id,
-      if (player.equipment.accessory != null) player.equipment.accessory!.id,
-      if (player.equipment.relic != null) player.equipment.relic!.id,
-    };
-
-    // Items the player can use: level <= playerLevel + 5
-    // but not too low: level >= playerLevel - 10 (min 1)
     final low = (playerLevel - 10).clamp(1, 100);
     final high = (playerLevel + 5).clamp(1, 100);
 
     var pool = allItems
-        .where(
-          (i) => i.level >= low && i.level <= high && !ownedIds.contains(i.id),
-        )
+        .where((i) => i.level >= low && i.level <= high)
         .toList();
 
-    // Fallback: just grab whatever is closest (still excluding owned)
+    // Fallback: grab closest by level
     if (pool.length < 4) {
-      pool = allItems.where((i) => !ownedIds.contains(i.id)).toList()
+      pool = List.of(allItems)
         ..sort(
           (a, b) => (a.level - playerLevel).abs().compareTo(
             (b.level - playerLevel).abs(),
@@ -52,13 +41,30 @@ class ShopPage extends StatelessWidget {
         );
     }
 
-    // Shuffle & take up to 4
-    pool.shuffle(Random(DateTime.now().millisecondsSinceEpoch));
+    // Deterministic daily shuffle
+    pool.shuffle(Random(daySeed));
     return pool.take(4).toList();
   }
 
-  void _showItemDetail(BuildContext context, Item item, Player player) {
-    final canAfford = player.canAfford(item.price);
+  /// Check whether the player already owns this item.
+  bool _isOwned(Player player, Item item) {
+    final ownedIds = <String>{
+      ...player.inventory.map((i) => i.id),
+      if (player.equipment.weapon != null) player.equipment.weapon!.id,
+      if (player.equipment.armor != null) player.equipment.armor!.id,
+      if (player.equipment.accessory != null) player.equipment.accessory!.id,
+      if (player.equipment.relic != null) player.equipment.relic!.id,
+    };
+    return ownedIds.contains(item.id);
+  }
+
+  void _showItemDetail(
+    BuildContext context,
+    Item item,
+    Player player, {
+    bool isSold = false,
+  }) {
+    final canAfford = !isSold && player.canAfford(item.price);
 
     showDialog(
       context: context,
@@ -263,7 +269,7 @@ class ShopPage extends StatelessWidget {
                     ),
                     const Spacer(),
                     // Cancel
-                    if (canAfford)
+                    if (canAfford && !isSold)
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(),
                         child: Text(
@@ -274,7 +280,7 @@ class ShopPage extends StatelessWidget {
                     const SizedBox(width: 8),
                     // Buy
                     ElevatedButton.icon(
-                      onPressed: canAfford
+                      onPressed: canAfford && !isSold
                           ? () {
                               Navigator.of(ctx).pop();
                               if (!context.mounted) return;
@@ -315,7 +321,11 @@ class ShopPage extends StatelessWidget {
                         size: 14,
                       ),
                       label: Text(
-                        canAfford ? 'Buy' : 'Not enough gold',
+                        isSold
+                            ? 'Sold'
+                            : canAfford
+                            ? 'Buy'
+                            : 'Not enough gold',
                         style: GoogleFonts.epilogue(
                           color: canAfford ? Colors.white : Colors.white38,
                           fontWeight: FontWeight.bold,
@@ -362,7 +372,15 @@ class ShopPage extends StatelessWidget {
     return BlocBuilder<GameBloc, GameState>(
       builder: (context, state) {
         final player = context.read<GameBloc>().player;
-        final wares = _waresForLevel(player);
+        final wares = _waresForDay(player.level);
+
+        // Sort: unsold first, sold at bottom
+        final sorted = List<Item>.from(wares)
+          ..sort((a, b) {
+            final aSold = _isOwned(player, a) ? 1 : 0;
+            final bSold = _isOwned(player, b) ? 1 : 0;
+            return aSold.compareTo(bSold);
+          });
 
         return Scaffold(
           backgroundColor: const Color.fromARGB(255, 41, 26, 20),
@@ -543,7 +561,7 @@ class ShopPage extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'STOCK: ${wares.length}',
+                      'STOCK: ${sorted.where((i) => !_isOwned(player, i)).length}',
                       style: GoogleFonts.epilogue(
                         color: Colors.white54,
                         fontSize: 14,
@@ -560,18 +578,31 @@ class ShopPage extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ListView.separated(
-                    itemCount: wares.length,
+                    itemCount: sorted.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 16),
                     itemBuilder: (context, index) {
-                      final item = wares[index];
-                      final canAfford = player.canAfford(item.price);
+                      final item = sorted[index];
+                      final isSold = _isOwned(player, item);
+                      final canAfford = !isSold && player.canAfford(item.price);
                       return GestureDetector(
-                        onTap: () => _showItemDetail(context, item, player),
+                        onTap: () => _showItemDetail(
+                          context,
+                          item,
+                          player,
+                          isSold: isSold,
+                        ),
                         child: ShopCardModel(
-                          item: item, // fallback icon
+                          item: item,
+                          isSold: isSold,
                           onPressed: canAfford
-                              ? () => _showItemDetail(context, item, player)
+                              ? () => _showItemDetail(
+                                  context,
+                                  item,
+                                  player,
+                                  isSold: isSold,
+                                )
                               : () {
+                                  if (isSold) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: const Color.fromARGB(
