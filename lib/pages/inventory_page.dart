@@ -8,6 +8,7 @@ import 'package:tes/blocs/app/app_event.dart';
 import 'package:tes/blocs/app/app_state.dart';
 import 'package:tes/colors.dart';
 import 'package:tes/components/cards.dart';
+import 'package:tes/components/experience_bar.dart';
 import 'package:tes/components/containers.dart';
 import 'package:tes/components/top_bar.dart';
 import 'package:tes/models/item.dart';
@@ -151,8 +152,8 @@ class InventoryPage extends StatelessWidget {
                                         childAspectRatio: 1,
                                       ),
                                   itemCount: inventory.length < 8
-                                      ? 8 - inventory.length
-                                      : inventory.length, // extra empty slots
+                                      ? 8 // extra empty slots
+                                      : inventory.length,
                                   itemBuilder: (context, index) {
                                     if (index < inventory.length) {
                                       final item = inventory[index];
@@ -188,6 +189,12 @@ class InventoryPage extends StatelessWidget {
                   ),
                 ),
 
+                // ─── XP bar ───
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: ExperienceBar(player: player),
+                ),
+
                 // ─── Bottom section: Stats ───
                 Container(
                   height: 2,
@@ -204,31 +211,31 @@ class InventoryPage extends StatelessWidget {
                       _StatTile(
                         icon: FontAwesomeIcons.crosshairs,
                         label: 'ATK',
-                        value: player.attack,
+                        value: player.baseAttack,
                         bonus: equipment.totalBonus('attack'),
                       ),
                       _StatTile(
                         icon: FontAwesomeIcons.shieldHalved,
                         label: 'DEF',
-                        value: player.defense,
+                        value: player.baseDefense,
                         bonus: equipment.totalBonus('defense'),
                       ),
                       _StatTile(
                         icon: FontAwesomeIcons.wandSparkles,
                         label: 'MAG',
-                        value: player.magic,
+                        value: player.baseMagic,
                         bonus: equipment.totalBonus('magic'),
                       ),
                       _StatTile(
                         icon: FontAwesomeIcons.boltLightning,
                         label: 'AGI',
-                        value: player.agility,
+                        value: player.baseAgility,
                         bonus: equipment.totalBonus('agility'),
                       ),
                       _StatTile(
                         icon: FontAwesomeIcons.heartPulse,
                         label: 'HP',
-                        value: player.maxHealth,
+                        value: player.baseHealth,
                         bonus: equipment.totalBonus('health'),
                       ),
                     ],

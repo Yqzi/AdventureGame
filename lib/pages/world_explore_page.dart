@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tes/blocs/app/app_bloc.dart';
 import 'package:tes/components/bottom_bar.dart';
 import 'package:tes/components/cards.dart';
+import 'package:tes/components/experience_bar.dart';
 import 'package:tes/components/top_bar.dart';
 
 class WorldExplorationPage extends StatelessWidget {
@@ -44,55 +47,67 @@ class WorldExplorationPage extends StatelessWidget {
           height: 1.25,
         ),
       ),
-      body: Container(
-        padding: const EdgeInsets.only(top: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                "Open Worlds",
-                style: GoogleFonts.epilogue(
-                  color: const Color(0xFFE3D5B8), // text-[#e3d5b8]
-                  fontSize: 22, // text-2xl ≈ 24px
-                  fontWeight: FontWeight.bold, // font-bold
-                  height: 1.25, // leading-tight
-                  letterSpacing: 1.2, // tracking-wide (adjust as needed)
-                  shadows: [
-                    Shadow(
-                      offset: Offset(2, 2), // x=2, y=2
-                      blurRadius: 4, // blur radius
-                      color: Color.fromRGBO(0, 0, 0, 0.8), // rgba(0,0,0,0.8)
+      body: Builder(
+        builder: (context) {
+          final player = context.read<GameBloc>().player;
+          return Container(
+            padding: const EdgeInsets.only(top: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExperienceBar(player: player),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    "Open Worlds",
+                    style: GoogleFonts.epilogue(
+                      color: const Color(0xFFE3D5B8), // text-[#e3d5b8]
+                      fontSize: 22, // text-2xl ≈ 24px
+                      fontWeight: FontWeight.bold, // font-bold
+                      height: 1.25, // leading-tight
+                      letterSpacing: 1.2, // tracking-wide (adjust as needed)
+                      shadows: [
+                        Shadow(
+                          offset: Offset(2, 2), // x=2, y=2
+                          blurRadius: 4, // blur radius
+                          color: Color.fromRGBO(
+                            0,
+                            0,
+                            0,
+                            0.8,
+                          ), // rgba(0,0,0,0.8)
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: ListView.separated(
-                  itemCount: quests.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final quest = quests[index];
-                    return SimpleQuestCard(
-                      title: quest['title'],
-                      description: quest['description'],
-                      reward: quest['reward'],
-                      onActionPressed: () {},
-                      image: quest['image'],
-                    );
-                  },
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: ListView.separated(
+                      itemCount: quests.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final quest = quests[index];
+                        return SimpleQuestCard(
+                          title: quest['title'],
+                          description: quest['description'],
+                          reward: quest['reward'],
+                          onActionPressed: () {},
+                          image: quest['image'],
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                CustomBottomBar(currentIndex: 0),
+              ],
             ),
-            CustomBottomBar(currentIndex: 0),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

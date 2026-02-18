@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tes/blocs/app/app_bloc.dart';
 import 'package:tes/colors.dart';
 import 'package:tes/components/bottom_bar.dart';
+import 'package:tes/components/experience_bar.dart';
 import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
 import 'package:tes/models/quest.dart';
@@ -375,6 +376,8 @@ class GuildPage extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+            ExperienceBar(player: player),
             const SizedBox(height: 12),
 
             Padding(
