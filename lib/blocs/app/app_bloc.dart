@@ -9,11 +9,14 @@ import 'package:tes/utils/apply_story_effects.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tes/blocs/app/app_event.dart';
 import 'package:tes/blocs/app/app_state.dart';
+import 'package:tes/models/game_session.dart';
 import 'package:tes/services/ai_service.dart';
+import 'package:tes/services/game_session_repository.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final AIService _aiService;
   final Uuid _uuid = const Uuid();
+  final GameSessionRepository _sessionRepo = GameSessionRepository();
 
   Map<String, dynamic> _currentActiveQuest = {};
   List<ChatMessage> _chatHistory = [];
@@ -34,6 +37,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<EquipItemEvent>(_onEquipItem);
     on<UnequipSlotEvent>(_onUnequipSlot);
     on<BuyItemEvent>(_onBuyItem);
+    on<ResumeQuestEvent>(_onResumeQuest);
     on<GameDisposeEvent>((event, emit) {
       _currentActiveQuest = {};
       _chatHistory = [];
@@ -43,6 +47,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// The current player — exposed for reading outside the bloc if needed.
   Player get player => _player;
+
+  /// Expose chat history so the game page can save sessions.
+  List<ChatMessage> get chatHistory => List.unmodifiable(_chatHistory);
+
+  /// Expose active quest details.
+  Map<String, dynamic> get activeQuest => Map.unmodifiable(_currentActiveQuest);
 
   @override
   Future<void> close() {
@@ -174,6 +184,45 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _chatHistory.last.isComplete = true;
       emit(GameError('Failed to start quest: $error', player: _player));
     }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  RESUME QUEST (from a saved session)
+  // ─────────────────────────────────────────────────────────
+
+  Future<void> _onResumeQuest(
+    ResumeQuestEvent event,
+    Emitter<GameState> emit,
+  ) async {
+    _currentActiveQuest = event.questDetails;
+
+    // Restore HP & MP for the resumed quest
+    _player = _player.fullRestore();
+
+    // Rebuild _chatHistory from the saved conversation
+    _chatHistory = event.conversationHistory.map((m) {
+      final sender = m['sender'] == 'player'
+          ? MessageSender.player
+          : MessageSender.ai;
+      return ChatMessage(
+        id: _uuid.v4(),
+        sender: sender,
+        text: m['text'] ?? '',
+        timestamp: DateTime.now(),
+        isComplete: true,
+      );
+    }).toList();
+
+    // Simply restore the previous state without re-generating from the AI.
+    // The player will see exactly where they left off with the same options.
+    emit(
+      GameLoaded(
+        messages: List.from(_chatHistory),
+        activeQuest: _currentActiveQuest,
+        player: _player,
+        options: event.lastOptions,
+      ),
+    );
   }
 
   // ─────────────────────────────────────────────────────────

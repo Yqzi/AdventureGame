@@ -524,6 +524,8 @@ class PinnedCard extends StatelessWidget {
   final String image;
   final double transformationAngle;
   final VoidCallback onActionPressed;
+  final String actionLabel;
+  final IconData actionIcon;
 
   const PinnedCard({
     super.key,
@@ -534,6 +536,8 @@ class PinnedCard extends StatelessWidget {
     required this.image,
     required this.onActionPressed,
     required this.transformationAngle,
+    this.actionLabel = 'Investigate',
+    this.actionIcon = Icons.visibility,
   });
 
   @override
@@ -682,13 +686,13 @@ class PinnedCard extends StatelessWidget {
                                   ),
                                 ),
                                 onPressed: onActionPressed,
-                                icon: const Icon(
-                                  Icons.visibility,
+                                icon: Icon(
+                                  actionIcon,
                                   size: 18,
                                   color: const Color(0xFFE3D5B8),
                                 ),
                                 label: Text(
-                                  "Investigate",
+                                  actionLabel,
                                   style: GoogleFonts.epilogue(
                                     color: const Color(0xFFE3D5B8),
                                     fontWeight: FontWeight.bold,

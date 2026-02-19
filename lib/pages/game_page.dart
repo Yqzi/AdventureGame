@@ -8,6 +8,7 @@ import 'package:tes/blocs/app/app_state.dart';
 import 'package:tes/colors.dart';
 import 'package:tes/components/animated_coin_counter.dart';
 import 'package:tes/components/loot_notification.dart';
+import 'package:tes/components/narrative_skeleton.dart';
 import 'package:tes/components/quest_complete_overlay.dart';
 import 'package:tes/components/quest_failed_overlay.dart';
 import 'package:tes/router.dart';
@@ -17,12 +18,21 @@ import 'package:tes/models/chat_message.dart';
 import 'package:tes/models/item.dart';
 import 'package:tes/models/player.dart';
 import 'package:tes/models/story_event.dart';
+import 'package:tes/models/game_session.dart';
+import 'package:tes/services/game_session_repository.dart';
 import 'package:uuid/uuid.dart';
 
 class GamePage extends StatefulWidget {
   final Map<String, dynamic> details;
+  final bool resume;
+  final String? questId;
 
-  const GamePage({super.key, required this.details});
+  const GamePage({
+    super.key,
+    required this.details,
+    this.resume = false,
+    this.questId,
+  });
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -31,7 +41,19 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scroll = ScrollController();
+  final GameSessionRepository _sessionRepo = GameSessionRepository();
   GameBloc? _gameBloc;
+
+  /// Whether auto-scroll-to-bottom is active. Disabled when the user scrolls
+  /// up, re-enabled when they scroll back near the bottom.
+  bool _autoScroll = true;
+
+  /// Throttle flag so we don't schedule multiple jumpTo calls per frame.
+  bool _scrollScheduled = false;
+
+  /// ID of the last streaming message we already did the initial scroll for.
+  /// Prevents re-scrolling on every chunk — only scrolls once per new message.
+  String? _lastScrolledMsgId;
 
   /// Currently showing loot notification effects (null = hidden).
   StoryEffects? _pendingEffects;
@@ -62,24 +84,87 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
-    // Start the quest immediately when the page loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    // Track whether the user has scrolled away from the bottom.
+    _scroll.addListener(_onScroll);
+
+    // Start or resume the quest when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.resume && widget.questId != null) {
+        // Try to load saved session
+        final session = await _sessionRepo.loadSession(widget.questId!);
+        if (session != null && mounted) {
+          context.read<GameBloc>().add(
+            ResumeQuestEvent(
+              questDetails: widget.details,
+              conversationHistory: session.conversationHistory,
+              lastOptions: session.lastOptions,
+            ),
+          );
+          return;
+        }
+      }
+      // No session to resume — start fresh
       context.read<GameBloc>().add(StartNewQuestEvent(widget.details));
     });
   }
 
-  // Function to scroll to the bottom of the chat list
-  void _scrollToBottom() {
-    // Using addPostFrameCallback to ensure layout is updated before scrolling
+  /// Detect user scroll intention and toggle auto-scroll.
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    // If user is within 80px of the bottom, re-enable auto-scroll.
+    _autoScroll = pos.maxScrollExtent - pos.pixels < 80;
+  }
+
+  /// Scrolls to the bottom — only when the user hasn't scrolled away.
+  /// Uses jumpTo (instant) during streaming to avoid animation pile-up,
+  /// and is throttled to once per frame.
+  void _scrollToBottom({bool force = false}) {
+    if (!_autoScroll && !force) return;
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollScheduled = false;
       if (_scroll.hasClients) {
-        _scroll.animateTo(
-          _scroll.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
       }
     });
+  }
+
+  /// Save the current session and pop back to the guild page.
+  Future<void> _saveAndPop() async {
+    final bloc = context.read<GameBloc>();
+    final questId = widget.questId;
+
+    // Only save if we have a questId and actual conversation to save
+    if (questId != null && bloc.chatHistory.isNotEmpty) {
+      final history = bloc.chatHistory
+          .map(
+            (m) => {
+              'sender': m.sender == MessageSender.player ? 'player' : 'ai',
+              'text': m.text,
+            },
+          )
+          .toList();
+
+      // Preserve the last options so resume shows them without re-generating.
+      final currentState = bloc.state;
+      final lastOptions = currentState is GameLoaded
+          ? currentState.options
+          : <String>[];
+
+      final session = GameSession(
+        questId: questId,
+        conversationHistory: history,
+        questDetails: widget.details,
+        lastOptions: lastOptions,
+        savedAt: DateTime.now(),
+      );
+      await _sessionRepo.saveSession(session);
+    }
+
+    if (mounted) Navigator.of(context).pop();
   }
 
   // Function to send a player command
@@ -306,7 +391,7 @@ class _GamePageState extends State<GamePage> {
                             // Back
                             if (!_questDone)
                               GestureDetector(
-                                onTap: () => Navigator.of(context).pop(),
+                                onTap: () => _saveAndPop(),
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
@@ -471,9 +556,21 @@ class _GamePageState extends State<GamePage> {
                           Expanded(
                             child: BlocConsumer<GameBloc, GameState>(
                               listener: (context, state) {
-                                if (state is GameLoaded ||
-                                    state is GameStreamingNarrative) {
-                                  _scrollToBottom();
+                                if (state is GameStreamingNarrative) {
+                                  // Scroll once when a new AI message starts.
+                                  final msgs = state.messages;
+                                  final lastAi = msgs.lastWhere(
+                                    (m) => m.sender == MessageSender.ai,
+                                    orElse: () => msgs.last,
+                                  );
+                                  if (_lastScrolledMsgId != lastAi.id) {
+                                    _lastScrolledMsgId = lastAi.id;
+                                    _autoScroll = true;
+                                    _scrollToBottom(force: true);
+                                  }
+                                } else if (state is GameLoaded) {
+                                  // Final scroll when response finishes.
+                                  _lastScrolledMsgId = null;
                                 }
                               },
                               builder: (context, state) {
@@ -770,6 +867,10 @@ class _GamePageState extends State<GamePage> {
                 totalXp: _totalXp,
                 itemsGained: List.unmodifiable(_itemsGained),
                 onReturnToGuild: () {
+                  // Delete saved session — quest is done
+                  if (widget.questId != null) {
+                    _sessionRepo.deleteSession(widget.questId!);
+                  }
                   Navigator.of(
                     context,
                   ).pushNamedAndRemoveUntil(AppRouter.guild, (route) => false);
@@ -781,6 +882,10 @@ class _GamePageState extends State<GamePage> {
               QuestFailedOverlay(
                 questTitle: widget.details['title'] ?? 'Quest',
                 onReturnToGuild: () {
+                  // Delete saved session — quest failed
+                  if (widget.questId != null) {
+                    _sessionRepo.deleteSession(widget.questId!);
+                  }
                   Navigator.of(
                     context,
                   ).pushNamedAndRemoveUntil(AppRouter.guild, (route) => false);
@@ -932,19 +1037,23 @@ class _GamePageState extends State<GamePage> {
       );
     }
 
-    // AI messages: typewriter reveal.
+    // AI messages: typewriter reveal with skeleton placeholder.
+    // Use MediaQuery for height since this widget lives inside a ListView
+    // (unbounded height) where LayoutBuilder can't provide useful constraints.
+    final viewportHeight = MediaQuery.of(context).size.height * 0.6;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           TypewriterText(
-            // Use message id as key so each message gets its own state.
             key: ValueKey(msg.id),
             text: text,
             isComplete: msg.isComplete,
             charDelayMs: 18,
-            onReveal: _scrollToBottom,
+            // No onReveal — we don't scroll per character.
             builder: (context, visibleText) {
               if (visibleText.length > 1) {
                 return RichText(
@@ -988,19 +1097,14 @@ class _GamePageState extends State<GamePage> {
               return const SizedBox.shrink();
             },
           ),
-          // Streaming indicator (shows while AI is still generating)
+
+          // Skeleton shimmer lines below the revealed text while
+          // the message is still streaming.
           if (!msg.isComplete)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: SizedBox(
-                width: 20,
-                height: 2,
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    const Color(0xFFD4883A).withOpacity(0.6),
-                  ),
-                ),
+              padding: const EdgeInsets.only(top: 12),
+              child: NarrativeSkeleton(
+                height: (viewportHeight * 0.55).clamp(80, 400),
               ),
             ),
         ],
@@ -1017,6 +1121,7 @@ class _GamePageState extends State<GamePage> {
 
   @override
   void dispose() {
+    _scroll.removeListener(_onScroll);
     _controller.dispose();
     _scroll.dispose();
     // Dispatch the dispose event for your Bloc

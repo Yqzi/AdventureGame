@@ -53,3 +53,15 @@ class BuyItemEvent extends GameEvent {
 }
 
 class GameDisposeEvent extends GameEvent {}
+
+/// Resume an in-progress quest with restored conversation history.
+class ResumeQuestEvent extends GameEvent {
+  final Map<String, dynamic> questDetails;
+  final List<Map<String, String>> conversationHistory;
+  final List<String> lastOptions;
+  ResumeQuestEvent({
+    required this.questDetails,
+    required this.conversationHistory,
+    this.lastOptions = const [],
+  });
+}

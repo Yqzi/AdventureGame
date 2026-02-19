@@ -69,7 +69,7 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
     super.dispose();
   }
 
-  static const _bloodRed = Color.fromARGB(255, 219, 184, 180);
+  static const _bloodRed = Color(0xFFC0392B);
 
   @override
   Widget build(BuildContext context) {

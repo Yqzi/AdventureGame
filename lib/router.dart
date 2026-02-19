@@ -29,7 +29,11 @@ class AppRouter {
             settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (context) {
-            return GamePage(details: args['details']);
+            return GamePage(
+              details: args['details'],
+              resume: args['resume'] == true,
+              questId: args['questId'] as String?,
+            );
           },
         );
       case guild:

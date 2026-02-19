@@ -11,11 +11,34 @@ import 'package:tes/components/cards.dart';
 import 'package:tes/components/top_bar.dart';
 import 'package:tes/models/quest.dart';
 import 'package:tes/router.dart';
+import 'package:tes/services/game_session_repository.dart';
 
-class GuildPage extends StatelessWidget {
+class GuildPage extends StatefulWidget {
   const GuildPage({super.key});
 
+  @override
+  State<GuildPage> createState() => _GuildPageState();
+}
+
+class _GuildPageState extends State<GuildPage> {
+  final GameSessionRepository _sessionRepo = GameSessionRepository();
+  Set<String> _activeSessionIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActiveSessions();
+  }
+
+  Future<void> _loadActiveSessions() async {
+    final ids = await _sessionRepo.allActiveQuestIds();
+    if (mounted) {
+      setState(() => _activeSessionIds = ids);
+    }
+  }
+
   void _showQuestDetail(BuildContext context, Quest quest) {
+    final hasSession = _activeSessionIds.contains(quest.id);
     showDialog(
       context: context,
       barrierColor: Colors.black87,
@@ -215,16 +238,20 @@ class GuildPage extends StatelessWidget {
                                     AppRouter.game,
                                     arguments: {
                                       'details': quest.toQuestDetails(),
+                                      'questId': quest.id,
+                                      'resume': hasSession,
                                     },
-                                  );
+                                  ).then((_) => _loadActiveSessions());
                                 },
-                                icon: const Icon(
-                                  FontAwesomeIcons.scroll,
+                                icon: Icon(
+                                  hasSession
+                                      ? Icons.play_arrow
+                                      : FontAwesomeIcons.scroll,
                                   size: 14,
                                   color: Color(0xFFE3D5B8),
                                 ),
                                 label: Text(
-                                  "Accept Quest",
+                                  hasSession ? "Resume" : "Accept Quest",
                                   style: GoogleFonts.epilogue(
                                     color: const Color(0xFFE3D5B8),
                                     fontWeight: FontWeight.bold,
@@ -426,6 +453,7 @@ class GuildPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   if (index < quests.length) {
                     final quest = quests[index];
+                    final hasSession = _activeSessionIds.contains(quest.id);
                     return GestureDetector(
                       onTap: () => _showQuestDetail(context, quest),
                       child: PinnedCard(
@@ -436,12 +464,20 @@ class GuildPage extends StatelessWidget {
                         transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
                         image:
                             'assets/images/${quest.location.toLowerCase()}.png',
+                        actionLabel: hasSession ? 'Resume' : 'Investigate',
+                        actionIcon: hasSession
+                            ? Icons.play_arrow
+                            : Icons.visibility,
                         onActionPressed: () {
                           Navigator.pushNamed(
                             context,
                             AppRouter.game,
-                            arguments: {'details': quest.toQuestDetails()},
-                          );
+                            arguments: {
+                              'details': quest.toQuestDetails(),
+                              'questId': quest.id,
+                              'resume': hasSession,
+                            },
+                          ).then((_) => _loadActiveSessions());
                         },
                       ),
                     );
