@@ -9,6 +9,7 @@ import 'package:tes/colors.dart';
 import 'package:tes/components/animated_coin_counter.dart';
 import 'package:tes/components/loot_notification.dart';
 import 'package:tes/components/quest_complete_overlay.dart';
+import 'package:tes/components/quest_failed_overlay.dart';
 import 'package:tes/router.dart';
 import 'package:tes/components/stat_bar.dart';
 import 'package:tes/components/typewriter_text.dart';
@@ -40,6 +41,12 @@ class _GamePageState extends State<GamePage> {
 
   /// Whether to show the full quest-complete overlay.
   bool _questCompleted = false;
+
+  /// Whether the AI has signalled quest failure (player hasn't dismissed yet).
+  bool _questFailedDone = false;
+
+  /// Whether to show the full quest-failed overlay.
+  bool _questFailed = false;
 
   /// Cumulative reward tracking across the entire quest.
   int _totalGold = 0;
@@ -259,6 +266,11 @@ class _GamePageState extends State<GamePage> {
             if (state.effects?.questCompleted == true) {
               setState(() {
                 _questDone = true;
+              });
+            }
+            if (state.effects?.questFailed == true) {
+              setState(() {
+                _questFailedDone = true;
               });
             }
           }
@@ -635,6 +647,49 @@ class _GamePageState extends State<GamePage> {
                                 );
                               }
 
+                              // ── Quest failed → show «Quest Failed» button ──
+                              if (_questFailedDone && !_questFailed) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    4,
+                                    12,
+                                    4,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: redText,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _questFailed = true;
+                                        });
+                                      },
+                                      child: const Text(
+                                        '☠  QUEST FAILED  ☠',
+                                        style: TextStyle(
+                                          fontFamily: 'Georgia',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
                               final options = state is GameLoaded
                                   ? state.options
                                   : <String>[];
@@ -672,7 +727,7 @@ class _GamePageState extends State<GamePage> {
                           ),
 
                           // ── Text input ──
-                          if (!_questDone)
+                          if (!_questDone && !_questFailedDone)
                             Padding(
                               padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                               child: GeminiTextField(
@@ -714,6 +769,17 @@ class _GamePageState extends State<GamePage> {
                 totalGold: _totalGold,
                 totalXp: _totalXp,
                 itemsGained: List.unmodifiable(_itemsGained),
+                onReturnToGuild: () {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil(AppRouter.guild, (route) => false);
+                },
+              ),
+
+            // ── Quest failed overlay ──
+            if (_questFailed)
+              QuestFailedOverlay(
+                questTitle: widget.details['title'] ?? 'Quest',
                 onReturnToGuild: () {
                   Navigator.of(
                     context,

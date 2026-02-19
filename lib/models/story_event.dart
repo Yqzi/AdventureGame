@@ -38,6 +38,7 @@ class StoryEffects {
   final String? itemLostId;
   final String? newLocation;
   final bool questCompleted;
+  final bool questFailed;
 
   const StoryEffects({
     this.damage = 0,
@@ -53,6 +54,7 @@ class StoryEffects {
     this.itemLostId,
     this.newLocation,
     this.questCompleted = false,
+    this.questFailed = false,
   });
 
   /// No effects at all — useful as a default.
@@ -73,6 +75,7 @@ class StoryEffects {
       itemLostId: json['itemLost'] as String?,
       newLocation: json['newLocation'] as String?,
       questCompleted: json['questCompleted'] as bool? ?? false,
+      questFailed: json['questFailed'] as bool? ?? false,
     );
   }
 
@@ -90,6 +93,7 @@ class StoryEffects {
     'itemLost': itemLostId,
     'newLocation': newLocation,
     'questCompleted': questCompleted,
+    'questFailed': questFailed,
   };
 
   /// Returns true if at least one effect is non-zero / non-null.
@@ -106,5 +110,6 @@ class StoryEffects {
       itemGainedId != null ||
       itemLostId != null ||
       newLocation != null ||
-      questCompleted;
+      questCompleted ||
+      questFailed;
 }

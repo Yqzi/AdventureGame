@@ -104,6 +104,14 @@ QUEST COMPLETION:
 - This is the LAST story beat. Make it satisfying and final.
 - Do NOT set questCompleted to true prematurely. The quest must feel earned.
 
+QUEST FAILURE:
+- A quest FAILS when the player DIES (HP reaches 0) or when the quest-specific failure condition is triggered (if it has one).
+- DEATH: If your damage this turn would reduce the player to 0 HP or below, the player DIES. Set "questFailed": true. Narrate the death — brutal, final, no resurrection. The story ends here.
+- QUEST-SPECIFIC FAILURE: Almost each quest has a unique failure condition described in the quest details. If that condition is met through the player's actions or inaction, set "questFailed": true. Narrate the consequences.
+- When questFailed is true, this is the FINAL response. Wrap up the failure conclusively — no cliffhangers, no second chances.
+- Do NOT set both questCompleted and questFailed to true in the same response.
+- questFailed should be false for ALL other responses.
+
 Track progression internally. After several exchanges in Phase 2, you MUST push to Phase 3. Never loop in the middle forever.
 
 === KEY FIGURES — MANDATORY ===
@@ -157,7 +165,7 @@ Rules:
 
 At the VERY END of every response, after the OPTIONS tag, append exactly this:
 
-<!--EFFECTS:{"damage":0,"heal":0,"manaSpent":0,"manaRestored":0,"goldGained":0,"goldLost":0,"xpGained":0,"statusAdded":null,"statusRemoved":null,"itemGained":null,"itemLost":null,"newLocation":null,"questCompleted":false}-->
+<!--EFFECTS:{"damage":0,"heal":0,"manaSpent":0,"manaRestored":0,"goldGained":0,"goldLost":0,"xpGained":0,"statusAdded":null,"statusRemoved":null,"itemGained":null,"itemLost":null,"newLocation":null,"questCompleted":false,"questFailed":false}-->
 
 Field rules:
 - damage: HP the player lost this turn. The player has 100 HP at level 1. Damage must be MEANINGFUL relative to max HP.
@@ -178,6 +186,7 @@ Field rules:
 - itemLost: Item ID string if player lost something, or null.
 - newLocation: Short location name if the player moved to a new area, or null.
 - questCompleted: boolean, true ONLY when the quest objective has been fully accomplished in this response. This is the FINAL response of the quest — wrap up the story conclusively. Set to false for ALL other responses.
+- questFailed: boolean, true ONLY when the player dies (HP reaches 0) or the quest-specific failure condition is met. This is the FINAL response of the quest — narrate the failure conclusively. Set to false for ALL other responses.
 
 CRITICAL:
 - Both OPTIONS and EFFECTS tags are MANDATORY on every response.
@@ -303,6 +312,10 @@ Never name these as "status effects." Weave them into the narration as physical 
     if (questDetails.containsKey('reward') &&
         (questDetails['reward'] as String).isNotEmpty) {
       parts.add('Reward: ${questDetails['reward']}');
+    }
+    if (questDetails.containsKey('failureCondition') &&
+        (questDetails['failureCondition'] as String).isNotEmpty) {
+      parts.add('Failure Condition: ${questDetails['failureCondition']}');
     }
     return parts.join('; ');
   }

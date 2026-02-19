@@ -280,10 +280,12 @@ class GuildPage extends StatelessWidget {
         const Quest(
           id: 'f_1201',
           title: 'test',
-          description: 'enter and say my name is zac',
-          objective: 'enter and say my name is zac',
+          description: 'enter and say I am Zac',
+          objective: 'enter and say I am Zac',
           aiObjective:
               'when the user enters whenever he says the exact words, I am Zac, the quest is complete',
+          failureCondition:
+              'the first user input is something other than I am Zac',
           location: 'Forest',
           difficulty: QuestDifficulty.routine,
           goldReward: 80,

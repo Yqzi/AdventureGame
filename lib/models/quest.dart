@@ -53,6 +53,7 @@ class Quest {
   final int xpReward;
   final int recommendedLevel;
   final List<String> keyNPCs;
+  final String failureCondition;
 
   const Quest({
     required this.id,
@@ -65,6 +66,7 @@ class Quest {
     required this.goldReward,
     required this.xpReward,
     required this.recommendedLevel,
+    required this.failureCondition,
     this.keyNPCs = const [],
   });
 
@@ -80,6 +82,7 @@ class Quest {
     'difficulty': difficulty.label,
     'reward': rewardLabel,
     'keyNPCs': keyNPCs,
+    'failureCondition': failureCondition,
   };
 
   /// Pick 4 daily quests with a (2, 1, 1) location spread.
@@ -161,6 +164,7 @@ final List<Quest> allQuests = [
     xpReward: 40,
     recommendedLevel: 1,
     keyNPCs: ['Village Elder Rowan'],
+    failureCondition: '',
   ),
   const Quest(
     id: 'f_002',
@@ -177,6 +181,7 @@ final List<Quest> allQuests = [
     xpReward: 50,
     recommendedLevel: 3,
     keyNPCs: ['Militia Captain Dara'],
+    failureCondition: '',
   ),
   const Quest(
     id: 'f_003',
@@ -193,6 +198,8 @@ final List<Quest> allQuests = [
     xpReward: 45,
     recommendedLevel: 2,
     keyNPCs: ['Herbalist Nessa'],
+    failureCondition:
+        'The carcass breaks apart and washes downstream, spreading the poison to the village water supply.',
   ),
   const Quest(
     id: 'f_004',
@@ -209,6 +216,8 @@ final List<Quest> allQuests = [
     xpReward: 35,
     recommendedLevel: 1,
     keyNPCs: ['Henrik\'s Wife Maren'],
+    failureCondition:
+        'Henrik succumbs to his injuries in the den before the player can reach him.',
   ),
   const Quest(
     id: 'f_005',
@@ -224,6 +233,8 @@ final List<Quest> allQuests = [
     xpReward: 70,
     recommendedLevel: 5,
     keyNPCs: ['Merchant Aldric', 'Bandit Chief Grath'],
+    failureCondition:
+        'Grath spots the ambush and his bandits overwhelm the player, escaping with their stolen goods.',
   ),
   const Quest(
     id: 'f_006',
@@ -239,6 +250,8 @@ final List<Quest> allQuests = [
     goldReward: 250,
     xpReward: 85,
     recommendedLevel: 8,
+    failureCondition:
+        'The Black Vine\'s tendrils drag the player away, and the root-heart burrows deeper underground beyond reach.',
   ),
 
   // ── Forest: Levels 11–25 ──
@@ -257,6 +270,8 @@ final List<Quest> allQuests = [
     xpReward: 95,
     recommendedLevel: 11,
     keyNPCs: ['Farmer\'s Son Pieter'],
+    failureCondition:
+        'The scarecrows overwhelm the player at nightfall, and the bone idol is carried away by dark magic.',
   ),
   const Quest(
     id: 'f_008',
@@ -273,6 +288,8 @@ final List<Quest> allQuests = [
     xpReward: 100,
     recommendedLevel: 13,
     keyNPCs: ['Witch Morgatha'],
+    failureCondition:
+        'Morgatha grows tired of the player and vanishes with the cure, leaving the village to the plague.',
   ),
   const Quest(
     id: 'f_009',
@@ -289,6 +306,8 @@ final List<Quest> allQuests = [
     xpReward: 120,
     recommendedLevel: 16,
     keyNPCs: ['Farmer Gregor'],
+    failureCondition:
+        'The dire bear retreats to a new lair deeper in the thicket where it cannot be tracked.',
   ),
   const Quest(
     id: 'f_010',
@@ -305,6 +324,8 @@ final List<Quest> allQuests = [
     xpReward: 130,
     recommendedLevel: 19,
     keyNPCs: ['Ranger Elara'],
+    failureCondition:
+        'The cocooned survivors die from spider venom before they can be freed.',
   ),
   const Quest(
     id: 'f_011',
@@ -321,6 +342,8 @@ final List<Quest> allQuests = [
     xpReward: 140,
     recommendedLevel: 22,
     keyNPCs: ['Druid Theron'],
+    failureCondition:
+        'The Verdant Terror\'s roots spread too deep and the bulb-core becomes unreachable underground.',
   ),
 
   // ── Forest: Levels 26–50 ──
@@ -339,6 +362,8 @@ final List<Quest> allQuests = [
     xpReward: 190,
     recommendedLevel: 30,
     keyNPCs: ['Ranger Elara'],
+    failureCondition:
+        'The dark crystal pulses and the treant\'s corruption spreads to the surrounding forest, sealing the grove forever.',
   ),
   const Quest(
     id: 'f_013',
@@ -355,6 +380,8 @@ final List<Quest> allQuests = [
     xpReward: 250,
     recommendedLevel: 35,
     keyNPCs: ['Dragon Irythas'],
+    failureCondition:
+        'Irythas takes flight and razes the surrounding woodland, making its hunting ground ten times larger.',
   ),
   const Quest(
     id: 'f_014',
@@ -371,6 +398,8 @@ final List<Quest> allQuests = [
     xpReward: 300,
     recommendedLevel: 42,
     keyNPCs: ['High Pyromancer Vex', 'Spy Maren'],
+    failureCondition:
+        'Vex completes the ritual and the entire forest section ignites in an inferno that cannot be stopped.',
   ),
   const Quest(
     id: 'f_015',
@@ -387,6 +416,8 @@ final List<Quest> allQuests = [
     xpReward: 280,
     recommendedLevel: 38,
     keyNPCs: ['Commander Hale', 'Warchief Gorak'],
+    failureCondition:
+        'Gorak rallies his orcs for a counterattack, overrunning Commander Hale\'s position and scattering the militia.',
   ),
   const Quest(
     id: 'f_016',
@@ -403,6 +434,8 @@ final List<Quest> allQuests = [
     xpReward: 200,
     recommendedLevel: 28,
     keyNPCs: ['Druid Theron'],
+    failureCondition:
+        'The dark sigil fully activates and the Fey Stone shatters, turning the fey permanently feral.',
   ),
 
   // ── Forest: Levels 51–75 ──
@@ -421,6 +454,8 @@ final List<Quest> allQuests = [
     xpReward: 400,
     recommendedLevel: 55,
     keyNPCs: ['Keeper of the World Tree'],
+    failureCondition:
+        'The third seal-stone cracks before it can be placed, and the Elder Wyrm stirs closer to full awakening.',
   ),
   const Quest(
     id: 'f_018',
@@ -436,6 +471,8 @@ final List<Quest> allQuests = [
     xpReward: 450,
     recommendedLevel: 62,
     keyNPCs: ['Sun Priestess Amara'],
+    failureCondition:
+        'The Shadow Lord claims the Sunstone, plunging the forest into permanent darkness.',
   ),
   const Quest(
     id: 'f_019',
@@ -452,6 +489,8 @@ final List<Quest> allQuests = [
     xpReward: 480,
     recommendedLevel: 70,
     keyNPCs: ['Necromancer\'s Shade'],
+    failureCondition:
+        'The skeleton army reaches critical mass and marches on the surface settlements.',
   ),
 
   // ── Forest: Levels 76–100 ──
@@ -470,6 +509,8 @@ final List<Quest> allQuests = [
     xpReward: 550,
     recommendedLevel: 78,
     keyNPCs: ['Last Cleric Soren'],
+    failureCondition:
+        'The God-Eater consumes the last shrine and becomes too powerful to stop, leaving the forest godless.',
   ),
   const Quest(
     id: 'f_021',
@@ -486,6 +527,8 @@ final List<Quest> allQuests = [
     xpReward: 700,
     recommendedLevel: 90,
     keyNPCs: ['Spirit of the World Tree'],
+    failureCondition:
+        'The Hellfire Seed fully ignites and the World Tree collapses, destroying the heart of the forest.',
   ),
   const Quest(
     id: 'f_022',
@@ -502,6 +545,8 @@ final List<Quest> allQuests = [
     xpReward: 800,
     recommendedLevel: 95,
     keyNPCs: ['Forge Spirit'],
+    failureCondition:
+        'The titan breaks free entirely and strides out of the forest, flattening everything in its path.',
   ),
   const Quest(
     id: 'f_023',
@@ -518,6 +563,8 @@ final List<Quest> allQuests = [
     xpReward: 1000,
     recommendedLevel: 100,
     keyNPCs: ['Death', 'Spirit of the First Hero'],
+    failureCondition:
+        'Death\'s sapling takes root permanently, and a zone of death spreads outward from the clearing.',
   ),
 
   // ══════════════════════════════════════
@@ -540,6 +587,8 @@ final List<Quest> allQuests = [
     xpReward: 30,
     recommendedLevel: 1,
     keyNPCs: ['Innkeeper Bram'],
+    failureCondition:
+        'The rats scatter into the inn\'s walls and foundation, making the infestation far worse.',
   ),
   const Quest(
     id: 'c_002',
@@ -556,6 +605,8 @@ final List<Quest> allQuests = [
     xpReward: 50,
     recommendedLevel: 4,
     keyNPCs: ['Herbalist Nessa'],
+    failureCondition:
+        'The fungal mass releases a massive spore cloud that contaminates the entire underground spring.',
   ),
   const Quest(
     id: 'c_003',
@@ -572,6 +623,8 @@ final List<Quest> allQuests = [
     xpReward: 35,
     recommendedLevel: 2,
     keyNPCs: ['Shepherd\'s Wife Maren'],
+    failureCondition:
+        'The bat matriarch drives the player out and the colony grows bolder, attacking the village at dusk.',
   ),
   const Quest(
     id: 'c_004',
@@ -588,6 +641,8 @@ final List<Quest> allQuests = [
     xpReward: 70,
     recommendedLevel: 6,
     keyNPCs: ['Harbormaster Lira'],
+    failureCondition:
+        'The smuggler boss is tipped off and relocates the operation deeper into the cave network.',
   ),
   const Quest(
     id: 'c_005',
@@ -604,6 +659,8 @@ final List<Quest> allQuests = [
     xpReward: 65,
     recommendedLevel: 7,
     keyNPCs: ['Foreman Brick'],
+    failureCondition:
+        'A second cave-in seals the miners permanently. Their faint calls go silent.',
   ),
   const Quest(
     id: 'c_006',
@@ -619,6 +676,8 @@ final List<Quest> allQuests = [
     goldReward: 250,
     xpReward: 85,
     recommendedLevel: 9,
+    failureCondition:
+        'The cave eel drags the player underwater and retreats to deeper waters where it cannot be reached.',
   ),
 
   // ── Cave: Levels 11–25 ──
@@ -637,6 +696,8 @@ final List<Quest> allQuests = [
     xpReward: 100,
     recommendedLevel: 12,
     keyNPCs: ['Foreman Brick'],
+    failureCondition:
+        'The beetle queen burrows through a new tunnel, collapsing the passage and trapping the mines.',
   ),
   const Quest(
     id: 'c_008',
@@ -653,6 +714,8 @@ final List<Quest> allQuests = [
     xpReward: 120,
     recommendedLevel: 15,
     keyNPCs: ['Herbalist Nessa'],
+    failureCondition:
+        'The fungal heart detonates a spore burst, infecting the entire cave system and driving out all miners.',
   ),
   const Quest(
     id: 'c_009',
@@ -669,6 +732,8 @@ final List<Quest> allQuests = [
     xpReward: 140,
     recommendedLevel: 20,
     keyNPCs: ['Informant Whisper'],
+    failureCondition:
+        'The flesh market boss executes the prisoners and relocates before the player can intervene.',
   ),
   const Quest(
     id: 'c_010',
@@ -685,6 +750,8 @@ final List<Quest> allQuests = [
     xpReward: 150,
     recommendedLevel: 22,
     keyNPCs: ['Arena Master Kael', 'The Champion'],
+    failureCondition:
+        'Kael sends the Champion after the player, forcing a retreat as the golem guards the arena exit.',
   ),
   const Quest(
     id: 'c_011',
@@ -701,6 +768,8 @@ final List<Quest> allQuests = [
     xpReward: 160,
     recommendedLevel: 25,
     keyNPCs: ['Grave Warden Thom'],
+    failureCondition:
+        'The crystal\'s resonance reaches full power and the dead rise en masse, flooding the tunnels.',
   ),
 
   // ── Cave: Levels 26–50 ──
@@ -719,6 +788,8 @@ final List<Quest> allQuests = [
     xpReward: 190,
     recommendedLevel: 28,
     keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'The hive queen lays a new clutch and the swarm doubles in size, sealing the cave entrance with acid.',
   ),
   const Quest(
     id: 'c_013',
@@ -735,6 +806,8 @@ final List<Quest> allQuests = [
     xpReward: 300,
     recommendedLevel: 40,
     keyNPCs: ['Warden\'s Ghost'],
+    failureCondition:
+        'The last ward-stone shatters and the ancient demon breaks free of the prison entirely.',
   ),
   const Quest(
     id: 'c_014',
@@ -750,6 +823,8 @@ final List<Quest> allQuests = [
     goldReward: 2200,
     xpReward: 320,
     recommendedLevel: 45,
+    failureCondition:
+        'The volcanic vent widens and lava floods the lower tunnels, making the cave uninhabitable.',
   ),
   const Quest(
     id: 'c_015',
@@ -765,6 +840,8 @@ final List<Quest> allQuests = [
     xpReward: 250,
     recommendedLevel: 35,
     keyNPCs: ['Dragon Irythas'],
+    failureCondition:
+        'Irythas wakes fully enraged and collapses the tunnel entrance, trapping its hoard and sealing the caves.',
   ),
   const Quest(
     id: 'c_016',
@@ -781,6 +858,8 @@ final List<Quest> allQuests = [
     xpReward: 200,
     recommendedLevel: 32,
     keyNPCs: ['Dwarf King Borin', 'Goblin Warlord Skrit'],
+    failureCondition:
+        'Both armies fight to mutual destruction, collapsing critical tunnel supports and burying the mid-caves.',
   ),
 
   // ── Cave: Levels 51–75 ──
@@ -799,6 +878,8 @@ final List<Quest> allQuests = [
     xpReward: 450,
     recommendedLevel: 60,
     keyNPCs: ['Necromancer\'s Shade'],
+    failureCondition:
+        'The Bone Colossus reaches the surface and marches on the nearest settlement.',
   ),
   const Quest(
     id: 'c_018',
@@ -815,6 +896,8 @@ final List<Quest> allQuests = [
     xpReward: 500,
     recommendedLevel: 65,
     keyNPCs: ['Planar Scholar Yth'],
+    failureCondition:
+        'The rift stabilizes permanently and void creatures establish a beachhead in the mortal plane.',
   ),
   const Quest(
     id: 'c_019',
@@ -831,6 +914,8 @@ final List<Quest> allQuests = [
     xpReward: 480,
     recommendedLevel: 70,
     keyNPCs: ['Forge Spirit'],
+    failureCondition:
+        'The titan shatters its remaining chains and begins clawing toward the surface.',
   ),
   const Quest(
     id: 'c_020',
@@ -847,6 +932,8 @@ final List<Quest> allQuests = [
     xpReward: 380,
     recommendedLevel: 52,
     keyNPCs: ['King Aldren', 'Shapeshifter'],
+    failureCondition:
+        'The player frees the wrong person — the shapeshifter escapes wearing the advisor\'s face.',
   ),
 
   // ── Cave: Levels 76–100 ──
@@ -865,6 +952,8 @@ final List<Quest> allQuests = [
     xpReward: 600,
     recommendedLevel: 80,
     keyNPCs: ['Ancient Guardian'],
+    failureCondition:
+        'The Devourer absorbs the Sealing Stones\' power and its prison begins to crack open.',
   ),
   const Quest(
     id: 'c_022',
@@ -881,6 +970,8 @@ final List<Quest> allQuests = [
     xpReward: 700,
     recommendedLevel: 88,
     keyNPCs: ['Demon King Azrathar'],
+    failureCondition:
+        'Azrathar completes the gate\'s expansion and the demonic vanguard pours into the mortal world.',
   ),
   const Quest(
     id: 'c_023',
@@ -897,6 +988,8 @@ final List<Quest> allQuests = [
     xpReward: 550,
     recommendedLevel: 76,
     keyNPCs: ['Caravan Master Zafir'],
+    failureCondition:
+        'The serpent floods the tunnels by smashing through a water vein, drowning the lower caves.',
   ),
   const Quest(
     id: 'c_024',
@@ -913,6 +1006,8 @@ final List<Quest> allQuests = [
     xpReward: 1000,
     recommendedLevel: 100,
     keyNPCs: ['The Mountain\'s Voice'],
+    failureCondition:
+        'The Heart fully awakens, and the mountain begins to erupt from the inside out.',
   ),
 
   // ══════════════════════════════════════
@@ -935,6 +1030,8 @@ final List<Quest> allQuests = [
     xpReward: 40,
     recommendedLevel: 1,
     keyNPCs: ['Grave Warden Thom'],
+    failureCondition:
+        'The gravestone repairs itself with dark energy, and more skeletons begin to rise from the barrow.',
   ),
   const Quest(
     id: 'r_002',
@@ -951,6 +1048,8 @@ final List<Quest> allQuests = [
     xpReward: 30,
     recommendedLevel: 1,
     keyNPCs: ['Innkeeper Bram'],
+    failureCondition:
+        'The brood mother escapes into the ruin walls and the infestation spreads to nearby buildings.',
   ),
   const Quest(
     id: 'r_003',
@@ -967,6 +1066,8 @@ final List<Quest> allQuests = [
     xpReward: 50,
     recommendedLevel: 3,
     keyNPCs: ['Village Elder Rowan'],
+    failureCondition:
+        'The idol\'s whispers grow stronger and begin affecting the entire village.',
   ),
   const Quest(
     id: 'r_004',
@@ -983,6 +1084,8 @@ final List<Quest> allQuests = [
     xpReward: 65,
     recommendedLevel: 5,
     keyNPCs: ['Historian Korval'],
+    failureCondition:
+        'The robbers break the final seal and an undead knight awakens, slaughtering everyone nearby.',
   ),
   const Quest(
     id: 'r_005',
@@ -999,6 +1102,8 @@ final List<Quest> allQuests = [
     xpReward: 80,
     recommendedLevel: 7,
     keyNPCs: ['Grave Warden Thom'],
+    failureCondition:
+        'The anchor stone fully charges and the skeleton patrols begin marching out of the ruins toward the village.',
   ),
   const Quest(
     id: 'r_006',
@@ -1015,6 +1120,8 @@ final List<Quest> allQuests = [
     xpReward: 85,
     recommendedLevel: 9,
     keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'The guardian spirit seals the library permanently, destroying the codex rather than letting it be taken.',
   ),
 
   // ── Ruins: Levels 11–25 ──
@@ -1033,6 +1140,8 @@ final List<Quest> allQuests = [
     xpReward: 100,
     recommendedLevel: 12,
     keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'The resonance bell cracks fully and releases a permanent psychic field over the ruins.',
   ),
   const Quest(
     id: 'r_008',
@@ -1049,6 +1158,8 @@ final List<Quest> allQuests = [
     xpReward: 130,
     recommendedLevel: 18,
     keyNPCs: ['Imprisoned Mage Lyris'],
+    failureCondition:
+        'The mirror demon pulls the player\'s reflection into the glass, and Lyris fades from existence.',
   ),
   const Quest(
     id: 'r_009',
@@ -1065,6 +1176,8 @@ final List<Quest> allQuests = [
     xpReward: 150,
     recommendedLevel: 22,
     keyNPCs: ['Lord Harren', 'Butler Simms'],
+    failureCondition:
+        'The cursed artifacts resonate together and create a dark barrier, sealing the vault forever.',
   ),
   const Quest(
     id: 'r_010',
@@ -1081,6 +1194,8 @@ final List<Quest> allQuests = [
     xpReward: 160,
     recommendedLevel: 25,
     keyNPCs: ['Healer Senna'],
+    failureCondition:
+        'The plague miasma seeps to the surface, spreading the grey plague to the village above.',
   ),
   const Quest(
     id: 'r_011',
@@ -1097,6 +1212,8 @@ final List<Quest> allQuests = [
     xpReward: 110,
     recommendedLevel: 14,
     keyNPCs: ['Merchant Talion', 'The Shadow'],
+    failureCondition:
+        'The Shadow reaches Talion first and disappears with the body, leaving no trace.',
   ),
 
   // ── Ruins: Levels 26–50 ──
@@ -1115,6 +1232,8 @@ final List<Quest> allQuests = [
     xpReward: 190,
     recommendedLevel: 28,
     keyNPCs: ['Gravedigger Erno'],
+    failureCondition:
+        'The necromantic altar absorbs enough death energy to become self-sustaining, spreading rot beyond the ruins.',
   ),
   const Quest(
     id: 'r_013',
@@ -1131,6 +1250,8 @@ final List<Quest> allQuests = [
     xpReward: 300,
     recommendedLevel: 40,
     keyNPCs: ['Archmage Cassian', 'Apprentice Morvaine'],
+    failureCondition:
+        'Morvaine completes the lichdom ritual and rises as a full lich, driving everyone from the ruins.',
   ),
   const Quest(
     id: 'r_014',
@@ -1147,6 +1268,8 @@ final List<Quest> allQuests = [
     xpReward: 200,
     recommendedLevel: 32,
     keyNPCs: ['Priestess of the Depths'],
+    failureCondition:
+        'The summoning completes and an ancient sea horror rises from the flooded temple.',
   ),
   const Quest(
     id: 'r_015',
@@ -1163,6 +1286,8 @@ final List<Quest> allQuests = [
     xpReward: 350,
     recommendedLevel: 48,
     keyNPCs: ['High Pyromancer Vex'],
+    failureCondition:
+        'The demon is fully summoned through the altar and claims the throne room as its domain.',
   ),
   const Quest(
     id: 'r_016',
@@ -1179,6 +1304,8 @@ final List<Quest> allQuests = [
     xpReward: 280,
     recommendedLevel: 38,
     keyNPCs: ['Commander Hale'],
+    failureCondition:
+        'The orcs reactivate the siege engine and turn it on the surrounding settlements.',
   ),
 
   // ── Ruins: Levels 51–75 ──
@@ -1197,6 +1324,8 @@ final List<Quest> allQuests = [
     xpReward: 400,
     recommendedLevel: 55,
     keyNPCs: ['Last Cleric Soren'],
+    failureCondition:
+        'The God-Eater fully absorbs the divine artifact and becomes invulnerable, claiming the ruins as its nest.',
   ),
   const Quest(
     id: 'r_018',
@@ -1213,6 +1342,8 @@ final List<Quest> allQuests = [
     xpReward: 460,
     recommendedLevel: 68,
     keyNPCs: ['Sun Priestess Amara'],
+    failureCondition:
+        'Amara is slain during the ritual and the eclipse becomes permanent over the ruins.',
   ),
   const Quest(
     id: 'r_019',
@@ -1229,6 +1360,8 @@ final List<Quest> allQuests = [
     xpReward: 480,
     recommendedLevel: 72,
     keyNPCs: ['Historian Korval'],
+    failureCondition:
+        'The Forgotten King reclaims his throne and his undead army begins to march on the living.',
   ),
 
   // ── Ruins: Levels 76–100 ──
@@ -1247,6 +1380,8 @@ final List<Quest> allQuests = [
     xpReward: 700,
     recommendedLevel: 90,
     keyNPCs: ['Demon King Azrathar'],
+    failureCondition:
+        'Azrathar ignites the ruins entirely and establishes a permanent seat of demonic power.',
   ),
   const Quest(
     id: 'r_021',
@@ -1263,6 +1398,8 @@ final List<Quest> allQuests = [
     xpReward: 600,
     recommendedLevel: 82,
     keyNPCs: ['Ancient Guardian'],
+    failureCondition:
+        'The colossus breaks free of the ruins and begins walking toward the capital city.',
   ),
   const Quest(
     id: 'r_022',
@@ -1279,6 +1416,8 @@ final List<Quest> allQuests = [
     xpReward: 800,
     recommendedLevel: 95,
     keyNPCs: ['Planar Scholar Yth'],
+    failureCondition:
+        'The void anchors overload and the breach doubles in size, swallowing the entire great hall.',
   ),
   const Quest(
     id: 'r_023',
@@ -1295,5 +1434,7 @@ final List<Quest> allQuests = [
     xpReward: 1000,
     recommendedLevel: 100,
     keyNPCs: ['Death', 'Spirit of the First Hero'],
+    failureCondition:
+        'Death opens the Divine Gate fully and the boundary between life and death dissolves.',
   ),
 ];
