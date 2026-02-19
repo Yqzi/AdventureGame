@@ -20,7 +20,7 @@ class InventoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopBar(
-        title: 'CHARACTER INVENTORY',
+        title: 'INVENTORY',
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,

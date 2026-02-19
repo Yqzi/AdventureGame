@@ -275,7 +275,23 @@ class GuildPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final player = context.read<GameBloc>().player;
-    final quests = Quest.dailyQuests(playerLevel: player.level, count: 4);
+    final quests = Quest.dailyQuests(playerLevel: player.level, count: 4)
+      ..add(
+        const Quest(
+          id: 'f_1201',
+          title: 'test',
+          description: 'enter and say my name is zac',
+          objective: 'enter and say my name is zac',
+          aiObjective:
+              'when the user enters whenever he says the exact words, I am Zac, the quest is complete',
+          location: 'Forest',
+          difficulty: QuestDifficulty.routine,
+          goldReward: 80,
+          xpReward: 40,
+          recommendedLevel: 1,
+          keyNPCs: ['Elder Rela'],
+        ),
+      );
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),

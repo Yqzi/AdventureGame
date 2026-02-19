@@ -165,6 +165,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           activeQuest: _currentActiveQuest,
           player: _player,
           options: parsed.options,
+          effects: parsed.effects,
         ),
       );
     } catch (error, stackTrace) {
@@ -261,6 +262,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           activeQuest: _currentActiveQuest,
           player: _player,
           options: parsed.options,
+          effects: parsed.effects,
         ),
       );
     } catch (error, stackTrace) {
