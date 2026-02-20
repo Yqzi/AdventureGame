@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:tes/blocs/app/app_bloc.dart';
+import 'package:tes/config/supabase_config.dart';
 import 'package:tes/router.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tes/services/ai_service.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp()); // Replace MyApp with your actual root widget
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -25,7 +31,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
-        initialRoute: AppRouter.start,
+        initialRoute: AppRouter.login,
         onGenerateRoute: AppRouter.onGenerateRoute,
       ),
     );

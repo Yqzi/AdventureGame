@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '272639844844',
     projectId: 'airpg-79881',
     storageBucket: 'airpg-79881.firebasestorage.app',
-    iosBundleId: 'com.example.tes',
+    iosBundleId: 'com.yusuf.questborne',
   );
 }

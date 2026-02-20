@@ -1,0 +1,114 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Lightweight wrapper around Supabase Auth for Google, Apple, and guest flows.
+class AuthService {
+  final SupabaseClient _client = Supabase.instance.client;
+
+  // ── Session helpers ──────────────────────────────────────────
+
+  User? get currentUser => _client.auth.currentUser;
+  bool get isLoggedIn => currentUser != null;
+  bool get isGuest => currentUser?.isAnonymous ?? false;
+  Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+
+  // ── Google Sign-In ───────────────────────────────────────────
+
+  /// Sign in with Google via native flow, then exchange the ID token with
+  /// Supabase. Returns the [AuthResponse].
+  ///
+  /// Set your **Web client ID** (from Google Cloud Console → Credentials →
+  /// OAuth 2.0) and optionally your iOS client ID below.
+  Future<AuthResponse> signInWithGoogle() async {
+    // TODO: Replace with your own Web + iOS client IDs from Google Cloud Console.
+    const webClientId =
+        '272639844844-2c3b93jcf9uatmenmunl90501ngmn67o.apps.googleusercontent.com';
+    const iosClientId = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
+
+    final googleSignIn = GoogleSignIn(
+      clientId: iosClientId,
+      serverClientId: webClientId,
+    );
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) throw Exception('Google sign-in was cancelled.');
+
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+    final accessToken = googleAuth.accessToken;
+
+    if (idToken == null) {
+      throw Exception('Could not retrieve Google ID token.');
+    }
+
+    return _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: accessToken,
+    );
+  }
+
+  // ── Apple Sign-In ────────────────────────────────────────────
+
+  /// Sign in with Apple (iOS only). Uses a raw nonce for security.
+  Future<AuthResponse> signInWithApple() async {
+    final rawNonce = _generateNonce();
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: hashedNonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      throw Exception('Could not retrieve Apple ID token.');
+    }
+
+    return _client.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+  }
+
+  /// Whether Apple Sign-In is available (iOS/macOS only).
+  bool get isAppleSignInAvailable =>
+      !kIsWeb && (Platform.isIOS || Platform.isMacOS);
+
+  // ── Guest (anonymous) ────────────────────────────────────────
+
+  /// Continue without an account. Creates an anonymous Supabase session.
+  Future<AuthResponse> signInAsGuest() async {
+    return await _client.auth.signInAnonymously();
+  }
+
+  // ── Sign out ─────────────────────────────────────────────────
+
+  Future<void> signOut() async {
+    await _client.auth.signOut();
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────
+
+  /// Generates a cryptographically-secure random nonce string.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+}
