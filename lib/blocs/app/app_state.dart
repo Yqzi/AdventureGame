@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:tes/models/chat_message.dart';
-import 'package:tes/models/player.dart';
-import 'package:tes/models/story_event.dart';
+import 'package:Questborne/models/chat_message.dart';
+import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/story_event.dart';
 
 abstract class AppState extends Equatable {
   const AppState();

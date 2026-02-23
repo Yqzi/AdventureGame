@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
+import 'package:Questborne/colors.dart';
 
 // ── The accent colour used throughout this screen ──
 const _accent = redText;

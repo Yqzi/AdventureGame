@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/models/item.dart';
+import 'package:Questborne/models/item.dart';
 
 class InventorySlot extends StatelessWidget {
   final IconData icon;

@@ -2,8 +2,8 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/models/item.dart';
+import 'package:Questborne/colors.dart';
+import 'package:Questborne/models/item.dart';
 
 enum Rarity { common, rare, epic, mythic }
 

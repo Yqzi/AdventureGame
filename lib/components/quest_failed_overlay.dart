@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
+import 'package:Questborne/colors.dart';
 
 /// Full-screen overlay displayed when the quest has been failed.
 /// Shows a "QUEST FAILED" banner with the failure reason and a return-to-guild button.

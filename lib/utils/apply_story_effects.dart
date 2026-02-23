@@ -1,6 +1,6 @@
-import 'package:tes/models/player.dart';
-import 'package:tes/models/story_event.dart';
-import 'package:tes/models/item.dart';
+import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/story_event.dart';
+import 'package:Questborne/models/item.dart';
 
 /// Takes the current player and the AI-generated effects,
 /// returns the updated player with all changes applied.

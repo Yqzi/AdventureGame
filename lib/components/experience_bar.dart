@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/models/player.dart';
+import 'package:Questborne/models/player.dart';
 
 /// A reusable XP progress bar showing current experience toward the next level.
 class ExperienceBar extends StatelessWidget {

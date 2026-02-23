@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tes/models/game_session.dart';
-import 'package:tes/services/supabase_save_service.dart';
+import 'package:Questborne/models/game_session.dart';
+import 'package:Questborne/services/supabase_save_service.dart';
 
 /// Session store that persists to Supabase for authenticated users and
 /// falls back to an in-memory cache for guests / offline.

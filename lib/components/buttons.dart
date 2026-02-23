@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tes/colors.dart';
+import 'package:Questborne/colors.dart';
 
 OutlinedButton customOutlinedButton({
   required String title,

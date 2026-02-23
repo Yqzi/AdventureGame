@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tes/models/game_session.dart';
-import 'package:tes/models/player.dart';
+import 'package:Questborne/models/game_session.dart';
+import 'package:Questborne/models/player.dart';
 
 /// Persists player progress and game sessions to Supabase.
 ///

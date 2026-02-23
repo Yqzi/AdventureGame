@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/blocs/app/app_bloc.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/components/bottom_bar.dart';
-import 'package:tes/components/experience_bar.dart';
-import 'package:tes/components/cards.dart';
-import 'package:tes/components/top_bar.dart';
-import 'package:tes/models/quest.dart';
-import 'package:tes/router.dart';
-import 'package:tes/services/game_session_repository.dart';
+import 'package:Questborne/blocs/app/app_bloc.dart';
+import 'package:Questborne/colors.dart';
+import 'package:Questborne/components/bottom_bar.dart';
+import 'package:Questborne/components/experience_bar.dart';
+import 'package:Questborne/components/cards.dart';
+import 'package:Questborne/components/top_bar.dart';
+import 'package:Questborne/models/quest.dart';
+import 'package:Questborne/router.dart';
+import 'package:Questborne/services/game_session_repository.dart';
 
 class GuildPage extends StatefulWidget {
   const GuildPage({super.key});

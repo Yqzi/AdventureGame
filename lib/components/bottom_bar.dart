@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/router.dart';
+import 'package:Questborne/colors.dart';
+import 'package:Questborne/router.dart';
 
 class CustomBottomBar extends StatelessWidget {
   final int currentIndex;

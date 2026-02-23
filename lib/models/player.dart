@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tes/models/item.dart';
+import 'package:Questborne/models/item.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  STATUS EFFECTS

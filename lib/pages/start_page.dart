@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/blocs/app/app_bloc.dart';
-import 'package:tes/blocs/app/app_event.dart';
-import 'package:tes/components/buttons.dart';
-import 'package:tes/components/character_name_dialog.dart';
-import 'package:tes/router.dart';
-import 'package:tes/services/auth_service.dart';
+import 'package:Questborne/blocs/app/app_bloc.dart';
+import 'package:Questborne/blocs/app/app_event.dart';
+import 'package:Questborne/components/buttons.dart';
+import 'package:Questborne/components/character_name_dialog.dart';
+import 'package:Questborne/router.dart';
+import 'package:Questborne/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '/colors.dart';
 

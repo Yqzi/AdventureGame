@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
+import 'package:Questborne/colors.dart';
 
 /// Full-screen overlay displayed when the quest objective is completed.
 /// Shows a "QUEST COMPLETE" banner with reward summary and a return-to-guild button.

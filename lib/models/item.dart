@@ -1,4 +1,4 @@
-import 'package:tes/components/cards.dart';
+import 'package:Questborne/components/cards.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  ITEM TYPE

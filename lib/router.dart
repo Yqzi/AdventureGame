@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tes/pages/game_page.dart';
-import 'package:tes/pages/guild_page.dart';
-import 'package:tes/pages/inventory_page.dart';
-import 'package:tes/pages/map_page.dart';
-import 'package:tes/pages/world_explore_page.dart';
-import 'package:tes/pages/shop_page.dart';
-import 'package:tes/pages/start_page.dart';
+import 'package:Questborne/pages/game_page.dart';
+import 'package:Questborne/pages/guild_page.dart';
+import 'package:Questborne/pages/inventory_page.dart';
+import 'package:Questborne/pages/map_page.dart';
+import 'package:Questborne/pages/world_explore_page.dart';
+import 'package:Questborne/pages/shop_page.dart';
+import 'package:Questborne/pages/start_page.dart';
 
 class AppRouter {
   static const start = '/start';

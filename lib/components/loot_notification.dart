@@ -3,7 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/models/story_event.dart';
+import 'package:Questborne/models/story_event.dart';
 
 /// Shows a brief overlay notification when the player obtains loot
 /// (gold, XP, items, etc.) extracted from [StoryEffects].

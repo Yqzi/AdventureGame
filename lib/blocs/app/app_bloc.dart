@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tes/models/chat_message.dart';
-import 'package:tes/models/player.dart';
-import 'package:tes/models/story_event.dart';
-import 'package:tes/utils/apply_story_effects.dart';
+import 'package:Questborne/models/chat_message.dart';
+import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/story_event.dart';
+import 'package:Questborne/utils/apply_story_effects.dart';
 import 'package:uuid/uuid.dart';
-import 'package:tes/blocs/app/app_event.dart';
-import 'package:tes/blocs/app/app_state.dart';
-import 'package:tes/models/game_session.dart';
-import 'package:tes/services/ai_service.dart';
-import 'package:tes/services/game_session_repository.dart';
-import 'package:tes/services/supabase_save_service.dart';
+import 'package:Questborne/blocs/app/app_event.dart';
+import 'package:Questborne/blocs/app/app_state.dart';
+import 'package:Questborne/models/game_session.dart';
+import 'package:Questborne/services/ai_service.dart';
+import 'package:Questborne/services/game_session_repository.dart';
+import 'package:Questborne/services/supabase_save_service.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final AIService _aiService;

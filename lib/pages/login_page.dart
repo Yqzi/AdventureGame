@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/router.dart';
-import 'package:tes/services/auth_service.dart';
+import 'package:Questborne/colors.dart';
+import 'package:Questborne/router.dart';
+import 'package:Questborne/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

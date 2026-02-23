@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:tes/blocs/app/app_bloc.dart';
-import 'package:tes/config/supabase_config.dart';
-import 'package:tes/router.dart';
+import 'package:Questborne/blocs/app/app_bloc.dart';
+import 'package:Questborne/config/supabase_config.dart';
+import 'package:Questborne/router.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tes/services/ai_service.dart';
+import 'package:Questborne/services/ai_service.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

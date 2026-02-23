@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tes/blocs/app/app_bloc.dart';
-import 'package:tes/blocs/app/app_event.dart';
-import 'package:tes/blocs/app/app_state.dart';
-import 'package:tes/colors.dart';
-import 'package:tes/components/bottom_bar.dart';
-import 'package:tes/components/cards.dart';
-import 'package:tes/components/top_bar.dart';
-import 'package:tes/models/item.dart';
-import 'package:tes/models/player.dart';
+import 'package:Questborne/blocs/app/app_bloc.dart';
+import 'package:Questborne/blocs/app/app_event.dart';
+import 'package:Questborne/blocs/app/app_state.dart';
+import 'package:Questborne/colors.dart';
+import 'package:Questborne/components/bottom_bar.dart';
+import 'package:Questborne/components/cards.dart';
+import 'package:Questborne/components/top_bar.dart';
+import 'package:Questborne/models/item.dart';
+import 'package:Questborne/models/player.dart';
 
 class ShopPage extends StatelessWidget {
   const ShopPage({super.key});
