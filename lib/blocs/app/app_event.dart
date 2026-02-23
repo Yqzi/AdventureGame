@@ -65,3 +65,15 @@ class ResumeQuestEvent extends GameEvent {
     this.lastOptions = const [],
   });
 }
+
+/// Load the player save from Supabase (called after login).
+class LoadPlayerFromCloudEvent extends GameEvent {}
+
+/// Manually trigger a player save to Supabase.
+class SavePlayerToCloudEvent extends GameEvent {}
+
+/// Set the player's character name (first-time naming).
+class SetPlayerNameEvent extends GameEvent {
+  final String name;
+  SetPlayerNameEvent(this.name);
+}

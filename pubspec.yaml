@@ -79,10 +79,12 @@ flutter:
   assets:
     - assets/images/bg/castle.png
     - assets/images/map.png
+    - assets/images/namebg.png
     - assets/images/forest.png
     - assets/images/cave.png
     - assets/images/ruins.png
     - assets/icons/flower.svg
+    - assets/icons/google.png
     - assets/sounds/coins.wav
   #   - images/a_dot_ham.jpeg
 

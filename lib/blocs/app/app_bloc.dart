@@ -12,11 +12,13 @@ import 'package:tes/blocs/app/app_state.dart';
 import 'package:tes/models/game_session.dart';
 import 'package:tes/services/ai_service.dart';
 import 'package:tes/services/game_session_repository.dart';
+import 'package:tes/services/supabase_save_service.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final AIService _aiService;
   final Uuid _uuid = const Uuid();
   final GameSessionRepository _sessionRepo = GameSessionRepository();
+  final SupabaseSaveService _saveService = SupabaseSaveService();
 
   Map<String, dynamic> _currentActiveQuest = {};
   List<ChatMessage> _chatHistory = [];
@@ -43,6 +45,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _chatHistory = [];
       emit(GameInitial(player: _player));
     });
+    on<LoadPlayerFromCloudEvent>(_onLoadPlayer);
+    on<SavePlayerToCloudEvent>(_onSavePlayer);
+    on<SetPlayerNameEvent>(_onSetPlayerName);
   }
 
   /// The current player — exposed for reading outside the bloc if needed.
@@ -57,6 +62,50 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   @override
   Future<void> close() {
     return super.close();
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  CLOUD SAVE / LOAD
+  // ─────────────────────────────────────────────────────────
+
+  Future<void> _onLoadPlayer(
+    LoadPlayerFromCloudEvent event,
+    Emitter<GameState> emit,
+  ) async {
+    try {
+      final json = await _saveService.loadPlayerJson();
+      if (json != null) {
+        _player = Player.fromJson(json);
+      }
+      // Also sync cached game sessions from Supabase.
+      await _sessionRepo.syncFromRemote();
+    } catch (e) {
+      // If loading fails, keep the default player—don't crash.
+      print('Failed to load player from cloud: $e');
+    }
+    emit(GameInitial(player: _player));
+  }
+
+  Future<void> _onSavePlayer(
+    SavePlayerToCloudEvent event,
+    Emitter<GameState> emit,
+  ) async {
+    try {
+      await _saveService.savePlayer(_player);
+    } catch (e) {
+      print('Failed to save player to cloud: $e');
+    }
+  }
+
+  void _onSetPlayerName(SetPlayerNameEvent event, Emitter<GameState> emit) {
+    _player = _player.copyWith(name: event.name);
+    _autoSavePlayer();
+    emit(GameInitial(player: _player));
+  }
+
+  /// Fire-and-forget helper to persist the player after every meaningful change.
+  void _autoSavePlayer() {
+    _saveService.savePlayer(_player).catchError((_) {});
   }
 
   // ─────────────────────────────────────────────────────────
@@ -168,6 +217,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       if (parsed.effects != null) {
         _player = applyStoryEffects(_player, parsed.effects!);
       }
+
+      _autoSavePlayer();
 
       emit(
         GameLoaded(
@@ -305,6 +356,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _player = applyStoryEffects(_player, parsed.effects!);
       }
 
+      _autoSavePlayer();
+
       emit(
         GameLoaded(
           messages: List.from(_chatHistory),
@@ -328,17 +381,20 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   void _onEquipItem(EquipItemEvent event, Emitter<GameState> emit) {
     _player = _player.equipItem(event.item);
+    _autoSavePlayer();
     _emitCurrentWithPlayer(emit);
   }
 
   void _onUnequipSlot(UnequipSlotEvent event, Emitter<GameState> emit) {
     _player = _player.unequipSlot(event.slotType);
+    _autoSavePlayer();
     _emitCurrentWithPlayer(emit);
   }
 
   void _onBuyItem(BuyItemEvent event, Emitter<GameState> emit) {
     if (!_player.canAfford(event.item.price)) return;
     _player = _player.buyItem(event.item);
+    _autoSavePlayer();
     _emitCurrentWithPlayer(emit);
   }
 

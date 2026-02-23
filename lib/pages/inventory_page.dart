@@ -20,7 +20,8 @@ class InventoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopBar(
-        title: 'INVENTORY',
+        title: context.read<GameBloc>().player.name.toUpperCase(),
+        desc: 'INVENTORY',
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,

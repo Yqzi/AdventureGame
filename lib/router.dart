@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:tes/pages/game_page.dart';
 import 'package:tes/pages/guild_page.dart';
 import 'package:tes/pages/inventory_page.dart';
-import 'package:tes/pages/login_page.dart';
 import 'package:tes/pages/map_page.dart';
 import 'package:tes/pages/world_explore_page.dart';
 import 'package:tes/pages/shop_page.dart';
 import 'package:tes/pages/start_page.dart';
 
 class AppRouter {
-  static const login = '/login';
   static const start = '/start';
   static const map = '/map';
   static const inventory = '/inventory';
@@ -20,8 +18,6 @@ class AppRouter {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case login:
-        return MaterialPageRoute(builder: (_) => const LoginPage());
       case start:
         return MaterialPageRoute(builder: (_) => const StartPage());
       case map:

@@ -30,8 +30,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => GameBloc(aiService: AIService())),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
-        initialRoute: AppRouter.login,
+        title: 'Questborne',
+        initialRoute: AppRouter.start,
         onGenerateRoute: AppRouter.onGenerateRoute,
       ),
     );

@@ -144,6 +144,19 @@ class Equipment extends Equatable {
     'relic': relic?.id,
   };
 
+  /// Reconstruct equipment from saved item IDs using the master item list.
+  factory Equipment.fromJson(
+    Map<String, dynamic> json,
+    Map<String, Item> itemLookup,
+  ) {
+    return Equipment(
+      weapon: itemLookup[json['weapon']],
+      armor: itemLookup[json['armor']],
+      accessory: itemLookup[json['accessory']],
+      relic: itemLookup[json['relic']],
+    );
+  }
+
   @override
   List<Object?> get props => [weapon, armor, accessory, relic];
 }
@@ -488,6 +501,22 @@ class Player extends Equatable {
   };
 
   factory Player.fromJson(Map<String, dynamic> json) {
+    // Build a lookup map from the master item list for O(1) access.
+    final itemLookup = {for (final item in allItems) item.id: item};
+
+    // Restore inventory from saved IDs.
+    final inventoryIds = (json['inventory'] as List<dynamic>?) ?? [];
+    final inventory = inventoryIds
+        .map((id) => itemLookup[id as String])
+        .whereType<Item>()
+        .toList();
+
+    // Restore equipped items from saved IDs.
+    final equipmentJson = json['equipment'] as Map<String, dynamic>?;
+    final equipment = equipmentJson != null
+        ? Equipment.fromJson(equipmentJson, itemLookup)
+        : const Equipment();
+
     return Player(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -503,6 +532,8 @@ class Player extends Equatable {
       baseMagic: json['baseMagic'] as int,
       baseAgility: json['baseAgility'] as int,
       gold: json['gold'] as int? ?? 0,
+      equipment: equipment,
+      inventory: inventory,
       statusEffects:
           (json['statusEffects'] as List<dynamic>?)
               ?.map((e) => StatusEffect.values[e as int])
@@ -511,8 +542,6 @@ class Player extends Equatable {
       currentLocation: json['currentLocation'] as String? ?? 'Unknown',
       questsCompleted: json['questsCompleted'] as int? ?? 0,
       enemiesDefeated: json['enemiesDefeated'] as int? ?? 0,
-      // NOTE: equipment & inventory must be resolved separately
-      //       using item IDs + your allItems list.
     );
   }
 

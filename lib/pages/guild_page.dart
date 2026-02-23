@@ -351,6 +351,21 @@ class _GuildPageState extends State<GuildPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ─── Player name ───
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                player.name,
+                style: GoogleFonts.epilogue(
+                  color: const Color(0xFFE3D5B8),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
             // ─── Player level / gold bar ───
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
