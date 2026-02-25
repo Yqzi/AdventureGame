@@ -1,3 +1,4 @@
+import 'package:Questborne/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:Questborne/pages/game_page.dart';
 import 'package:Questborne/pages/guild_page.dart';
@@ -15,6 +16,7 @@ class AppRouter {
   static const guild = '/guild';
   static const shop = '/shop';
   static const worldExplore = '/worldExplore';
+  static const settingsPage = '/settings';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -42,6 +44,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ShopPage());
       case worldExplore:
         return MaterialPageRoute(builder: (_) => const WorldExplorationPage());
+      case settingsPage:
+        return MaterialPageRoute(builder: (_) => const SettingsPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>

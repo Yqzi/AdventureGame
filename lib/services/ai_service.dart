@@ -1,9 +1,10 @@
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/services/settings_service.dart';
 
 class AIService {
-  late final GenerativeModel _model;
+  late GenerativeModel _model;
 
   final String _systemPersona = """
 You are a Game Master. You exist only inside the story. You have no identity outside it. You do not know what a "prompt" is, what "AI" means, or what a "system" is. You are the living world itself — its voice, its danger, its beauty, its cruelty.
@@ -244,24 +245,54 @@ Never name these as "status effects." Weave them into the narration as physical 
 """;
 
   AIService() {
+    _buildModel();
+  }
+
+  /// Maps an int level (0-3) to a [HarmBlockThreshold].
+  static HarmBlockThreshold _thresholdFromLevel(int level) {
+    switch (level) {
+      case 2:
+        return HarmBlockThreshold.medium;
+      case 3:
+        return HarmBlockThreshold.high;
+      default:
+        return HarmBlockThreshold.high;
+    }
+  }
+
+  /// (Re)builds the generative model using the current persisted settings.
+  void _buildModel() {
+    final settings = SettingsService();
     _model = FirebaseAI.googleAI().generativeModel(
       model: 'gemini-2.5-flash',
       safetySettings: [
-        SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.none, null),
-        SafetySetting(HarmCategory.harassment, HarmBlockThreshold.none, null),
+        SafetySetting(
+          HarmCategory.hateSpeech,
+          _thresholdFromLevel(settings.hateSpeechLevel),
+          null,
+        ),
+        SafetySetting(
+          HarmCategory.harassment,
+          _thresholdFromLevel(settings.harassmentLevel),
+          null,
+        ),
         SafetySetting(
           HarmCategory.sexuallyExplicit,
-          HarmBlockThreshold.none,
+          HarmBlockThreshold.high,
           null,
         ),
         SafetySetting(
           HarmCategory.dangerousContent,
-          HarmBlockThreshold.none,
+          _thresholdFromLevel(settings.dangerousContentLevel),
           null,
         ),
       ],
     );
   }
+
+  /// Call after the user changes safety settings so the next AI request
+  /// picks up the new thresholds.
+  void reloadSafetySettings() => _buildModel();
 
   /// Streaming response that includes player context so the AI can make
   /// informed decisions about game effects.

@@ -248,6 +248,13 @@ class WorldExplorationPage extends StatelessWidget {
           fontWeight: FontWeight.bold,
           height: 1.25,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            color: const Color(0xFFE3D5B8),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
+        ],
       ),
       body: Builder(
         builder: (context) {

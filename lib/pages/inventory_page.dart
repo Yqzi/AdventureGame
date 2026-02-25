@@ -36,9 +36,9 @@ class InventoryPage extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.settings),
             color: const Color(0xFFE3D5B8),
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
       ),

@@ -403,6 +403,11 @@ class ShopPage extends StatelessWidget {
                 color: redText,
                 onPressed: () {},
               ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                color: const Color(0xFFE3D5B8),
+                onPressed: () => Navigator.pushNamed(context, '/settings'),
+              ),
             ],
           ),
           body: Column(

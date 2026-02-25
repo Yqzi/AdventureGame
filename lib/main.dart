@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/router.dart';
+import 'package:Questborne/services/settings_service.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/services/ai_service.dart';
@@ -17,6 +18,7 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  await SettingsService().init();
   runApp(const MyApp());
 }
 

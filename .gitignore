@@ -46,3 +46,5 @@ app.*.map.json
 
 lib/keys
 lib/Secrets
+lib/firebase_options.dart
+

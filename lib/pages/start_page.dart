@@ -52,10 +52,19 @@ class _StartPageState extends State<StartPage> {
 
   // ── Auth actions ────────────────────────────────────────────
 
-  Future<void> _handleGoogle() async =>
-      _performAuth(() => _auth.signInWithGoogle());
-  Future<void> _handleApple() async =>
-      _performAuth(() => _auth.signInWithApple());
+  Future<void> _handleGoogle() async {
+    // If already signed in as guest, link + migrate data to Google account
+    if (_auth.isGuest) {
+      return _performAuth(() => _auth.linkWithGoogle());
+    }
+    return _performAuth(() => _auth.signInWithGoogle());
+  }
+
+  Future<void> _handleApple() async {
+    // TODO: add linkWithApple when Apple Sign-In linking is needed
+    return _performAuth(() => _auth.signInWithApple());
+  }
+
   Future<void> _handleGuest() async =>
       _performAuth(() => _auth.signInAsGuest());
 
@@ -173,7 +182,7 @@ class _StartPageState extends State<StartPage> {
                 "QUESTBORNE",
                 textAlign: TextAlign.center,
                 style: GoogleFonts.epilogue(
-                  fontSize: 56,
+                  fontSize: 46,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
                   height: 0.95,
@@ -239,7 +248,7 @@ class _StartPageState extends State<StartPage> {
                 letterSpacing: 1,
                 fontsize: 16,
                 onpressed: () {
-                  Navigator.pushReplacementNamed(context, AppRouter.inventory);
+                  Navigator.pushNamed(context, AppRouter.settingsPage);
                 },
               ),
             ),

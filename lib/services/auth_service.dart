@@ -93,6 +93,90 @@ class AuthService {
     return await _client.auth.signInAnonymously();
   }
 
+  // ── Link identity (anonymous → permanent) ────────────────────
+
+  /// Links a Google account to the current anonymous user by:
+  /// 1. Reading the anonymous user's data while still in their session
+  /// 2. Signing in with Google natively (switches session)
+  /// 3. Writing the anonymous data to the Google user's rows
+  ///
+  /// Returns the new [AuthResponse] for the Google account.
+  Future<AuthResponse> linkWithGoogle() async {
+    final anonUserId = currentUser?.id;
+    if (anonUserId == null) throw Exception('No anonymous session found.');
+
+    // ── Read anonymous data BEFORE switching sessions ──
+    // (RLS only allows reading your own rows, so we must do this now)
+    final anonSave = await _client
+        .from('player_saves')
+        .select()
+        .eq('user_id', anonUserId)
+        .maybeSingle();
+
+    final anonSessions = await _client
+        .from('game_sessions')
+        .select()
+        .eq('user_id', anonUserId);
+
+    // ── Switch session to Google ──
+    final response = await signInWithGoogle();
+    final newUserId = response.user?.id;
+
+    if (newUserId != null && newUserId != anonUserId) {
+      // Migrate data from anonymous user → Google user
+      await _migrateData(
+        to: newUserId,
+        anonSave: anonSave,
+        anonSessions: anonSessions as List,
+      );
+    }
+
+    return response;
+  }
+
+  /// Writes previously-read anonymous data to the new user's rows.
+  Future<void> _migrateData({
+    required String to,
+    required Map<String, dynamic>? anonSave,
+    required List anonSessions,
+  }) async {
+    // ── player_saves ──
+    if (anonSave != null) {
+      final existingSave = await _client
+          .from('player_saves')
+          .select('user_id')
+          .eq('user_id', to)
+          .maybeSingle();
+
+      if (existingSave == null) {
+        await _client.from('player_saves').upsert({
+          'user_id': to,
+          'player': anonSave['player'],
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
+    }
+
+    // ── game_sessions ──
+    for (final session in anonSessions) {
+      final existing = await _client
+          .from('game_sessions')
+          .select('id')
+          .eq('user_id', to)
+          .eq('quest_id', session['quest_id'])
+          .maybeSingle();
+
+      if (existing == null) {
+        await _client.from('game_sessions').upsert({
+          'user_id': to,
+          'quest_id': session['quest_id'],
+          'session': session['session'],
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        }, onConflict: 'user_id, quest_id');
+      }
+    }
+  }
+
   // ── Sign out ─────────────────────────────────────────────────
 
   Future<void> signOut() async {

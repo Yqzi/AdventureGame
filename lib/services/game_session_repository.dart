@@ -16,9 +16,7 @@ class GameSessionRepository {
   /// acts as a write-through cache for authenticated users.
   final Map<String, GameSession> _sessions = {};
 
-  bool get _useRemote =>
-      Supabase.instance.client.auth.currentUser != null &&
-      !(Supabase.instance.client.auth.currentUser!.isAnonymous);
+  bool get _useRemote => Supabase.instance.client.auth.currentUser != null;
 
   Future<void> saveSession(GameSession session) async {
     _sessions[session.questId] = session;
@@ -90,4 +88,7 @@ class GameSessionRepository {
       }
     } catch (_) {}
   }
+
+  /// Clear the in-memory cache (e.g. on account deletion / sign out).
+  void clearLocal() => _sessions.clear();
 }

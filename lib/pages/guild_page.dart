@@ -344,6 +344,11 @@ class _GuildPageState extends State<GuildPage> {
             color: const Color(0xFFE3D5B8),
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            color: const Color(0xFFE3D5B8),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
         ],
       ),
       body: Container(

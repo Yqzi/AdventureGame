@@ -48,10 +48,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<LoadPlayerFromCloudEvent>(_onLoadPlayer);
     on<SavePlayerToCloudEvent>(_onSavePlayer);
     on<SetPlayerNameEvent>(_onSetPlayerName);
+    on<ResetPlayerEvent>(_onResetPlayer);
   }
 
   /// The current player — exposed for reading outside the bloc if needed.
   Player get player => _player;
+
+  /// Expose the AI service so settings can reload safety thresholds.
+  AIService get aiService => _aiService;
 
   /// Expose chat history so the game page can save sessions.
   List<ChatMessage> get chatHistory => List.unmodifiable(_chatHistory);
@@ -106,6 +110,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// Fire-and-forget helper to persist the player after every meaningful change.
   void _autoSavePlayer() {
     _saveService.savePlayer(_player).catchError((_) {});
+  }
+
+  void _onResetPlayer(ResetPlayerEvent event, Emitter<GameState> emit) {
+    _player = Player.create(id: _uuid.v4(), name: 'Adventurer');
+    _currentActiveQuest = {};
+    _chatHistory = [];
+    _sessionRepo.clearLocal();
+    emit(GameInitial(player: _player));
   }
 
   // ─────────────────────────────────────────────────────────

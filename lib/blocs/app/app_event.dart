@@ -77,3 +77,6 @@ class SetPlayerNameEvent extends GameEvent {
   final String name;
   SetPlayerNameEvent(this.name);
 }
+
+/// Reset player and all in-memory state (e.g. on account deletion / sign out).
+class ResetPlayerEvent extends GameEvent {}
