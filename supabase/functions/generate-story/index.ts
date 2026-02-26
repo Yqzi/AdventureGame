@@ -11,6 +11,20 @@ interface RequestBody {
   systemPersona: string;
   safetySettings: SafetySetting[];
   deviceId: string;
+  /** AI model identifier — e.g. 'gemini-2.5-flash', 'gemini-3-flash', or 'gemini-3.1-pro'. */
+  model?: string;
+  /** Gemini generation temperature (0–1). */
+  temperature?: number;
+  /** Max output tokens for the response. */
+  maxOutputTokens?: number;
+  /** Thinking/reasoning effort level for Pro models (e.g. 'medium'). */
+  thinkingLevel?: string;
+  /** Additional system prompt text appended for paid tiers. */
+  tierPromptAppend?: string;
+  /** World lore context from the Hollowed Codex (paid tiers only). */
+  loreContext?: string;
+  /** Pre-formatted conversation context (trimmed by client based on tier). */
+  conversationContext?: string;
 }
 
 interface SafetySetting {
@@ -95,40 +109,71 @@ Deno.serve(async (req: Request) => {
       return jsonError("Device ID is required.", 400);
     }
 
-    // ── Device-level credit enforcement ──
-    // Credits live on the device, not the user. Accounts don't matter.
-    let { data: deviceRow } = await supabaseAdmin
-      .from("device_credits")
-      .select("credits, max_credits, reset_at")
-      .eq("device_id", body.deviceId)
-      .single();
+    // ── Credit enforcement ──
+    // First check if the user has a subscription row (tier-based credits).
+    // Fall back to device_credits for backward compat / non-subscribed users.
+    let credits = 0;
+    let creditSource: "subscription" | "device" = "device";
+    let subMaxCredits = 0;
 
-    if (!deviceRow) {
-      // First time this device is seen — create a row
-      const resetAt = getNextMonthStart();
-      await supabaseAdmin.from("device_credits").upsert({
-        device_id: body.deviceId,
-        credits: 2,
-        max_credits: 2,
-        reset_at: resetAt.toISOString(),
-      });
-      deviceRow = { credits: 2, max_credits: 2, reset_at: resetAt.toISOString() };
-    }
+    const { data: subRow } = await supabaseAdmin
+      .from("user_subscriptions")
+      .select("tier, credits_remaining, max_credits, credits_reset_at, expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    let credits = deviceRow.credits;
-    const resetAt = new Date(deviceRow.reset_at);
+    if (subRow) {
+      creditSource = "subscription";
+      let subCredits = subRow.credits_remaining ?? 0;
+      subMaxCredits = subRow.max_credits ?? 0;
+      const subResetAt = new Date(subRow.credits_reset_at);
 
-    // Reset credits if we're past the reset date
-    if (new Date() >= resetAt) {
-      const newReset = getNextMonthStart();
-      await supabaseAdmin
+      // Reset credits if past reset date
+      if (new Date() >= subResetAt) {
+        const newReset = getNextMonthStart();
+        await supabaseAdmin
+          .from("user_subscriptions")
+          .update({
+            credits_remaining: subMaxCredits,
+            credits_reset_at: newReset.toISOString(),
+          })
+          .eq("user_id", user.id);
+        subCredits = subMaxCredits;
+      }
+      credits = subCredits;
+    } else {
+      // Fall back to device-level credits (legacy / free users without a row).
+      let { data: deviceRow } = await supabaseAdmin
         .from("device_credits")
-        .update({
-          credits: deviceRow.max_credits,
-          reset_at: newReset.toISOString(),
-        })
-        .eq("device_id", body.deviceId);
-      credits = deviceRow.max_credits;
+        .select("credits, max_credits, reset_at")
+        .eq("device_id", body.deviceId)
+        .single();
+
+      if (!deviceRow) {
+        const resetAt = getNextMonthStart();
+        await supabaseAdmin.from("device_credits").upsert({
+          device_id: body.deviceId,
+          credits: 30,
+          max_credits: 30,
+          reset_at: resetAt.toISOString(),
+        });
+        deviceRow = { credits: 30, max_credits: 30, reset_at: resetAt.toISOString() };
+      }
+
+      credits = deviceRow.credits;
+      const resetAt = new Date(deviceRow.reset_at);
+
+      if (new Date() >= resetAt) {
+        const newReset = getNextMonthStart();
+        await supabaseAdmin
+          .from("device_credits")
+          .update({
+            credits: deviceRow.max_credits,
+            reset_at: newReset.toISOString(),
+          })
+          .eq("device_id", body.deviceId);
+        credits = deviceRow.max_credits;
+      }
     }
 
     if (credits <= 0) {
@@ -141,25 +186,63 @@ Deno.serve(async (req: Request) => {
       threshold: thresholdMap[s.threshold] ?? "BLOCK_ONLY_HIGH",
     }));
 
-    const geminiBody = {
+    // Resolve which Gemini model to use. Default to flash.
+    const allowedModels = ["gemini-2.5-flash", "gemini-3-flash", "gemini-3.1-pro"];
+    const requestedModel = body.model ?? "gemini-2.5-flash";
+    const model = allowedModels.includes(requestedModel)
+      ? requestedModel
+      : "gemini-2.5-flash";
+
+    // Tier-specific generation parameters (with safe defaults).
+    const temperature = typeof body.temperature === "number"
+      ? Math.min(Math.max(body.temperature, 0), 2)
+      : 1.0;
+    const maxOutputTokens = typeof body.maxOutputTokens === "number"
+      ? Math.min(Math.max(body.maxOutputTokens, 100), 2000)
+      : undefined;
+
+    // Append tier-specific system prompt directives.
+    const systemPrompt = body.tierPromptAppend
+      ? body.systemPersona + body.tierPromptAppend
+      : body.systemPersona;
+
+    // Build the content parts — optionally include conversation history.
+    const contentParts: { text: string }[] = [
+      { text: systemPrompt },
+    ];
+    if (body.loreContext) {
+      contentParts.push({ text: body.loreContext });
+    }
+    contentParts.push(
+      { text: `Current Active Quest: ${body.questDetails}` },
+      { text: `Current Player State: ${body.playerContext}` },
+    );
+    if (body.conversationContext) {
+      contentParts.push({
+        text: `Previous Story Context:\n${body.conversationContext}`,
+      });
+    }
+    contentParts.push({
+      text: `The player attempts to: "${body.prompt}"`,
+    });
+
+    const geminiBody: Record<string, unknown> = {
       contents: [
         {
-          parts: [
-            { text: body.systemPersona },
-            { text: `Current Active Quest: ${body.questDetails}` },
-            { text: `Current Player State: ${body.playerContext}` },
-            { text: `The player attempts to: "${body.prompt}"` },
-          ],
+          parts: contentParts,
         },
       ],
       safetySettings,
       generationConfig: {
-        temperature: 1.0,
+        temperature,
+        ...(maxOutputTokens ? { maxOutputTokens } : {}),
+        // Enable thinking/reasoning for Gemini 3.1 Pro (champion tier).
+        ...(body.thinkingLevel ? { thinkingConfig: { thinkingBudget: body.thinkingLevel } } : {}),
       },
     };
 
     // ── Call Gemini streaming API ──
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
 
     const geminiRes = await fetch(geminiUrl, {
       method: "POST",
@@ -173,11 +256,18 @@ Deno.serve(async (req: Request) => {
       return jsonError(`Gemini API error: ${geminiRes.status}`, 502);
     }
 
-    // ── Decrement device credit (the request was accepted) ──
-    await supabaseAdmin
-      .from("device_credits")
-      .update({ credits: credits - 1 })
-      .eq("device_id", body.deviceId);
+    // ── Decrement credit from the correct source ──
+    if (creditSource === "subscription") {
+      await supabaseAdmin
+        .from("user_subscriptions")
+        .update({ credits_remaining: credits - 1 })
+        .eq("user_id", user.id);
+    } else {
+      await supabaseAdmin
+        .from("device_credits")
+        .update({ credits: credits - 1 })
+        .eq("device_id", body.deviceId);
+    }
 
     // ── Stream the response back to the client ──
     const encoder = new TextEncoder();

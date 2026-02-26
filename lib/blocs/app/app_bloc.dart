@@ -11,7 +11,9 @@ import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/blocs/app/app_state.dart';
 import 'package:Questborne/models/game_session.dart';
 import 'package:Questborne/services/ai_service.dart';
+import 'package:Questborne/services/conversation_memory_manager.dart';
 import 'package:Questborne/services/game_session_repository.dart';
+import 'package:Questborne/services/subscription_service.dart';
 import 'package:Questborne/services/supabase_save_service.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
@@ -19,6 +21,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   final Uuid _uuid = const Uuid();
   final GameSessionRepository _sessionRepo = GameSessionRepository();
   final SupabaseSaveService _saveService = SupabaseSaveService();
+  final ConversationMemoryManager _memoryManager = ConversationMemoryManager();
 
   Map<String, dynamic> _currentActiveQuest = {};
   List<ChatMessage> _chatHistory = [];
@@ -83,6 +86,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
       // Also sync cached game sessions from Supabase.
       await _sessionRepo.syncFromRemote();
+      // Refresh subscription tier so credit limits and model are up-to-date.
+      await SubscriptionService().refresh();
     } catch (e) {
       // If loading fails, keep the default player—don't crash.
       print('Failed to load player from cloud: $e');
@@ -181,6 +186,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   ) async {
     _currentActiveQuest = event.questDetails;
     _chatHistory = [];
+    _memoryManager.reset();
 
     // Restore HP & MP for the new quest but keep level, gold, inventory, etc.
     _player = _player.fullRestore();
@@ -197,11 +203,21 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     String accumulatedRaw = "";
     try {
+      // Build conversation context based on subscription tier.
+      final tier = SubscriptionService().current.effectiveTier;
+      final conversationCtx = _memoryManager.buildContextForAI(
+        _chatHistory.where((m) => m.isComplete).toList(),
+        tier,
+      );
+
       await for (final chunk in _aiService.streamResponse(
         "The player accepts the quest: '${_currentActiveQuest['title']}'. "
         "Narrate their immediate surroundings and what happens next.",
         _currentActiveQuest,
         player: _player,
+        conversationContext: conversationCtx.isNotEmpty
+            ? conversationCtx
+            : null,
       )) {
         accumulatedRaw += chunk;
 
@@ -336,10 +352,20 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     String accumulatedRaw = "";
     try {
+      // Build conversation context based on subscription tier.
+      final tier = SubscriptionService().current.effectiveTier;
+      final conversationCtx = _memoryManager.buildContextForAI(
+        _chatHistory.where((m) => m.isComplete).toList(),
+        tier,
+      );
+
       await for (final chunk in _aiService.streamResponse(
         event.command,
         _currentActiveQuest,
         player: _player,
+        conversationContext: conversationCtx.isNotEmpty
+            ? conversationCtx
+            : null,
       )) {
         accumulatedRaw += chunk;
 

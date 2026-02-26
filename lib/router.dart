@@ -7,6 +7,7 @@ import 'package:Questborne/pages/map_page.dart';
 import 'package:Questborne/pages/world_explore_page.dart';
 import 'package:Questborne/pages/shop_page.dart';
 import 'package:Questborne/pages/start_page.dart';
+import 'package:Questborne/pages/subscription_page.dart';
 
 class AppRouter {
   static const start = '/start';
@@ -17,6 +18,7 @@ class AppRouter {
   static const shop = '/shop';
   static const worldExplore = '/worldExplore';
   static const settingsPage = '/settings';
+  static const subscription = '/subscription';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -46,6 +48,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const WorldExplorationPage());
       case settingsPage:
         return MaterialPageRoute(builder: (_) => const SettingsPage());
+      case subscription:
+        return MaterialPageRoute(builder: (_) => const SubscriptionPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>

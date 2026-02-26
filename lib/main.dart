@@ -3,6 +3,7 @@ import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/router.dart';
 import 'package:Questborne/services/settings_service.dart';
+import 'package:Questborne/services/subscription_service.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/services/ai_service.dart';
@@ -16,6 +17,8 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
   await SettingsService().init();
+  // Pre-load subscription tier so it's available immediately.
+  await SubscriptionService().fetch();
   runApp(const MyApp());
 }
 

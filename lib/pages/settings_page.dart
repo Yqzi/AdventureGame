@@ -7,6 +7,7 @@ import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/top_bar.dart';
+import 'package:Questborne/router.dart';
 import 'package:Questborne/services/auth_service.dart';
 import 'package:Questborne/services/game_session_repository.dart';
 import 'package:Questborne/services/settings_service.dart';
@@ -138,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.workspace_premium_outlined,
             title: 'Premium',
             subtitle: 'View subscription options',
-            onTap: () => _showComingSoonSnack('Premium'),
+            onTap: () => Navigator.pushNamed(context, AppRouter.subscription),
           ),
           _divider(),
           _settingsTile(

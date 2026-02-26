@@ -8,8 +8,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/models/item.dart';
+import 'package:Questborne/models/lore_codex.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/subscription.dart';
 import 'package:Questborne/services/settings_service.dart';
+import 'package:Questborne/services/subscription_service.dart';
 
 class AIService {
   /// Stable device ID fetched once at first AI call.
@@ -303,10 +306,14 @@ Never name these as "status effects." Weave them into the narration as physical 
 
   /// Streaming response that calls the Supabase Edge Function which
   /// proxies to Gemini, with server-side credit enforcement.
+  ///
+  /// [conversationContext] is the formatted chat history (already trimmed
+  /// by [ConversationMemoryManager] according to the user's tier).
   Stream<String> streamResponse(
     String playerPrompt,
     Map<String, dynamic> activeQuestDetails, {
     Player? player,
+    String? conversationContext,
   }) async* {
     try {
       // Refresh the session to ensure a valid access token
@@ -319,11 +326,28 @@ Never name these as "status effects." Weave them into the narration as physical 
       }
 
       String questDescription = _formatQuestDetails(activeQuestDetails);
+
+      // Tier determines how much player data the AI receives.
+      final currentTier = SubscriptionService().current.effectiveTier;
       String playerContext = player != null
-          ? _formatPlayerContext(player)
+          ? (currentTier.sendsFullPlayerContext
+                ? _formatFullPlayerContext(player)
+                : _formatBasicPlayerContext(player))
           : 'No player data.';
 
       final deviceId = await _getDeviceId();
+
+      // Resolve the user's current subscription tier for model & params.
+      final sub = SubscriptionService().current;
+      final tier = sub.effectiveTier;
+
+      // Build lore context for paid tiers (empty string for free).
+      final questLocation = activeQuestDetails['location'] as String?;
+      final loreContext = LoreCodex.getForTier(
+        questLocation,
+        tier,
+        playerLevel: player?.level ?? 1,
+      );
 
       final body = jsonEncode({
         'prompt': playerPrompt,
@@ -332,6 +356,15 @@ Never name these as "status effects." Weave them into the narration as physical 
         'systemPersona': _systemPersona,
         'safetySettings': _buildSafetyPayload(),
         'deviceId': deviceId,
+        'model': tier.aiModel,
+        'temperature': tier.temperature,
+        'maxOutputTokens': tier.maxOutputTokens,
+        if (tier == SubscriptionTier.champion) 'thinkingLevel': 'medium',
+        if (tier.tierPromptAppend.isNotEmpty)
+          'tierPromptAppend': tier.tierPromptAppend,
+        if (loreContext.isNotEmpty) 'loreContext': loreContext,
+        if (conversationContext != null)
+          'conversationContext': conversationContext,
       });
 
       final request = http.Request('POST', _functionUrl)
@@ -401,9 +434,29 @@ Never name these as "status effects." Weave them into the narration as physical 
     return parts.join('; ');
   }
 
-  /// Builds a detailed summary of the player's current state so the AI can
-  /// evaluate capabilities, equipment effects, and make informed decisions.
-  String _formatPlayerContext(Player player) {
+  /// Basic player context for the free tier — name, level, HP/MP, location,
+  /// and equipped weapon name only. Keeps the payload small.
+  String _formatBasicPlayerContext(Player player) {
+    final parts = <String>[
+      'Name: ${player.name}',
+      'Level: ${player.level}',
+      'HP: ${player.currentHealth}/${player.maxHealth}',
+      'MP: ${player.currentMana}/${player.maxMana}',
+      'Location: ${player.currentLocation}',
+    ];
+    final weapon = player.equipment.weapon;
+    parts.add('Weapon: ${weapon?.name ?? '[unarmed]'}');
+    if (player.statusEffects.isNotEmpty) {
+      parts.add(
+        'Status: ${player.statusEffects.map((e) => e.label).join(', ')}',
+      );
+    }
+    return parts.join('\n');
+  }
+
+  /// Full player context for paid tiers — stats, equipment details with
+  /// effects, inventory, gold, and status effects.
+  String _formatFullPlayerContext(Player player) {
     final parts = <String>[
       'Name: ${player.name}',
       'Level: ${player.level}',
