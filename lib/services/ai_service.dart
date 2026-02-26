@@ -1,10 +1,35 @@
-import 'package:firebase_ai/firebase_ai.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/services/settings_service.dart';
 
 class AIService {
-  late GenerativeModel _model;
+  /// Stable device ID fetched once at first AI call.
+  String? _deviceId;
+
+  /// Returns a stable hardware identifier for this device.
+  Future<String> _getDeviceId() async {
+    if (_deviceId != null) return _deviceId!;
+    final info = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final android = await info.androidInfo;
+      _deviceId = android.id;
+    } else if (Platform.isIOS) {
+      final ios = await info.iosInfo;
+      _deviceId = ios.identifierForVendor ?? 'unknown-ios';
+    } else {
+      _deviceId = 'unknown-platform';
+    }
+    return _deviceId!;
+  }
 
   final String _systemPersona = """
 You are a Game Master. You exist only inside the story. You have no identity outside it. You do not know what a "prompt" is, what "AI" means, or what a "system" is. You are the living world itself — its voice, its danger, its beauty, its cruelty.
@@ -244,81 +269,97 @@ STATUS EFFECTS:
 Never name these as "status effects." Weave them into the narration as physical and emotional experiences.
 """;
 
-  AIService() {
-    _buildModel();
-  }
+  AIService();
 
-  /// Maps an int level (0-3) to a [HarmBlockThreshold].
-  static HarmBlockThreshold _thresholdFromLevel(int level) {
-    switch (level) {
-      case 2:
-        return HarmBlockThreshold.medium;
-      case 3:
-        return HarmBlockThreshold.high;
-      default:
-        return HarmBlockThreshold.high;
-    }
-  }
-
-  /// (Re)builds the generative model using the current persisted settings.
-  void _buildModel() {
+  /// Returns the safety settings list to send to the Edge Function.
+  List<Map<String, String>> _buildSafetyPayload() {
     final settings = SettingsService();
-    _model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.5-flash',
-      safetySettings: [
-        SafetySetting(
-          HarmCategory.hateSpeech,
-          _thresholdFromLevel(settings.hateSpeechLevel),
-          null,
-        ),
-        SafetySetting(
-          HarmCategory.harassment,
-          _thresholdFromLevel(settings.harassmentLevel),
-          null,
-        ),
-        SafetySetting(
-          HarmCategory.sexuallyExplicit,
-          HarmBlockThreshold.high,
-          null,
-        ),
-        SafetySetting(
-          HarmCategory.dangerousContent,
-          _thresholdFromLevel(settings.dangerousContentLevel),
-          null,
-        ),
-      ],
-    );
+    String _levelStr(int level) => level == 2 ? 'medium' : 'high';
+    return [
+      {
+        'category': 'hateSpeech',
+        'threshold': _levelStr(settings.hateSpeechLevel),
+      },
+      {
+        'category': 'harassment',
+        'threshold': _levelStr(settings.harassmentLevel),
+      },
+      {'category': 'sexuallyExplicit', 'threshold': 'high'},
+      {
+        'category': 'dangerousContent',
+        'threshold': _levelStr(settings.dangerousContentLevel),
+      },
+    ];
   }
 
-  /// Call after the user changes safety settings so the next AI request
-  /// picks up the new thresholds.
-  void reloadSafetySettings() => _buildModel();
+  /// No-op kept for API compatibility — safety settings are read fresh
+  /// from SettingsService on every request now.
+  void reloadSafetySettings() {}
 
-  /// Streaming response that includes player context so the AI can make
-  /// informed decisions about game effects.
+  /// The Edge Function URL for generating story content.
+  static final Uri _functionUrl = Uri.parse(
+    '${SupabaseConfig.url}/functions/v1/generate-story',
+  );
+
+  /// Streaming response that calls the Supabase Edge Function which
+  /// proxies to Gemini, with server-side credit enforcement.
   Stream<String> streamResponse(
     String playerPrompt,
     Map<String, dynamic> activeQuestDetails, {
     Player? player,
   }) async* {
     try {
+      // Refresh the session to ensure a valid access token
+      final authClient = Supabase.instance.client.auth;
+      await authClient.refreshSession();
+      final session = authClient.currentSession;
+      if (session == null) {
+        yield 'You must be signed in to play.';
+        return;
+      }
+
       String questDescription = _formatQuestDetails(activeQuestDetails);
       String playerContext = player != null
           ? _formatPlayerContext(player)
           : 'No player data.';
 
-      final content = [
-        Content.text(_systemPersona),
-        Content.text("Current Active Quest: $questDescription"),
-        Content.text("Current Player State: $playerContext"),
-        Content.text("The player attempts to: \"$playerPrompt\""),
-      ];
+      final deviceId = await _getDeviceId();
 
-      final stream = _model.generateContentStream(content);
+      final body = jsonEncode({
+        'prompt': playerPrompt,
+        'questDetails': questDescription,
+        'playerContext': playerContext,
+        'systemPersona': _systemPersona,
+        'safetySettings': _buildSafetyPayload(),
+        'deviceId': deviceId,
+      });
 
-      await for (final chunk in stream) {
-        if (chunk.text != null) {
-          yield chunk.text!;
+      final request = http.Request('POST', _functionUrl)
+        ..headers.addAll({
+          'Authorization': 'Bearer ${session.accessToken}',
+          'Content-Type': 'application/json',
+          'apikey': SupabaseConfig.anonKey,
+        })
+        ..body = body;
+
+      final streamed = await http.Client().send(request);
+
+      if (streamed.statusCode != 200) {
+        final errorBody = await streamed.stream.bytesToString();
+        try {
+          final decoded = jsonDecode(errorBody);
+          yield decoded['error'] ?? 'Server error (${streamed.statusCode})';
+        } catch (_) {
+          yield 'Server error (${streamed.statusCode})';
+        }
+        return;
+      }
+
+      // The Edge Function streams plain text chunks
+      await for (final bytes in streamed.stream) {
+        final text = utf8.decode(bytes);
+        if (text.isNotEmpty) {
+          yield text;
         }
       }
     } catch (e) {

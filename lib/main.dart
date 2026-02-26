@@ -7,13 +7,10 @@ import 'package:Questborne/services/settings_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/services/ai_service.dart';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,

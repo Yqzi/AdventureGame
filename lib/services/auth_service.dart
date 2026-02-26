@@ -177,12 +177,6 @@ class AuthService {
     }
   }
 
-  // ── Sign out ─────────────────────────────────────────────────
-
-  Future<void> signOut() async {
-    await _client.auth.signOut();
-  }
-
   // ── Helpers ──────────────────────────────────────────────────
 
   /// Generates a cryptographically-secure random nonce string.

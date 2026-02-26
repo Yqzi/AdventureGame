@@ -161,16 +161,8 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => _linkWithGoogle(),
               iconColor: _creamText,
               titleColor: Colors.white,
-            )
-          else
-            _settingsTile(
-              icon: Icons.logout,
-              title: 'Sign Out',
-              subtitle: 'Sign out of your account',
-              onTap: () => _confirmSignOut(),
-              iconColor: redText,
-              titleColor: redText,
             ),
+
           _divider(),
           _settingsTile(
             icon: Icons.delete_forever,
@@ -629,7 +621,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       );
-      setState(() {}); // refresh UI to show Sign Out instead
+      setState(() {});
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -644,23 +636,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // ── Sign out ─────────────────────────────────────────────
-
-  Future<void> _confirmSignOut() async {
-    final confirmed = await _showConfirmDialog(
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-      confirmLabel: 'Sign Out',
-    );
-    if (confirmed == true && mounted) {
-      context.read<GameBloc>().add(ResetPlayerEvent());
-      await _auth.signOut();
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/start', (_) => false);
-      }
-    }
-  }
-
   // ── Delete account ───────────────────────────────────────
 
   Future<void> _confirmDeleteAccount() async {
@@ -671,42 +646,41 @@ class _SettingsPageState extends State<SettingsPage> {
           'This action cannot be undone.',
       confirmLabel: 'Delete',
     );
-    if (confirmed == true && mounted) {
-      try {
-        // Delete all remote data for this user
-        final user = Supabase.instance.client.auth.currentUser;
-        if (user != null) {
-          await Supabase.instance.client
-              .from('player_saves')
-              .delete()
-              .eq('user_id', user.id);
-          await Supabase.instance.client
-              .from('game_sessions')
-              .delete()
-              .eq('user_id', user.id);
-        }
-        // Clear in-memory session cache
-        GameSessionRepository().clearLocal();
-        // Reset player and all in-memory game state
-        if (mounted) {
-          context.read<GameBloc>().add(ResetPlayerEvent());
-        }
-        await _auth.signOut();
-        if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, '/start', (_) => false);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: _cardColor,
-              content: Text(
-                'Failed to delete account: $e',
-                style: GoogleFonts.epilogue(color: Colors.white),
-              ),
+    if (confirmed != true || !mounted) return;
+
+    try {
+      // Delete all remote data for this user
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client
+            .from('player_saves')
+            .delete()
+            .eq('user_id', user.id);
+        await Supabase.instance.client
+            .from('game_sessions')
+            .delete()
+            .eq('user_id', user.id);
+      }
+      // Clear in-memory session cache
+      GameSessionRepository().clearLocal();
+      // Reset player and all in-memory game state
+      if (mounted) {
+        context.read<GameBloc>().add(ResetPlayerEvent());
+      }
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/start', (_) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: _cardColor,
+            content: Text(
+              'Failed to delete account: $e',
+              style: GoogleFonts.epilogue(color: Colors.white),
             ),
-          );
-        }
+          ),
+        );
       }
     }
   }

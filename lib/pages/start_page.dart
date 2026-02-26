@@ -45,7 +45,6 @@ class _StartPageState extends State<StartPage> {
         context.read<GameBloc>().add(LoadPlayerFromCloudEvent());
       }
     } catch (_) {
-      await _auth.signOut();
       if (mounted) setState(() {});
     }
   }
