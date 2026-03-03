@@ -81,6 +81,7 @@ flutter:
     - assets/images/forest.png
     - assets/images/cave.png
     - assets/images/ruins.png
+    - assets/images/items/
     - assets/icons/flower.svg
     - assets/icons/google.png
     - assets/sounds/coins.wav

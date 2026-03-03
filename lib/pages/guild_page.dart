@@ -333,11 +333,6 @@ class _GuildPageState extends State<GuildPage> {
           fontWeight: FontWeight.bold,
           height: 1.25,
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          color: const Color(0xFFE3D5B8),
-          onPressed: () {},
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.hourglass_top_rounded),

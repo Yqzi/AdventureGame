@@ -100,10 +100,7 @@ class ShopPage extends StatelessWidget {
                         ),
                       ),
                       child: Center(
-                        child: Text(
-                          item.type.icon,
-                          style: const TextStyle(fontSize: 22),
-                        ),
+                        child: Image.asset(item.imagePath, fit: BoxFit.contain),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -391,11 +388,6 @@ class ShopPage extends StatelessWidget {
               fontSize: 20,
               fontWeight: FontWeight.bold,
               height: 1.25,
-            ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new),
-              color: const Color(0xFFE3D5B8),
-              onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(

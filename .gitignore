@@ -48,3 +48,4 @@ lib/keys
 lib/Secrets
 lib/firebase_options.dart
 
+scripts/generate_item_images.py

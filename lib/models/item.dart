@@ -87,149 +87,186 @@ class Item {
 
   /// Formatted price string.
   String get priceLabel => '$price Gold';
+
+  /// Path to the item's image asset, derived from its id.
+  String get imagePath => 'assets/images/items/$id.png';
 }
 
 // ═════════════════════════════════════════════════════════════
-//  ALL GAME ITEMS
+//  ALL GAME ITEMS  —  Lore-rooted across four sources:
+//    GLOBAL  (Sundering · Hollow · Radiant One · Deep Mother · Death)
+//    FOREST  (Thornveil · Vaelithi · World Tree · Fey Courts · Pale Root)
+//    CAVE    (Hollows · Ossborn · Forge Spirit · Warden-craft · Devourer)
+//    RUINS   (Valdris · Tithebound · Nameless Choir · Severance · Morvaine)
+//
 //  Prices scale with level & rarity:
 //    base  = level × 50 + 50
 //    ×1 Common  ×3 Rare  ×7 Epic  ×15 Mythic
 // ═════════════════════════════════════════════════════════════
 
 final List<Item> allItems = [
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
   //  W E A P O N S
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
+
+  // ── wpn_001 · GLOBAL · The Sundering ──────────────────
   const Item(
     id: 'wpn_001',
-    name: 'Rusty Bone Cleaver',
+    name: 'Sundering Shard Knife',
     description:
-        'A crude hatchet forged from sharpened bone and corroded iron. '
-        'It reeks of old marrow and desperation.',
+        'A crude knife chipped from stone that fell during the war of the '
+        'Firstborn Gods. It hums faintly when held — an echo of the blow '
+        'that cracked reality itself.',
     type: ItemType.weapon,
     rarity: Rarity.common,
     level: 1,
     price: 100,
-    attack: 4,
-    agility: 1,
-    effect: 'Chance to inflict Tetanus (2% poison per turn for 3 turns).',
+    attack: 8,
+    effect:
+        'Shard Resonance: deals 3% bonus damage near areas corrupted by the Hollow.',
   ),
 
+  // ── wpn_002 · FOREST · Thornveil ─────────────────────
   const Item(
     id: 'wpn_002',
-    name: 'Hollow Fang Dagger',
+    name: 'Thornveil Stalker Bow',
     description:
-        'A jagged dagger carved from the fang of a Blight Serpent. '
-        'Venom still seeps from its hollow core.',
+        'A short hunting bow of living thornwood, its limbs still bearing '
+        'green buds that never bloom. The Thornveil gives these willingly '
+        'to mortal stalkers it tolerates — the string hums a note only '
+        'forest creatures hear, and they run.',
     type: ItemType.weapon,
     rarity: Rarity.common,
     level: 5,
     price: 300,
-    attack: 8,
-    agility: 4,
-    effect: '8% chance to poison target for 3 turns.',
+    attack: 12,
+    agility: 5,
+    effect: '+10% damage against Fey creatures.',
   ),
 
+  // ── wpn_003 · CAVE · The Hollows ─────────────────────
   const Item(
     id: 'wpn_003',
-    name: 'Gravedigger\'s Spade',
+    name: 'Hollows Warden Blade',
     description:
-        'A shovel baptized in gravesoil and restless spirits. '
-        'Each swing echoes with the groans of the buried.',
+        'A short, broad-bladed sword of dark iron etched with glowing '
+        'warden runes along the fuller. Carried by miners who work the '
+        'upper Hollows — where the things in the dark require more than '
+        'a lantern.',
     type: ItemType.weapon,
     rarity: Rarity.common,
     level: 10,
     price: 550,
-    attack: 14,
-    defense: 3,
-    effect: 'Deals 15% bonus damage to Undead enemies.',
+    attack: 15,
+    defense: 5,
+    effect:
+        'Warden Rune: reveals hidden passages in the Hollows. +5% damage to mineral-based enemies.',
   ),
 
+  // ── wpn_004 · RUINS · Tithebound ─────────────────────
   const Item(
     id: 'wpn_004',
-    name: 'Blighted Shortsword',
+    name: 'Tithebound Ritual Blade',
     description:
-        'A cursed blade encrusted with black fungal growth. '
-        'Wounds it inflicts fester and refuse to heal.',
+        'A long, thin blade of grey metal carried by the Tithebound — the '
+        'ash-skinned wardens who patrol the Valdris ruins in loops they '
+        'cannot explain. This one was dropped by a sentinel who stopped '
+        'mid-patrol and simply forgot how to move.',
     type: ItemType.weapon,
     rarity: Rarity.rare,
     level: 15,
     price: 2400,
-    attack: 24,
-    agility: 6,
+    attack: 25,
+    agility: 10,
     effect:
-        'Inflicts Festering Wound: target\'s healing reduced by 30% for 4 turns.',
+        'Hollow Strike: 15% chance attacks ignore target\'s defense entirely.',
   ),
 
+  // ── wpn_005 · GLOBAL · The Hollow ────────────────────
   const Item(
     id: 'wpn_005',
-    name: 'Wraithbone Axe',
+    name: 'Hollow-Touched Falchion',
     description:
-        'Hewn from the fused spine of a Hollow Wraith. '
-        'The air around it grows cold and heavy with sorrow.',
+        'A blade left too long near a wound in reality where the Hollow '
+        'seeps through. The void-stuff has eaten into the steel, making it '
+        'lighter and impossibly sharp — but the metal crumbles a little '
+        'more each day.',
     type: ItemType.weapon,
     rarity: Rarity.rare,
     level: 20,
     price: 3150,
-    attack: 34,
-    magic: 8,
+    attack: 32,
+    agility: 12,
     effect:
-        'Attacks have a 15% chance to Chill the target, reducing AGI by 20%.',
+        'Void Edge: attacks deal 10% bonus damage. The Hollow hungers through the blade.',
   ),
 
+  // ── wpn_006 · FOREST · Pale Root ─────────────────────
   const Item(
     id: 'wpn_006',
-    name: 'Plague Doctor\'s Scalpel',
+    name: 'Pale Root Whisper Crossbow',
     description:
-        'A surgical instrument used in forbidden autopsies of the still-living. '
-        'Inscribed with anatomical runes that expose weakness.',
+        'A compact crossbow of bleached white wood, its rail inlaid with '
+        'crushed petals that deaden all sound. The Pale Root use these '
+        'from the High Canopy — two lords fell before anyone heard '
+        'the bolt. The Verdant Court pretends these don\'t exist.',
     type: ItemType.weapon,
     rarity: Rarity.rare,
     level: 25,
     price: 3900,
-    attack: 38,
-    agility: 14,
+    attack: 30,
+    agility: 18,
     effect:
-        'Critical hit chance increased by 12%. Crits apply Hemorrhage (bleed 3% HP/turn).',
+        'Assassination: critical hits deal 35% bonus damage. +12% crit chance from stealth.',
   ),
 
+  // ── wpn_007 · CAVE · Warden-Craft ────────────────────
   const Item(
     id: 'wpn_007',
-    name: 'Nighthowl Glaive',
+    name: 'Warden-Craft Halberd',
     description:
-        'This polearm screams when swung — a banshee\'s wail trapped in dark steel. '
-        'Enemies falter before it even strikes.',
+        'Forged using techniques inherited through the Rite of Grafting — '
+        'patterns no living mind devised, hammered from memory stored in '
+        'dead wardens\' bones. The rune sequence along the shaft matches '
+        'a binding prayer that sealed something in the mid-depths.',
     type: ItemType.weapon,
     rarity: Rarity.rare,
     level: 30,
     price: 4650,
     attack: 50,
-    agility: 10,
-    effect: '20% chance to inflict Fear on hit (target skips next turn).',
+    defense: 10,
+    effect:
+        'Binding Strike: 20% chance to immobilize target for 1 turn. Deals double damage to escaped prisoners of the deep.',
   ),
 
+  // ── wpn_008 · RUINS · Morvaine ───────────────────────
   const Item(
     id: 'wpn_008',
-    name: 'Bloodthorn Whip',
+    name: 'Morvaine\'s Staff-Blade',
     description:
-        'A living tendril ripped from the Abyssal Garden. '
-        'Its thorns drink deep, and the whip grows stronger with every lash.',
+        'The walking staff of Morvaine, the apprentice whose pursuit of '
+        'lichdom shattered Valdris from within — or so the histories claim. '
+        'The wood is petrified, and the crystal at its head shows a kingdom '
+        'that looks nothing like ruins.',
     type: ItemType.weapon,
     rarity: Rarity.epic,
     level: 35,
     price: 12950,
-    attack: 58,
-    agility: 18,
-    health: 30,
-    effect: 'Lifesteal: restores HP equal to 10% of damage dealt.',
+    attack: 40,
+    magic: 30,
+    effect:
+        'Lich\'s Ambition: spell attacks deal 15% bonus damage. On kill, restore 5% max HP.',
   ),
 
+  // ── wpn_009 · GLOBAL · Death ─────────────────────────
   const Item(
     id: 'wpn_009',
-    name: 'Soulreaper Scythe',
+    name: 'Death\'s Tithe',
     description:
-        'A scythe of blackened bone and soulfire. '
-        'Each kill harvests a sliver of the victim\'s essence, empowering the wielder.',
+        'A scythe that belonged to no reaper — it simply appeared where '
+        'Death had recently passed. Death is eldest of the three surviving '
+        'gods, walks both worlds freely, and answers to no prayer. This '
+        'blade carries that same cold indifference.',
     type: ItemType.weapon,
     rarity: Rarity.epic,
     level: 40,
@@ -237,97 +274,116 @@ final List<Item> allItems = [
     attack: 72,
     magic: 20,
     effect:
-        'On kill: gain +5 ATK for the remainder of the battle (stacks up to 5×).',
+        'Inevitability: ignores 15% of target\'s DEF and magic resistance. Cannot be disarmed.',
   ),
 
+  // ── wpn_010 · FOREST · World Tree ────────────────────
   const Item(
     id: 'wpn_010',
-    name: 'Ashen Greatsword',
+    name: 'Sinew of the World Tree',
     description:
-        'Forged in the pyre of a burning kingdom, this colossal blade still smolders. '
-        'Ash drifts from every devastating cut.',
+        'A longbow strung with root-fiber from the World Tree itself — '
+        'the miles-high titan whose roots pierce the underworld. Arrows '
+        'fired from this bow bend toward living things, as if the Tree '
+        'still hungers for what grows beyond its reach.',
     type: ItemType.weapon,
     rarity: Rarity.epic,
     level: 50,
     price: 18200,
-    attack: 95,
-    defense: 15,
-    effect: 'Attacks deal splash damage to adjacent enemies (40% of base ATK).',
+    attack: 85,
+    magic: 25,
+    health: 30,
+    effect:
+        'Rootbound: arrows entangle targets (−15% AGI for 2 turns). Regenerate 2% HP per turn in forest areas.',
   ),
 
+  // ── wpn_011 · CAVE · Forge Spirit ────────────────────
   const Item(
     id: 'wpn_011',
-    name: 'Voidfang Katana',
+    name: 'Forge Spirit\'s Greathammer',
     description:
-        'A blade folded within dimensional rifts — '
-        'its edge exists in multiple planes simultaneously. Cuts through armor like shadow.',
+        'A hammer that radiates heat from the core of the world. The Forge '
+        'Spirit who tends the ancient bindings used this to repair '
+        'ward-stones — and to crush anything that emerged when those '
+        'repairs came too late.',
     type: ItemType.weapon,
     rarity: Rarity.epic,
     level: 60,
     price: 21700,
     attack: 115,
-    agility: 35,
+    defense: 20,
     effect:
-        'Ignores 25% of target\'s DEF. 10% chance to phase through counter-attacks.',
+        'Seal Breaker: attacks shatter magical barriers. +25% damage against bound or sealed enemies.',
   ),
 
+  // ── wpn_012 · RUINS · Severance ──────────────────────
   const Item(
     id: 'wpn_012',
-    name: 'Doomhammer of the Fallen King',
+    name: 'Severance Edge',
     description:
-        'The warhammer of King Aldric the Mad, who slaughtered his court in a single night. '
-        'The screams of his subjects still ring from the metal.',
+        'A blade forged from the dark glass that paves the streets of '
+        'Valdris — not the ruins, but the living kingdom folded into a '
+        'dimension that should not exist. The glass reflects corridors '
+        'you\'ve never walked and a sky with no stars.',
     type: ItemType.weapon,
     rarity: Rarity.mythic,
     level: 70,
     price: 54000,
     attack: 155,
-    defense: 30,
-    health: 80,
+    magic: 40,
     effect:
-        'Concussive Blow: 25% chance to stun for 1 turn. Deals double damage to stunned targets.',
+        'Dimensional Cut: ignores 25% DEF and magic resistance. 10% chance to tear reality, dealing AoE damage.',
   ),
 
+  // ── wpn_013 · FOREST · Bloom Rite / Vaelithi ─────────
   const Item(
     id: 'wpn_013',
-    name: 'Eclipsebane',
+    name: 'Seylith\'s Bloom Arc',
     description:
-        'A longsword that devours light itself. Where it swings, '
-        'darkness follows — absolute and suffocating. Even the sun fears its edge.',
+        'A ceremonial bow grown in the World Tree\'s root-hollows during '
+        'the Bloom Rite — the trial that determines Vaelithi succession. '
+        'Its string sprouts thorn-arrows on its own. Queen Seylith drew '
+        'this arc for four centuries. It has never missed.',
     type: ItemType.weapon,
     rarity: Rarity.mythic,
     level: 80,
     price: 61500,
     attack: 185,
-    magic: 40,
-    agility: 25,
+    agility: 35,
+    magic: 20,
     effect:
-        'Eclipse Aura: enemies within range lose 5% ATK per turn. You gain what they lose.',
+        'Undying Bloom: the bow regenerates arrows between battles. Crits cause roots to erupt from wounds, dealing 40% bonus damage over 3 turns.',
   ),
 
+  // ── wpn_014 · CAVE · Deep Mother ─────────────────────
   const Item(
     id: 'wpn_014',
-    name: 'Malachar\'s Hungering Blade',
+    name: 'Deep Mother\'s Fang',
     description:
-        'A sentient sword that whispers and feeds on its wielder\'s blood. '
-        'The more you bleed, the harder it bites. It despises being sheathed.',
+        'A stalactite ripped from directly above the Heart of the '
+        'Mountain — the living organ of stone and magma that beats in the '
+        'deepest Hollows. Some scholars believe it is the Deep Mother\'s '
+        'own heart. This fang still drips with molten spite.',
     type: ItemType.weapon,
     rarity: Rarity.mythic,
     level: 90,
     price: 69750,
     attack: 220,
-    agility: 40,
-    health: -50,
+    defense: 30,
+    health: -40,
     effect:
-        'Costs 3% max HP per attack. In exchange: +50% total damage and guaranteed crit below 30% HP.',
+        'Magma Vein: attacks deal 20% bonus fire damage and inflict Burn. Costs 2% max HP per hit, but burn damage heals the wielder.',
   ),
 
+  // ── wpn_015 · RUINS · Azrathar / Valdris ─────────────
   const Item(
     id: 'wpn_015',
-    name: 'Godslayer, End of All',
+    name: 'Azrathar\'s Covenant Blade',
     description:
-        'The obsidian blade that felled the Last Deity. '
-        'Reality warps around its edge. Those who lift it feel the weight of a dead god\'s final scream.',
+        'The weapon the demon Azrathar once offered Valdris in exchange '
+        'for passage into the mortal world. The histories blame Azrathar '
+        'for the kingdom\'s fall — but the blade was never used. Whatever '
+        'destroyed Valdris was not a demon. It was something far worse.',
     type: ItemType.weapon,
     rarity: Rarity.mythic,
     level: 100,
@@ -337,63 +393,75 @@ final List<Item> allItems = [
     agility: 30,
     health: 100,
     effect:
-        'Deicide: ignores ALL enemy resistances. On kill, fully restores HP and resets all cooldowns.',
+        'Covenant: ignores ALL enemy resistances. On kill, absorb the target\'s strongest stat permanently (+1, stacks up to 20).',
   ),
 
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
   //  A R M O R
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
+
+  // ── arm_001 · GLOBAL · The Sundering ──────────────────
   const Item(
     id: 'arm_001',
-    name: 'Tattered Hide Wrap',
+    name: 'Sundering-Cloth Wrap',
     description:
-        'Scraps of mottled leather held together by dried sinew. '
-        'Barely armor — but better than bare flesh in the wastes.',
+        'Strips of ancient fabric salvaged from a battlefield older than '
+        'any kingdom. The cloth was woven before the Firstborn Gods '
+        'warred — when creation was still one piece.',
     type: ItemType.armor,
     rarity: Rarity.common,
     level: 1,
     price: 100,
     defense: 5,
     health: 10,
-    effect: 'Reduces physical damage taken by 2%.',
+    effect: 'Ancestral Thread: reduces physical damage taken by 2%.',
   ),
 
+  // ── arm_002 · CAVE · Smugglers ───────────────────────
   const Item(
     id: 'arm_002',
-    name: 'Bonecage Vest',
+    name: 'Smuggler\'s Tunnel Leathers',
     description:
-        'A crude chestplate wired from rib bones of the fallen. '
-        'Rattles with every step, as if the dead protest their desecration.',
+        'Hardened leather stitched by the smugglers who run contraband '
+        'through the upper Hollows by torchlight. Stained with '
+        'bioluminescent fungal residue that never quite washes out.',
     type: ItemType.armor,
     rarity: Rarity.common,
     level: 5,
     price: 300,
     defense: 10,
-    health: 20,
-    effect: '5% chance to deflect melee attacks completely.',
+    agility: 8,
+    effect:
+        'Cave Runner: +5% evasion in underground areas. Faintly glows in darkness.',
   ),
 
+  // ── arm_003 · FOREST · Thornveil ─────────────────────
   const Item(
     id: 'arm_003',
-    name: 'Gravewarden\'s Chainmail',
+    name: 'Thornveil Bark Cuirass',
     description:
-        'Rusted links salvaged from fallen knights of the Order of Ash. '
-        'Stained with old blood that never quite washes out.',
+        'A chestplate shaped from fallen bark of the Thornveil. The forest '
+        'gave this wood freely — a tree struck by lightning, already dead. '
+        'Even in death, the bark resists rot with stubborn, living defiance.',
     type: ItemType.armor,
     rarity: Rarity.common,
     level: 10,
     price: 550,
     defense: 18,
     health: 30,
-    effect: 'Reduces damage from Undead enemies by 10%.',
+    effect:
+        'Forest\'s Memory: reduces damage from plant and fey creatures by 10%.',
   ),
 
+  // ── arm_004 · RUINS · Valdris Upper ──────────────────
   const Item(
     id: 'arm_004',
-    name: 'Flayed Skin Jerkin',
+    name: 'Valdris Grave-Scavenger\'s Coat',
     description:
-        'Leather made from something not quite animal — the pores still weep. '
-        'Unnervingly warm to the touch, as if still alive.',
+        'Patched leather worn by those foolish enough to loot the upper '
+        'ruins of Valdris. Every pocket rattles with pilfered trinkets '
+        'that whisper when the wind is wrong. Scholar Veyra condemns '
+        'scavengers. They wear her disapproval like a badge.',
     type: ItemType.armor,
     rarity: Rarity.rare,
     level: 15,
@@ -402,15 +470,18 @@ final List<Item> allItems = [
     agility: 8,
     health: 40,
     effect:
-        'Regenerate 1% max HP per turn. Enemies have -5% accuracy against you.',
+        'Scavenger\'s Luck: +8% gold drop rate. 5% chance to resist curse effects from Valdris relics.',
   ),
 
+  // ── arm_005 · GLOBAL · The Hollow ────────────────────
   const Item(
     id: 'arm_005',
-    name: 'Ironblood Cuirass',
+    name: 'Hollow-Scarred Plate',
     description:
-        'Plate armor quenched in sacrificial blood during a crimson moon ritual. '
-        'The metal has a wet sheen that never dries.',
+        'Steel plate warped by proximity to the Hollow — the '
+        'void-corruption that seeps through reality\'s cracks. The metal '
+        'bends at angles that shouldn\'t hold, yet the armor is lighter '
+        'and harder than any forge could make it.',
     type: ItemType.armor,
     rarity: Rarity.rare,
     level: 20,
@@ -418,15 +489,19 @@ final List<Item> allItems = [
     defense: 38,
     attack: 8,
     health: 60,
-    effect: 'Blood Rage: when hit, gain +3 ATK for 2 turns (stacks up to 3×).',
+    effect:
+        'Void Warp: 8% chance to deflect attacks through micro-rifts. Takes 5% extra damage from holy sources.',
   ),
 
+  // ── arm_006 · CAVE · Ossborn ─────────────────────────
   const Item(
     id: 'arm_006',
-    name: 'Plaguewalker\'s Vestments',
+    name: 'Ossborn Grafted Shell',
     description:
-        'Thick robes soaked in concentrated miasma from the Rotting Marshes. '
-        'The stench alone keeps most threats at bay.',
+        'Armor assembled from shed bone-plates of the Ossborn — the '
+        'eyeless monks who carry dead wardens\' memories in their fused '
+        'skeletons. Each plate hums with a different frequency, as if '
+        'remembering a different voice.',
     type: ItemType.armor,
     rarity: Rarity.rare,
     level: 25,
@@ -435,283 +510,340 @@ final List<Item> allItems = [
     magic: 15,
     health: 70,
     effect:
-        'Immune to Poison and Disease. Melee attackers take 5% poison recoil.',
+        'Grafted Memory: immune to confusion effects. 10% chance to reflexively dodge (inherited warden instinct).',
   ),
 
+  // ── arm_007 · FOREST · Verdant Court ─────────────────
   const Item(
     id: 'arm_007',
-    name: 'Dreadknight Plate',
+    name: 'Verdant Court Ceremonial Mail',
     description:
-        'Black steel forged in the furnaces of the Abyss, worn by those who swore fealty to the Void. '
-        'Light bends around it, as if afraid.',
+        'Chainmail of green-gold alloy, each ring shaped like a tiny leaf. '
+        'Worn by the twelve High Canopy lords of Vaelith\'s Verdant '
+        'Court — before two were assassinated by the Pale Root. This set '
+        'belonged to one of the fallen.',
     type: ItemType.armor,
     rarity: Rarity.rare,
     level: 30,
     price: 4650,
     defense: 52,
-    attack: 10,
+    agility: 12,
     health: 80,
-    effect: 'Dread Aura: adjacent enemies lose 8% ATK. Immune to Fear effects.',
+    effect:
+        'Courtly Grace: immune to Fear effects. +10% magic resistance. Elvish light reveals hidden foes.',
   ),
 
+  // ── arm_008 · RUINS · Tithebound ─────────────────────
   const Item(
     id: 'arm_008',
-    name: 'Wailing Mantle',
+    name: 'Tithebound Sentinel Plate',
     description:
-        'A cloak stitched from the echoes of the damned. '
-        'Ghostly faces ripple across its surface, mouths agape in silent screams.',
+        'Chitinous armor grown — not forged — by Tithebound sentinels in '
+        'the deep ruins. Made from their own shed skin, layered over '
+        'centuries. Ash-grey and warm to the touch, as if something inside '
+        'it still remembers being alive.',
     type: ItemType.armor,
     rarity: Rarity.epic,
     level: 35,
     price: 12950,
     defense: 55,
-    magic: 22,
-    agility: 15,
     health: 100,
+    agility: 15,
     effect:
-        'Spectral Shroud: 15% chance to phase through physical attacks. +20% magic resistance.',
+        'Hollow Warden: +15% damage resistance while standing ground. Incoming attacks echo faintly, warning of ambush.',
   ),
 
+  // ── arm_009 · GLOBAL · Radiant One ───────────────────
   const Item(
     id: 'arm_009',
-    name: 'Flesh Golem\'s Carapace',
+    name: 'Radiant One\'s Blessed Mail',
     description:
-        'Armor grown from living, regenerating tissue harvested from an abomination. '
-        'It pulses rhythmically, mending its own wounds.',
+        'Plate armor blessed by clerics who maintain the binding seals in '
+        'the Radiant One\'s name. The god who forged the sun declared '
+        'dominion over the surface world — this armor carries that decree '
+        'hammered into every rivet.',
     type: ItemType.armor,
     rarity: Rarity.epic,
     level: 40,
     price: 14700,
     defense: 70,
     health: 150,
+    attack: 10,
     effect:
-        'Living Armor: regenerate 3% max HP per turn. Armor repairs itself after battle.',
+        'Solar Ward: immune to darkness and shadow effects. Regenerate 2% HP per turn in daylight or surface areas.',
   ),
 
+  // ── arm_010 · CAVE · Deep Mother ─────────────────────
   const Item(
     id: 'arm_010',
-    name: 'Abyssal Dragonscale Mail',
+    name: 'Deep Mother\'s Carapace',
     description:
-        'Scales from Vorathrex, the dragon who fell into the Abyss and emerged twisted. '
-        'Each scale is a window into a screaming void.',
+        'Chitin harvested from creatures born too close to the Heart of '
+        'the Mountain. The Deep Mother burrowed into the earth\'s core and '
+        'claimed all beneath stone — these shells carry her territorial '
+        'fury, hardening under pressure.',
     type: ItemType.armor,
     rarity: Rarity.epic,
     level: 50,
     price: 18200,
     defense: 92,
-    magic: 20,
     health: 180,
+    magic: 20,
     effect:
-        'Abyssal Ward: reduces all incoming damage by 12%. Immune to fire damage.',
+        'Pressure Skin: DEF increases by 1% for each 10% HP lost. Immune to fire and magma damage.',
   ),
 
+  // ── arm_011 · FOREST · Thornwall ─────────────────────
   const Item(
     id: 'arm_011',
-    name: 'Sorrow\'s Embrace',
+    name: 'Thornwall Living Armor',
     description:
-        'Armor woven from crystallized grief. The more pain the wearer endures, '
-        'the harder the plates become. Suffering is its forge.',
+        'A suit grown from a fragment of the Thornwall itself — the '
+        'enchanted barrier of briar that seals Vaelith from the mortal '
+        'world. Humans who cross the Thornwall don\'t come back. This '
+        'armor was pried from the wall\'s edge, and it has not stopped '
+        'growing.',
     type: ItemType.armor,
     rarity: Rarity.epic,
     level: 60,
     price: 21700,
     defense: 112,
-    attack: 20,
     health: 200,
+    attack: 20,
     effect:
-        'Martyrdom: DEF increases by 2% for every 10% HP lost. At below 25% HP, gain +30% ATK.',
+        'Living Barrier: regenerate 3% max HP per turn. Thorns deal 8% recoil damage to melee attackers.',
   ),
 
+  // ── arm_012 · GLOBAL · Death ─────────────────────────
   const Item(
     id: 'arm_012',
-    name: 'Titan\'s Ossuary Plate',
+    name: 'Death\'s Walking Shroud',
     description:
-        'Forged from the fossilized bones of a primordial titan. '
-        'Mountains were its armor; now you wear a fragment of a god\'s skeleton.',
+        'A cloak of absolute black that weighs nothing and fits everyone. '
+        'Death is eldest of the three surviving gods and walks both worlds '
+        'freely. This shroud once draped something that stood in Death\'s '
+        'shadow — and the shadow never quite left it.',
     type: ItemType.armor,
     rarity: Rarity.mythic,
     level: 70,
     price: 54000,
     defense: 155,
     health: 300,
-    attack: 20,
+    agility: 25,
     effect:
-        'Titanic Fortitude: immune to knockback and stun. Reduces all damage by 15%.',
+        'Death\'s Passage: ignore environmental hazards. 15% chance to negate fatal damage and survive with 1 HP.',
   ),
 
+  // ── arm_013 · RUINS · Court Arcanists ─────────────────
   const Item(
     id: 'arm_013',
-    name: 'Veil of the Undying',
+    name: 'Court Arcanist\'s Vestments',
     description:
-        'This armor defies death itself — stitched from the membrane between life and the afterworld. '
-        'Its wearer has died before, and the armor simply refused.',
+        'Robes worn by the Valdris Court Arcanists who cast the '
+        'Severance — the spell that pulled an entire kingdom into a '
+        'folded dimension. The Arcanists were consumed by their own '
+        'working. The robes remember the incantation in every threaded '
+        'sigil.',
     type: ItemType.armor,
     rarity: Rarity.mythic,
     level: 80,
     price: 61500,
     defense: 180,
+    magic: 45,
     health: 350,
-    magic: 30,
     effect:
-        'Undying: once per battle, survive a killing blow with 1 HP and become invulnerable for 1 turn.',
+        'Severance Echo: all spell damage reduced by 20%. Once per battle, cast a ward that absorbs damage equal to 30% max HP.',
   ),
 
+  // ── arm_014 · CAVE · Titans ──────────────────────────
   const Item(
     id: 'arm_014',
-    name: 'Nethershroud Aegis',
+    name: 'Titan\'s Binding Plate',
     description:
-        'Woven from the fraying fabric between dimensions. '
-        'Reality itself becomes your shield. Attacks pass through you like wind through a ghost.',
+        'Armor forged from the actual chains that bound a titan in the '
+        'mid-depths during the Sundering. The titan still slumbers '
+        'beneath — and the chains still tighten when something stirs in '
+        'its prison. Wearing them, you feel the weight of holding a god '
+        'in place.',
     type: ItemType.armor,
     rarity: Rarity.mythic,
     level: 90,
     price: 69750,
     defense: 210,
-    agility: 40,
-    health: 300,
-    magic: 40,
+    health: 400,
+    attack: 30,
     effect:
-        'Dimensional Shift: 20% chance to negate any attack entirely. Immune to all status effects.',
+        'Unyielding Chains: immune to knockback, stun, and forced movement. Reduces all incoming damage by 15%.',
   ),
 
+  // ── arm_015 · RUINS · Folded Dimension ────────────────
   const Item(
     id: 'arm_015',
-    name: 'The Eternal Prison',
+    name: 'Netherveil of the Folded Kingdom',
     description:
-        'A living armor that entombs and empowers. It fused with the last warrior who wore it, '
-        'consuming their body to become something beyond mortal craft. It hungers for a new host.',
+        'A garment woven from the membrane between the mortal world and '
+        'the folded dimension where Valdris still lives. It smells of '
+        'still air from a kingdom where time loops, and bends around the '
+        'wearer like reality bending to avoid the Severance.',
     type: ItemType.armor,
     rarity: Rarity.mythic,
     level: 100,
     price: 78000,
     defense: 260,
-    attack: 40,
     health: 500,
-    magic: 30,
+    magic: 40,
+    agility: 30,
     effect:
-        'Symbiosis: all stats grow by 1% per turn in combat (max 20%). Fully immune to instant-death effects.',
+        'Dimensional Phase: 20% chance to phase through attacks entirely. Immune to all status effects. Stats grow by 1% per turn in combat (max 15%).',
   ),
 
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
   //  A C C E S S O R I E S
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
+
+  // ── acc_001 · GLOBAL · Binding Seals ──────────────────
   const Item(
     id: 'acc_001',
-    name: 'Cracked Soul Gem',
+    name: 'Cracked Binding Seal',
     description:
-        'A dim crystal containing a shrieking fragment of a departed spirit. '
-        'It flickers weakly, barely tethered to this realm.',
+        'A palm-sized fragment of a ward-stone, worn as a pendant. '
+        'Clerics maintain these seals across the world — this one cracked, '
+        'and whatever it held is long gone. A reminder that the world '
+        'needs holding together, one broken seal at a time.',
     type: ItemType.accessory,
     rarity: Rarity.common,
     level: 1,
     price: 100,
     magic: 3,
     health: 5,
-    effect: 'Restores 1% MP per turn.',
+    effect: 'Faint Ward: restores 1% HP per turn.',
   ),
 
+  // ── acc_002 · FOREST · Fey Courts ────────────────────
   const Item(
     id: 'acc_002',
-    name: 'Rat King\'s Tooth Necklace',
+    name: 'Fey Pact Charm',
     description:
-        'A string of yellowed rodent teeth, each from a different plague-bearer. '
-        'Faint dark magic clings to the enamel.',
+        'A twisted knot of silver wire and dried petals, given by Fey '
+        'Court sprites in exchange for a secret. The pact is simple: '
+        'carry this, and the old trickster-spirits will only trick you '
+        'gently. When the pacts fray, even this won\'t help.',
     type: ItemType.accessory,
     rarity: Rarity.common,
     level: 5,
     price: 300,
-    attack: 3,
     agility: 5,
-    health: 10,
-    effect: '+5% gold drop rate from enemies.',
+    magic: 5,
+    effect:
+        'Fey Favor: +5% evasion against magical attacks. Wisps ignore the wearer.',
   ),
 
+  // ── acc_003 · CAVE · Upper Hollows ───────────────────
   const Item(
     id: 'acc_003',
-    name: 'Eye of the Blind Seer',
+    name: 'Bioluminescent Fungal Lantern',
     description:
-        'A preserved eye floating in amber resin. It belonged to a prophet who gouged out her own eyes '
-        'to see the truth. Now it grants fragments of that terrible foresight.',
+        'A caged cluster of cavern fungi that glow with the Deep '
+        'Mother\'s ambient influence. Miners prize these over torches — '
+        'they never go out, and they pulse faster when something watches '
+        'from the dark.',
     type: ItemType.accessory,
     rarity: Rarity.common,
     level: 10,
     price: 550,
     magic: 10,
     agility: 5,
-    effect: '+8% evasion chance. Reveals enemy HP values.',
+    effect:
+        'Deep Light: reveals hidden enemies and traps. +5% evasion in underground areas.',
   ),
 
+  // ── acc_004 · RUINS · Korval ─────────────────────────
   const Item(
     id: 'acc_004',
-    name: 'Cursed Wedding Band',
+    name: 'Korval\'s Research Pendant',
     description:
-        'A tarnished ring etched with vows of eternal devotion — '
-        'now broken. Its former owner waits somewhere in the dark, still calling.',
+        'A brass locket containing a fragment of Historian Korval\'s '
+        'notes on Valdris architecture — specifically, his confused '
+        'observations about rooms that seem larger inside than out. He '
+        'attributed it to residual enchantment. He was wrong.',
     type: ItemType.accessory,
     rarity: Rarity.rare,
     level: 15,
     price: 2400,
-    defense: 10,
     magic: 12,
+    defense: 10,
     health: 30,
     effect:
-        'Bound Fate: when HP drops below 50%, gain a shield equal to 10% max HP once per battle.',
+        'Scholar\'s Eye: reveals enemy weaknesses at battle start. +10% XP from Ruins encounters.',
   ),
 
+  // ── acc_005 · GLOBAL · The Hollow ────────────────────
   const Item(
     id: 'acc_005',
-    name: 'Noose of the Hanged Man',
+    name: 'Hollow Void Amulet',
     description:
-        'A frayed rope charm taken from a gallows at midnight. '
-        'It tightens imperceptibly around the wrist when danger draws near.',
+        'A gemstone with a hole in it — not a physical hole, but an '
+        'absence where the Hollow has unmade the crystal\'s center. '
+        'Light bends around the gap. Staring into it too long makes '
+        'you forget what you were looking at.',
     type: ItemType.accessory,
     rarity: Rarity.rare,
     level: 20,
     price: 3150,
-    agility: 20,
-    defense: 10,
+    magic: 18,
+    attack: 10,
     effect:
-        'Death\'s Warning: always act first in the opening turn of battle. +10% evasion.',
+        'Void Gaze: spell damage +10%. 5% chance attacks erase one enemy buff.',
   ),
 
+  // ── acc_006 · FOREST · Circle of Thorn ────────────────
   const Item(
     id: 'acc_006',
-    name: 'Bloodstone Pendant',
+    name: 'Circle of Thorn Signet',
     description:
-        'A deep crimson gem that pulses in rhythm with the wearer\'s heart. '
-        'It grows warm when blood is spilled nearby — and it is always warm.',
+        'A ring of living wood worn by druids of the Circle of Thorn — '
+        'mediators between mortal and Fey. Their numbers thin each '
+        'decade. This signet still channels the old pacts, though fewer '
+        'answer its call.',
     type: ItemType.accessory,
     rarity: Rarity.rare,
     level: 25,
     price: 3900,
-    attack: 12,
+    magic: 15,
     health: 60,
+    defense: 5,
     effect:
-        'Sanguine Pulse: lifesteal 5% on all attacks. HP regen doubled when below 40% HP.',
+        'Druid\'s Pact: healing effects increased by 15%. Fey creatures will not attack first.',
   ),
 
+  // ── acc_007 · CAVE · Ossborn ─────────────────────────
   const Item(
     id: 'acc_007',
-    name: 'Shadowweave Bracers',
+    name: 'Ossborn Memory Fragment',
     description:
-        'Armlets braided from concentrated darkness. '
-        'The wearer\'s silhouette bleeds into shadows, making them impossible to pin down.',
+        'A bone shard from an Ossborn elder — a piece that fell during '
+        'the Rite of Grafting. It carries a single warden memory: the '
+        'exact rune sequence that held a specific prison sealed for '
+        'three thousand years. The sequence plays in your dreams.',
     type: ItemType.accessory,
     rarity: Rarity.rare,
     level: 30,
     price: 4650,
     agility: 28,
-    attack: 10,
+    defense: 10,
     effect:
-        'Shadow Meld: +18% evasion in darkness. Sneak attacks deal 30% bonus damage.',
+        'Inherited Instinct: always act first in the opening turn of battle. +15% evasion against traps.',
   ),
 
+  // ── acc_008 · RUINS · Tithebound ─────────────────────
   const Item(
     id: 'acc_008',
-    name: 'Witch\'s Third Eye',
+    name: 'Tithebound Resonance Stone',
     description:
-        'A crystallized eye pried from the forehead of a dead crone. '
-        'It still sees — things you wish it wouldn\'t.',
+        'A smooth grey stone that vibrates at the same frequency as the '
+        'Tithebound\'s hollow eyes. When held, you hear what they hear — '
+        'a faint sound from deep beneath the ruins that shapes itself '
+        'into what you most desire. It is not a calling. It is bait.',
     type: ItemType.accessory,
     rarity: Rarity.epic,
     level: 35,
@@ -719,15 +851,18 @@ final List<Item> allItems = [
     magic: 35,
     agility: 15,
     effect:
-        'True Sight: see through invisibility and illusions. Spell damage increased by 15%.',
+        'Resonance: spell damage +15%. Grants brief precognition — see enemy attacks before they land.',
   ),
 
+  // ── acc_009 · GLOBAL · Death ─────────────────────────
   const Item(
     id: 'acc_009',
-    name: 'Heartstring Amulet',
+    name: 'Death\'s Walking Band',
     description:
-        'Woven from the literal heartstrings of a greater demon. '
-        'It beats against your chest — a second heart, dark and powerful.',
+        'A ring of bone-white metal, featureless and cold. Death walks '
+        'both worlds freely and answers to no prayer — but Death notices '
+        'those who carry artifacts of the divine. This ring ensures you '
+        'are noticed in return.',
     type: ItemType.accessory,
     rarity: Rarity.epic,
     level: 40,
@@ -736,50 +871,58 @@ final List<Item> allItems = [
     magic: 25,
     health: 80,
     effect:
-        'Demon Heart: +10% to all damage. Immune to charm and mind control effects.',
+        'Death Marked: +10% to all damage. Immune to instant-death and charm effects.',
   ),
 
+  // ── acc_010 · FOREST · Vaelithi / Seylith ────────────
   const Item(
     id: 'acc_010',
-    name: 'Crown of Thorns',
+    name: 'Seylith\'s Moonstone Brooch',
     description:
-        'A circlet of blackened iron thorns that bites into the brow. '
-        'Blood runs freely, but with it comes terrible, holy power.',
+        'A brooch of elvish craft set with a moonstone that holds four '
+        'centuries of light — one for each year of Queen Seylith the '
+        'Undying\'s reign. The Vaelithi do not part with these. That it '
+        'exists outside the Thornwall means someone defected or died.',
     type: ItemType.accessory,
     rarity: Rarity.epic,
     level: 50,
     price: 18200,
-    attack: 30,
     magic: 30,
     defense: 15,
-    health: -30,
+    agility: 20,
     effect:
-        'Martyrdom: lose 2% HP per turn. Gain +25% to all damage dealt. Healing spells cost 50% less.',
+        'Undying Light: regenerate 3% HP per turn. +20% resistance to dark and corruption effects.',
   ),
 
+  // ── acc_011 · CAVE · Warden Bones ────────────────────
   const Item(
     id: 'acc_011',
-    name: 'Ring of the Blood Moon',
+    name: 'Warden Bone Bracers',
     description:
-        'A signet ring that glows crimson during lunar events. '
-        'Its power waxes and wanes, but at its peak, the wearer becomes something inhuman.',
+        'Bracers carved from the bones of ancient wardens — the '
+        'originals who chained the titans and sealed the demons. The '
+        'Ossborn grafted these bones into themselves. These bracers '
+        'carry what the Ossborn chose not to keep.',
     type: ItemType.accessory,
     rarity: Rarity.epic,
     level: 60,
     price: 21700,
-    attack: 35,
-    agility: 30,
-    magic: 20,
+    defense: 30,
+    attack: 25,
+    agility: 25,
     effect:
-        'Blood Moon Frenzy: ATK and AGI increase by 20% at night. Critical hits heal for 8% max HP.',
+        'Warden\'s Reflex: +18% evasion. Automatically counter-attack once per turn when dodging.',
   ),
 
+  // ── acc_012 · RUINS · Nameless Choir ──────────────────
   const Item(
     id: 'acc_012',
-    name: 'Ouroboros Circlet',
+    name: 'Choir Silence Pendant',
     description:
-        'A serpent of dark metal eating its own tail, worn upon the brow. '
-        'Death and rebirth spiral endlessly within its coils.',
+        'A pendant that generates a sphere of absolute silence — crafted '
+        'by a Tithebound elder who retained enough awareness to '
+        'understand what the Nameless Choir does. The silence is not '
+        'peaceful. It is the absence of the sound that unmakes you.',
     type: ItemType.accessory,
     rarity: Rarity.mythic,
     level: 70,
@@ -788,98 +931,121 @@ final List<Item> allItems = [
     health: 120,
     defense: 25,
     effect:
-        'Eternal Cycle: upon dying, revive once with 30% HP. All cooldowns reset on revival.',
+        'Silent Ward: immune to all sound-based and mind-affecting attacks. Once per battle, negate a killing blow and heal 25% HP.',
   ),
 
+  // ── acc_013 · GLOBAL · Firstborn Gods ─────────────────
   const Item(
     id: 'acc_013',
-    name: 'Soul Chain of the Lich',
+    name: 'Firstborn\'s Tear',
     description:
-        'A chain of soul-forged links connecting the wearer to a hidden phylactery. '
-        'As long as the chain holds, death is merely an inconvenience.',
+        'A crystallized tear shed during the Sundering — from which of '
+        'the three surviving gods, no scholar agrees. The Radiant One '
+        'wept for the sun. The Deep Mother wept for the earth. Death, '
+        'eldest of all, does not weep — but something fell from its face.',
     type: ItemType.accessory,
     rarity: Rarity.mythic,
     level: 80,
     price: 61500,
     magic: 55,
-    defense: 35,
+    attack: 30,
     health: 150,
     effect:
-        'Phylactery Bond: reduce all damage by 10%. Once per battle, negate a killing blow and heal 50% HP.',
+        'Divine Sorrow: all damage +15%. Healing spells cost 40% less. Immune to divine-type damage.',
   ),
 
+  // ── acc_014 · FOREST · Bloom Rite ─────────────────────
   const Item(
     id: 'acc_014',
-    name: 'Eye of the Abyss',
+    name: 'Crown of the Bloom Rite',
     description:
-        'You gazed into the Abyss, and the Abyss gazed back — '
-        'then blinked. Now you carry its eye, and nothing is hidden from you.',
+        'The crown formed in the root-hollows of the World Tree during '
+        'the Bloom Rite — Vaelithi succession\'s ultimate trial. '
+        'Candidates descend and return changed, or don\'t return at all. '
+        'This crown was found beside someone who didn\'t return.',
     type: ItemType.accessory,
     rarity: Rarity.mythic,
     level: 90,
     price: 69750,
-    magic: 70,
-    attack: 30,
+    attack: 40,
+    magic: 40,
     agility: 30,
     effect:
-        'Abyssal Gaze: all enemy stats are visible. Spells ignore magic resistance. +20% crit chance.',
+        'Root-Hollow Crown: all stats +8%. Below 25% HP, regenerate 5% max HP per turn and gain +20% to all damage.',
   ),
 
+  // ── acc_015 · CAVE · Deep Mother ──────────────────────
   const Item(
     id: 'acc_015',
-    name: 'The First Sin',
+    name: 'Eye of the Deep Mother',
     description:
-        'The original transgression — the moment the first mortal defied the gods — '
-        'crystallized into a black diamond. To wear it is to carry the weight of all rebellion.',
+        'Not a metaphor. Not a gem shaped like an eye. An eye — milky '
+        'white, the size of a fist, warm and wet, and it blinks. Pulled '
+        'from a crevice near the Heart of the Mountain where the rock '
+        'thinned enough to see through. The Deep Mother sees through it '
+        'still.',
     type: ItemType.accessory,
     rarity: Rarity.mythic,
     level: 100,
     price: 78000,
-    attack: 50,
-    magic: 50,
-    agility: 50,
-    health: 100,
+    magic: 70,
+    attack: 40,
+    agility: 30,
     effect:
-        'Primordial Defiance: immune to divine damage. All stats +10%. Damage dealt can never be reduced below 50%.',
+        'All-Seeing: all enemy stats visible. Spells ignore magic resistance. +20% crit chance. The Deep Mother watches through you.',
   ),
 
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
   //  R E L I C S
-  // ─────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════
+
+  // ── rel_001 · GLOBAL · Binding Seals ──────────────────
   const Item(
     id: 'rel_001',
-    name: 'Broken Hourglass Shard',
+    name: 'Fractured Binding Seal',
     description:
-        'A fragment of an hourglass that once measured the lifespan of a god. '
-        'Time stutters in its presence.',
+        'A broken ward-stone — one of thousands scattered across the '
+        'crumbling ancient prisons. Druids tend the World Tree\'s roots, '
+        'clerics maintain the binding seals, and heroes carry blades '
+        'into the dark. You carry a piece of what they\'re all fighting '
+        'to hold together.',
     type: ItemType.relic,
     rarity: Rarity.common,
     level: 1,
     price: 100,
     agility: 3,
-    effect: 'Time Stutter: 5% chance to gain an extra action per turn.',
+    effect: 'Faint Resonance: 5% chance to gain an extra action per turn.',
   ),
 
+  // ── rel_002 · CAVE · Upper Hollows ───────────────────
   const Item(
     id: 'rel_002',
-    name: 'Whispering Skull',
+    name: 'Hollows Bioluminescent Spore',
     description:
-        'A charred human skull that mutters secrets of the recently dead. '
-        'Press your ear close — if you dare.',
+        'A living fungal cluster from the upper Hollows, pulsing with '
+        'the Deep Mother\'s ambient influence. It lights dark places '
+        'with a sickly green glow and recoils from heat, as if the Deep '
+        'Mother disapproves of the Radiant One\'s fire.',
     type: ItemType.relic,
     rarity: Rarity.common,
     level: 5,
     price: 300,
     magic: 6,
-    effect: 'Dead Whispers: reveals enemy weaknesses at the start of battle.',
+    health: 5,
+    effect:
+        'Deep Glow: reveals enemy positions in darkness. +5% magic damage in underground areas.',
   ),
 
+  // ── rel_003 · RUINS · Scholar Veyra ──────────────────
   const Item(
     id: 'rel_003',
-    name: 'Candle of the Vigil',
+    name: 'Scholar Veyra\'s Field Journal',
     description:
-        'A black wax candle with a pale flame that never extinguishes. '
-        'It was lit at the funeral of the world and has burned since.',
+        'A battered journal belonging to Scholar Veyra, who catalogs the '
+        'upper Valdris ruins alongside Historian Korval. Her notes are '
+        'meticulous but confused — measurements that contradict '
+        'themselves, sketches of rooms larger inside than out. She calls '
+        'it "residual enchantment." She is wrong.',
     type: ItemType.relic,
     rarity: Rarity.common,
     level: 10,
@@ -887,48 +1053,57 @@ final List<Item> allItems = [
     magic: 8,
     health: 20,
     effect:
-        'Vigil Light: regenerate 2% HP per turn. Undead enemies deal 10% less damage.',
+        'Scholar\'s Record: +10% XP from all encounters. Reveals hidden lore in Ruins areas.',
   ),
 
+  // ── rel_004 · FOREST · Fey Courts ────────────────────
   const Item(
     id: 'rel_004',
-    name: 'Tome of Forbidden Whispers',
+    name: 'Thornveil Wisp Lantern',
     description:
-        'Pages inscribed in blood that shifts and rewrites itself. '
-        'Reading it teaches dark arts — but each page read takes something from you.',
+        'A cage of living vines containing a captured wisp from the Fey '
+        'Courts. The old pacts that bind the fey predate even the elves '
+        '— this wisp agreed to serve in exchange for protection from '
+        'what happens when those pacts finally break.',
     type: ItemType.relic,
     rarity: Rarity.rare,
     level: 15,
     price: 2400,
     magic: 22,
-    health: -10,
+    agility: 8,
     effect:
-        'Forbidden Knowledge: spell damage +20%. Learning new spells costs 30% less XP.',
+        'Wisp Light: reveals hidden paths and treasures. +10% evasion against ambushes.',
   ),
 
+  // ── rel_005 · GLOBAL · The Hollow ────────────────────
   const Item(
     id: 'rel_005',
-    name: 'Chalice of Sorrow',
+    name: 'Shard of the Hollow',
     description:
-        'A goblet that endlessly fills with the tears of the mourning. '
-        'Drinking from it grants visions of loss — and terrible clarity.',
+        'A crystallized fragment of the Hollow itself — void-stuff '
+        'hardened into something almost physical. It unmakes what it '
+        'touches slowly: wood greys, metal corrodes, skin numbs. The '
+        'Hollow spreads not as invasion but as erosion. This is what '
+        'erosion looks like held in your hand.',
     type: ItemType.relic,
     rarity: Rarity.rare,
     level: 20,
     price: 3150,
     magic: 18,
-    health: 50,
-    defense: 8,
+    attack: 10,
     effect:
-        'Grief\'s Clarity: +15% spell accuracy. After an ally falls, gain +25% all stats for 3 turns.',
+        'Void Erosion: attacks permanently reduce enemy DEF by 3% per hit (stacks up to 5x). Wielder takes 1% max HP per turn.',
   ),
 
+  // ── rel_006 · CAVE · Forge Spirit ────────────────────
   const Item(
     id: 'rel_006',
-    name: 'Petrified Demon Heart',
+    name: 'Forge Spirit\'s Ember',
     description:
-        'A heart of stone that still beats with malevolent energy. '
-        'Hold it long enough and you\'ll feel your own heart try to match its rhythm.',
+        'A fragment of living flame from the Forge Spirit — the ancient '
+        'entity that tends the weakening bindings in the Hollows. It '
+        'considers the Ossborn tools, not allies. It considers you less '
+        'than that. But the ember burns, and it burns true.',
     type: ItemType.relic,
     rarity: Rarity.rare,
     level: 25,
@@ -936,15 +1111,20 @@ final List<Item> allItems = [
     attack: 15,
     magic: 15,
     health: 40,
-    effect: 'Demonic Pulse: every 3rd attack deals 50% bonus dark damage.',
+    effect:
+        'Spirit Flame: every 3rd attack deals 50% bonus fire damage. Immune to burn effects.',
   ),
 
+  // ── rel_007 · RUINS · Valdris Wards ──────────────────
   const Item(
     id: 'rel_007',
-    name: 'Mirror of Lost Souls',
+    name: 'Valdris Ward-Stone Shard',
     description:
-        'A hand mirror that shows reflections of every soul that died in your vicinity. '
-        'The glass is always fogged with spectral breath.',
+        'A fragment of the protective wards that once shielded '
+        'Valdris — before Morvaine shattered them from within, or '
+        'Azrathar breached them from without. The histories disagree. '
+        'This shard hums at a frequency that makes your teeth ache, '
+        'and sometimes shows a kingdom that looks nothing like ruins.',
     type: ItemType.relic,
     rarity: Rarity.rare,
     level: 30,
@@ -952,65 +1132,82 @@ final List<Item> allItems = [
     magic: 25,
     defense: 15,
     effect:
-        'Soul Mirror: reflects 15% of magic damage back at the caster. Shows enemy spell cooldowns.',
+        'Ward Echo: reflects 15% of magic damage back at caster. +10% resistance to curse effects.',
   ),
 
+  // ── rel_008 · FOREST · World Tree Root ────────────────
   const Item(
     id: 'rel_008',
-    name: 'Black Feather of Morrigan',
+    name: 'World Tree Root Heart',
     description:
-        'A single raven\'s feather, impossibly dark, from the war goddess herself. '
-        'Battles fought in its presence are longer, bloodier, and more rewarding.',
+        'A gnarled heartwood node from deep within the World Tree\'s '
+        'root system — where the roots pierce the underworld. Something '
+        'stirs in those root-hollows that the Vaelithi will not name: '
+        'a blight that withers their trees from the inside. This heart '
+        'still pulses with life, but the edges are grey.',
     type: ItemType.relic,
     rarity: Rarity.epic,
     level: 35,
     price: 12950,
-    attack: 20,
-    agility: 20,
-    magic: 20,
+    magic: 30,
+    health: 80,
+    defense: 10,
     effect:
-        'War Goddess\'s Favor: +25% XP from combat. Critical hits have a 10% chance to instantly kill non-boss enemies.',
+        'Root Bond: regenerate 4% HP per turn. Nature spells deal 25% bonus damage. Warns of corruption nearby.',
   ),
 
+  // ── rel_009 · CAVE · The Devourer ────────────────────
   const Item(
     id: 'rel_009',
-    name: 'Lantern of the Ferryman',
+    name: 'Devourer\'s Prison Keystone',
     description:
-        'The ghostly lantern that once guided dead souls across the River Styx. '
-        'It illuminates paths no living eye should see.',
+        'A keystone from the deepest vault in the Hollows — the prison '
+        'that holds the Devourer, something that predates even the gods. '
+        'The Forge Spirit tends this binding above all others. The '
+        'Ossborn refuse to approach it. The keystone is warm, and if '
+        'you press your ear to it, you hear breathing.',
     type: ItemType.relic,
     rarity: Rarity.epic,
     level: 40,
     price: 14700,
+    attack: 20,
     magic: 30,
-    agility: 15,
     health: 60,
     effect:
-        'Ferryman\'s Light: reveals all hidden enemies and traps. +15% evasion. Opens sealed spirit doors.',
+        'Abyssal Lock: +15% damage against ancient and divine enemies. Grants a shield (10% max HP) at the start of each battle.',
   ),
 
+  // ── rel_010 · GLOBAL · Titans ────────────────────────
   const Item(
     id: 'rel_010',
-    name: 'Void Shard',
+    name: 'Titan\'s Shackle Link',
     description:
-        'A piece of literal nothingness — a hole in reality shaped like a crystal. '
-        'Staring into it, you see forever, and forever stares back hungry.',
+        'A single link from the chains forged during the Sundering to '
+        'bind the titans in their prisons. The chains were made to hold '
+        'gods. A single link still carries that purpose — when held, you '
+        'feel the weight of holding something immeasurably powerful in '
+        'place.',
     type: ItemType.relic,
     rarity: Rarity.epic,
     level: 50,
     price: 18200,
-    magic: 40,
-    attack: 15,
+    defense: 25,
+    attack: 20,
+    magic: 20,
     effect:
-        'Void Rift: spells have a 10% chance to open a void rift dealing 200% magic damage. Immune to Void damage.',
+        'Titan\'s Weight: immune to knockback and displacement. +15% damage to targets larger than the wielder.',
   ),
 
+  // ── rel_011 · RUINS · Nameless Choir ──────────────────
   const Item(
     id: 'rel_011',
-    name: 'Necronomicon Fragment',
+    name: 'Nameless Choir Echo',
     description:
-        'Tattered pages from the Book of the Dead, bound in skin that weeps. '
-        'The text rearranges itself to teach you what you most desire — and most fear.',
+        'A tuning fork that vibrates at the exact frequency of the '
+        'Nameless Choir — the sound a dimensional wound makes when it '
+        'refuses to close. Prolonged exposure strips memory: first '
+        'small things, then larger ones. Holding this, you hear the '
+        'first note. It sounds like something you forgot.',
     type: ItemType.relic,
     rarity: Rarity.epic,
     level: 60,
@@ -1018,15 +1215,19 @@ final List<Item> allItems = [
     magic: 55,
     health: 80,
     effect:
-        'Necromancy: summon a Skeletal Servant once per battle (stats = 30% of yours). Dark spells cost 40% less.',
+        'Memory Thief: spells have 10% chance to strip one random buff from the target. Dark spells deal 30% bonus damage. Costs 1% max HP per spell cast.',
   ),
 
+  // ── rel_012 · FOREST · Verdant Court ──────────────────
   const Item(
     id: 'rel_012',
-    name: 'Heart of the World Tree',
+    name: 'Heart of the Verdant Court',
     description:
-        'The corrupted core of Yggdrasil — the great tree that once connected all realms. '
-        'It beats with a sickly green pulse, leaking primordial energy.',
+        'The emerald core of Vaelith\'s governance — a living gemstone '
+        'grown within the throne of the Verdant Court over centuries. '
+        'It contains the accumulated will of every Vaelithi monarch who '
+        'passed the Bloom Rite. Queen Seylith sat beside it for four '
+        'hundred years. The gem remembers every one of them.',
     type: ItemType.relic,
     rarity: Rarity.mythic,
     level: 70,
@@ -1035,15 +1236,19 @@ final List<Item> allItems = [
     health: 200,
     defense: 30,
     effect:
-        'World Root: regenerate 5% max HP per turn. All nature spells deal double damage. Immune to rot and decay.',
+        'Verdant Will: regenerate 5% max HP per turn. Nature and healing effects deal double. Immune to corruption and decay.',
   ),
 
+  // ── rel_013 · CAVE · Deep Mother's Heart ──────────────
   const Item(
     id: 'rel_013',
-    name: 'Ark of Damned Souls',
+    name: 'Deep Mother\'s Heartstone',
     description:
-        'A small iron chest containing a thousand screaming spirits compressed into a singularity of agony. '
-        'Opening it is inadvisable. Carrying it is worse.',
+        'A fragment of the Heart of the Mountain itself — the living '
+        'organ of stone and magma that scholars believe is the Deep '
+        'Mother\'s own heart, still beating after the Sundering. It '
+        'pulses in your hand with a rhythm slower than any mortal heart, '
+        'and the ground trembles in sympathy.',
     type: ItemType.relic,
     rarity: Rarity.mythic,
     level: 80,
@@ -1052,15 +1257,19 @@ final List<Item> allItems = [
     attack: 30,
     health: 100,
     effect:
-        'Soul Storm: once per battle, release all souls for AoE damage equal to 300% MAG. Enemies hit are Feared for 2 turns.',
+        'Earthen Fury: once per battle, call a tremor dealing AoE damage equal to 300% MAG. Enemies hit lose 20% DEF for 3 turns. Immune to earth and magma damage.',
   ),
 
+  // ── rel_014 · RUINS · Severance Catalyst ──────────────
   const Item(
     id: 'rel_014',
-    name: 'Philosopher\'s Bane',
+    name: 'Severance Catalyst',
     description:
-        'The antithesis of the Philosopher\'s Stone — it does not transmute lead to gold, '
-        'but unmakes matter entirely. To hold it is to hold annihilation.',
+        'The crystalline focus through which the Valdris Court Arcanists '
+        'channeled the Severance — the spell that folded an entire '
+        'kingdom into a dimension that should not exist. The Arcanists '
+        'were consumed. The catalyst survived. It still wants to fold '
+        'things.',
     type: ItemType.relic,
     rarity: Rarity.mythic,
     level: 90,
@@ -1069,16 +1278,20 @@ final List<Item> allItems = [
     attack: 40,
     agility: 20,
     effect:
-        'Annihilate: attacks permanently reduce enemy DEF by 5% (stacks infinitely). Spells ignore shields.',
+        'Severance: attacks permanently reduce enemy stats by 5% (stacks). Spells ignore shields. Once per battle, banish one enemy ability.',
   ),
 
+  // ── rel_015 · GLOBAL · The Sundering Wound ────────────
   const Item(
     id: 'rel_015',
-    name: 'The Void Throne Shard',
+    name: 'The Sundering Wound',
     description:
-        'A fragment of the Seat of Oblivion — the throne upon which Nothing sits. '
-        'Whoever possesses it commands a sliver of absolute entropy. '
-        'The universe bends to avoid its touch.',
+        'Not an object — a scar in reality itself, contained in a '
+        'sphere of binding glass made by the first wardens. Inside, you '
+        'see the original wound: the crack the Firstborn Gods tore in '
+        'creation. It has never healed. The Hollow seeps from wounds '
+        'like this. Carrying it is carrying the reason the world is '
+        'broken.',
     type: ItemType.relic,
     rarity: Rarity.mythic,
     level: 100,
@@ -1088,7 +1301,7 @@ final List<Item> allItems = [
     defense: 40,
     health: 200,
     effect:
-        'Oblivion\'s Will: all damage +20%. Once per battle, erase one enemy ability permanently. Immune to all debuffs.',
+        'World Wound: all damage +20%. Once per battle, open a rift that erases one enemy ability permanently. Immune to all debuffs. Nearby enemies lose 3% stats per turn.',
   ),
 ];
 

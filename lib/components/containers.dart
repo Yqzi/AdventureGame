@@ -53,10 +53,7 @@ class InventorySlot extends StatelessWidget {
         children: [
           item == null
               ? FaIcon(icon, color: iconColor, size: iconSize)
-              : Text(
-                  item!.type.icon,
-                  style: TextStyle(color: iconColor, fontSize: iconSize),
-                ),
+              : Image.asset(item!.imagePath, fit: BoxFit.contain),
           if (label != null) const SizedBox(height: 8),
           if (label != null)
             Text(

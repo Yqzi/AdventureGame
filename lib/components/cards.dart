@@ -208,9 +208,9 @@ class ShopCardModel extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: Center(
-                      child: Text(
-                        item.type.icon,
-                        style: const TextStyle(fontSize: 44),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Image.asset(item.imagePath, fit: BoxFit.contain),
                       ),
                     ),
                   ),

@@ -360,10 +360,7 @@ class _InventoryItemCell extends StatelessWidget {
             children: [
               Expanded(
                 child: Center(
-                  child: Text(
-                    item.type.icon,
-                    style: const TextStyle(fontSize: 33),
-                  ),
+                  child: Image.asset(item.imagePath, fit: BoxFit.contain),
                 ),
               ),
               Column(
@@ -371,7 +368,7 @@ class _InventoryItemCell extends StatelessWidget {
                   Text(
                     item.name,
                     textAlign: TextAlign.center,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.epilogue(
                       color: item.rarity.color,
@@ -456,7 +453,12 @@ class _ItemDetailSheet extends StatelessWidget {
           // ── Name + rarity ──
           Row(
             children: [
-              Text(item.type.icon, style: const TextStyle(fontSize: 24)),
+              Image.asset(
+                item.imagePath,
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
