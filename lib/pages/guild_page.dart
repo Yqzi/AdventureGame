@@ -319,9 +319,9 @@ class _GuildPageState extends State<GuildPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.hourglass_top_rounded),
+            icon: const Icon(Icons.diamond_outlined),
             color: const Color(0xFFE3D5B8),
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, '/subscription'),
           ),
           IconButton(
             icon: const Icon(Icons.settings),

@@ -20,40 +20,50 @@ class AppRouter {
   static const settingsPage = '/settings';
   static const subscription = '/subscription';
 
+  static Route<dynamic> _noAnim(Widget page, RouteSettings settings) {
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+    );
+  }
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case '/':
       case start:
-        return MaterialPageRoute(builder: (_) => const StartPage());
+        return _noAnim(const StartPage(), settings);
       case map:
-        return MaterialPageRoute(builder: (_) => const MapPage());
+        return _noAnim(const MapPage(), settings);
       case inventory:
-        return MaterialPageRoute(builder: (_) => const InventoryPage());
+        return _noAnim(const InventoryPage(), settings);
       case game:
         final Map<String, dynamic> args =
             settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-          builder: (context) {
-            return GamePage(
-              details: args['details'],
-              resume: args['resume'] == true,
-              questId: args['questId'] as String?,
-            );
-          },
+        return _noAnim(
+          GamePage(
+            details: args['details'],
+            resume: args['resume'] == true,
+            questId: args['questId'] as String?,
+          ),
+          settings,
         );
       case guild:
-        return MaterialPageRoute(builder: (_) => GuildPage());
+        return _noAnim(GuildPage(), settings);
       case shop:
-        return MaterialPageRoute(builder: (_) => const ShopPage());
+        return _noAnim(const ShopPage(), settings);
       case worldExplore:
-        return MaterialPageRoute(builder: (_) => const WorldExplorationPage());
+        return _noAnim(const WorldExplorationPage(), settings);
       case settingsPage:
-        return MaterialPageRoute(builder: (_) => const SettingsPage());
+        return _noAnim(const SettingsPage(), settings);
       case subscription:
-        return MaterialPageRoute(builder: (_) => const SubscriptionPage());
+        return _noAnim(const SubscriptionPage(), settings);
       default:
-        return MaterialPageRoute(
-          builder: (_) =>
-              const Scaffold(body: Center(child: Text('404 – Page not found'))),
+        return _noAnim(
+          const Scaffold(body: Center(child: Text('404 – Page not found'))),
+          settings,
         );
     }
   }

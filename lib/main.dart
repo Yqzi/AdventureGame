@@ -35,6 +35,12 @@ class MyApp extends StatelessWidget {
         title: 'Questborne',
         initialRoute: AppRouter.start,
         onGenerateRoute: AppRouter.onGenerateRoute,
+        builder: (context, child) {
+          return ScrollConfiguration(
+            behavior: const _NoStretchScrollBehavior(),
+            child: child!,
+          );
+        },
       ),
     );
   }
@@ -54,5 +60,23 @@ class _MyHomePageState extends State<MyHomePage> {
     return const Scaffold(
       body: Center(child: Text('Home Page')), // Placeholder
     );
+  }
+}
+
+class _NoStretchScrollBehavior extends ScrollBehavior {
+  const _NoStretchScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
   }
 }

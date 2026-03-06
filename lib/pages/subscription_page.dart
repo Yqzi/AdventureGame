@@ -17,15 +17,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionService _subService = SubscriptionService();
   bool _loading = true;
   late UserSubscription _subscription;
-  SubscriptionTier _selectedTier = SubscriptionTier.free;
 
   // ── Styling constants ─────────────────────────────────────
 
   static const _bgColor = Color.fromARGB(255, 41, 26, 20);
   static const _cardBase = Color.fromARGB(255, 30, 18, 14);
   static const _creamText = Color(0xFFE3D5B8);
-  static const _goldAccent = Color(0xFFD4A846);
   static const _champGlow = Color(0xFFB44AFF);
+
+  // Muted, warm accent colors
+  static const _freeAccent = Color(0xFF8A7E6E);
+  static const _advAccent = Color(0xFFC2955A);
+  static const _champAccent = Color(0xFF9B6ED4);
 
   @override
   void initState() {
@@ -38,7 +41,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     if (mounted) {
       setState(() {
         _subscription = sub;
-        _selectedTier = sub.effectiveTier;
         _loading = false;
       });
     }
@@ -53,7 +55,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Scaffold(
       backgroundColor: _bgColor,
       appBar: TopBar(
-        title: 'SUBSCRIPTION',
+        title: 'PLANS',
         textStyle: GoogleFonts.epilogue(
           color: _creamText,
           fontSize: 20,
@@ -72,44 +74,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               child: CircularProgressIndicator(color: redText, strokeWidth: 2),
             )
           : ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               children: [
-                // ── Current plan badge ──────────────────────
-                _currentPlanBadge(),
-                const SizedBox(height: 28),
+                // ── Credits overview ────────────────────────
+                _creditsSection(),
+                const SizedBox(height: 32),
 
                 // ── Tier cards ──────────────────────────────
                 ..._buildTierCards(),
-
-                const SizedBox(height: 28),
-
-                // ── FAQ ─────────────────────────────────────
-                _sectionHeader('FAQ'),
-                const SizedBox(height: 12),
-                _faqTile(
-                  'How do credits work?',
-                  'Each quest turn (player action + AI response) costs 1 credit. '
-                      'Credits reset on the 1st of every month.',
-                ),
-                const SizedBox(height: 8),
-                _faqTile(
-                  'What is story memory?',
-                  'Story memory determines how much of the conversation the AI '
-                      'remembers. On the free tier, older turns are summarised to '
-                      'save space. Higher tiers keep more — or all — of the story intact.',
-                ),
-                const SizedBox(height: 8),
-                _faqTile(
-                  'Can I cancel anytime?',
-                  'Yes. Your perks stay active until the end of the billing '
-                      'period, then it reverts to Free.',
-                ),
-                const SizedBox(height: 8),
-                _faqTile(
-                  'What AI model do I get?',
-                  'Free and Adventurer use Gemini 2.5 Flash — fast and creative. '
-                      'Champion unlocks Gemini 2.5 Pro for richer, more detailed narratives.',
-                ),
 
                 const SizedBox(height: 40),
               ],
@@ -118,74 +90,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   // ─────────────────────────────────────────────────────────
-  //  CURRENT PLAN BADGE
+  //  CREDITS SECTION
   // ─────────────────────────────────────────────────────────
 
-  Widget _currentPlanBadge() {
+  Widget _creditsSection() {
     final tier = _subscription.effectiveTier;
-    final accentColor = _accentFor(tier);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _cardBase,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.4)),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(_iconFor(tier), color: accentColor, size: 22),
-              const SizedBox(width: 10),
-              Text(
-                'CURRENT PLAN',
-                style: GoogleFonts.epilogue(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white54,
-                  letterSpacing: 2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            tier.label.toUpperCase(),
-            style: GoogleFonts.epilogue(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: accentColor,
-              letterSpacing: 1.5,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            tier.tagline,
-            style: GoogleFonts.epilogue(fontSize: 13, color: Colors.white60),
-          ),
-          const SizedBox(height: 16),
-
-          // Credits bar
-          _creditsBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _creditsBar() {
-    final used = _subscription.maxCredits - _subscription.creditsRemaining;
     final pct = _subscription.maxCredits > 0
-        ? used / _subscription.maxCredits
+        ? (_subscription.maxCredits - _subscription.creditsRemaining) /
+              _subscription.maxCredits
         : 0.0;
 
     return Column(
@@ -195,30 +107,52 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${_subscription.creditsRemaining} / ${_subscription.maxCredits} credits remaining',
+              '${_subscription.creditsRemaining}',
               style: GoogleFonts.epilogue(
-                fontSize: 12,
-                color: Colors.white70,
-                fontWeight: FontWeight.w600,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
-            Text(
-              'Resets ${_formatResetDate(_subscription.creditsResetAt)}',
-              style: GoogleFonts.epilogue(fontSize: 11, color: Colors.white38),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _accentFor(tier).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                tier.label,
+                style: GoogleFonts.epilogue(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: _accentFor(tier),
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 2),
+        Text(
+          'credits remaining of ${_subscription.maxCredits}',
+          style: GoogleFonts.epilogue(fontSize: 13, color: Colors.white38),
+        ),
+        const SizedBox(height: 14),
         ClipRRect(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: pct.clamp(0.0, 1.0),
-            minHeight: 8,
-            backgroundColor: Colors.white10,
+            minHeight: 4,
+            backgroundColor: Colors.white.withOpacity(0.06),
             valueColor: AlwaysStoppedAnimation(
-              pct > 0.85 ? redText : _accentFor(_subscription.effectiveTier),
+              pct > 0.85 ? redText : _accentFor(tier).withOpacity(0.6),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Resets ${_formatResetDate(_subscription.creditsResetAt)}',
+          style: GoogleFonts.epilogue(fontSize: 11, color: Colors.white24),
         ),
       ],
     );
@@ -248,232 +182,177 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   // ─────────────────────────────────────────────────────────
 
   List<Widget> _buildTierCards() {
-    return SubscriptionTier.values.map((tier) {
+    const order = [
+      SubscriptionTier.adventurer,
+      SubscriptionTier.champion,
+      SubscriptionTier.free,
+    ];
+    return order.map((tier) {
       final isCurrentTier = tier == _subscription.effectiveTier;
-      final isSelected = tier == _selectedTier;
       final accent = _accentFor(tier);
+      final isChampion = tier == SubscriptionTier.champion;
 
       return Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: GestureDetector(
-          onTap: () => setState(() => _selectedTier = tier),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? _cardBase.withOpacity(0.95)
-                  : _cardBase.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isSelected ? accent : Colors.white10,
-                width: isSelected ? 1.5 : 0.5,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: accent.withOpacity(0.12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : [],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(_iconFor(tier), color: accent, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          tier.label.toUpperCase(),
-                          style: GoogleFonts.epilogue(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: accent,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isChampion
+                ? _champGlow.withOpacity(0.06)
+                : _cardBase.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    if (isCurrentTier)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: accent.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: accent.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          'CURRENT',
-                          style: GoogleFonts.epilogue(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: accent,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  tier.tagline,
-                  style: GoogleFonts.epilogue(
-                    fontSize: 12,
-                    color: Colors.white54,
+                    child: Icon(_iconFor(tier), color: accent, size: 18),
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                // Price
-                Text(
-                  tier.priceLabel,
-                  style: GoogleFonts.epilogue(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Feature list
-                ...tier.features.map(
-                  (f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.check_rounded, color: accent, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            f,
-                            style: GoogleFonts.epilogue(
-                              fontSize: 13,
-                              color: Colors.white70,
-                              height: 1.3,
-                            ),
+                        Text(
+                          tier.label,
+                          style: GoogleFonts.epilogue(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                        Text(
+                          tier.tagline,
+                          style: GoogleFonts.epilogue(
+                            fontSize: 12,
+                            color: Colors.white38,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-
-                // Memory row with tappable info icon
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_rounded, color: accent, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${tier.memoryTag} Memory',
-                        style: GoogleFonts.epilogue(
-                          fontSize: 13,
-                          color: Colors.white70,
-                          height: 1.3,
-                        ),
+                  if (isCurrentTier)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
                       ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: () => _showMemoryInfo(tier),
-                        child: Icon(
-                          Icons.info_outline_rounded,
-                          size: 15,
-                          color: Colors.white38,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Subscribe button (only if not current)
-                if (!isCurrentTier && tier != SubscriptionTier.free) ...[
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => _handleSubscribe(tier),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'SUBSCRIBE',
+                        'Current',
                         style: GoogleFonts.epilogue(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: accent,
                         ),
                       ),
                     ),
-                  ),
+                  if (!isCurrentTier)
+                    Text(
+                      tier.priceLabel,
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white54,
+                      ),
+                    ),
                 ],
+              ),
+
+              const SizedBox(height: 18),
+
+              // Features — compact rows
+              _featureRow(
+                Icons.bolt_outlined,
+                '${tier.maxCredits} credits',
+                accent,
+              ),
+              const SizedBox(height: 8),
+              _featureRow(Icons.memory_outlined, tier.aiModelLabel, accent),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _showMemoryInfo(tier),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.psychology_outlined,
+                      color: accent.withOpacity(0.7),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${tier.memoryTag} memory',
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        color: Colors.white60,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 13,
+                      color: Colors.white24,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Upgrade button
+              if (!isCurrentTier && tier != SubscriptionTier.free) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: TextButton(
+                    onPressed: () => _handleSubscribe(tier),
+                    style: TextButton.styleFrom(
+                      backgroundColor: accent.withOpacity(0.12),
+                      foregroundColor: accent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      isChampion
+                          ? 'Upgrade to Champion'
+                          : 'Upgrade to Adventurer',
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       );
     }).toList();
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  FAQ
-  // ─────────────────────────────────────────────────────────
-
-  Widget _faqTile(String question, String answer) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _cardBase,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-          childrenPadding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom: 14,
-          ),
-          iconColor: Colors.white38,
-          collapsedIconColor: Colors.white24,
-          title: Text(
-            question,
-            style: GoogleFonts.epilogue(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          children: [
-            Text(
-              answer,
-              style: GoogleFonts.epilogue(
-                fontSize: 12,
-                color: Colors.white54,
-                height: 1.5,
-              ),
-            ),
-          ],
+  Widget _featureRow(IconData icon, String text, Color accent) {
+    return Row(
+      children: [
+        Icon(icon, color: accent.withOpacity(0.7), size: 16),
+        const SizedBox(width: 10),
+        Text(
+          text,
+          style: GoogleFonts.epilogue(fontSize: 13, color: Colors.white60),
         ),
-      ),
+      ],
     );
   }
 
@@ -487,14 +366,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: _cardBase,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          border: const Border(
-            top: BorderSide(color: Colors.white12, width: 0.5),
-            left: BorderSide(color: Colors.white12, width: 0.5),
-            right: BorderSide(color: Colors.white12, width: 0.5),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           child: Padding(
@@ -506,52 +380,49 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: Colors.white12,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Icon(Icons.psychology_outlined, color: accent, size: 32),
+                const SizedBox(height: 24),
+                Icon(Icons.psychology_outlined, color: accent, size: 28),
                 const SizedBox(height: 12),
                 Text(
-                  '${tier.memoryTag.toUpperCase()} MEMORY',
+                  '${tier.memoryTag} Memory',
                   style: GoogleFonts.epilogue(
                     fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: accent,
-                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white.withOpacity(0.85),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 Text(
                   tier.memoryExplanation,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.epilogue(
                     fontSize: 13,
-                    color: Colors.white60,
+                    color: Colors.white54,
                     height: 1.6,
                   ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
+                  height: 46,
+                  child: TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white10,
-                      foregroundColor: Colors.white70,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.06),
+                      foregroundColor: Colors.white60,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      elevation: 0,
                     ),
                     child: Text(
-                      'GOT IT',
+                      'Got it',
                       style: GoogleFonts.epilogue(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
                       ),
                     ),
                   ),
@@ -568,36 +439,21 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   //  HELPERS
   // ─────────────────────────────────────────────────────────
 
-  Widget _sectionHeader(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text,
-        style: GoogleFonts.epilogue(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: _creamText,
-          letterSpacing: 2,
-        ),
-      ),
-    );
-  }
-
   Color _accentFor(SubscriptionTier tier) {
     switch (tier) {
       case SubscriptionTier.free:
-        return Colors.white60;
+        return _freeAccent;
       case SubscriptionTier.adventurer:
-        return _goldAccent;
+        return _advAccent;
       case SubscriptionTier.champion:
-        return _champGlow;
+        return _champAccent;
     }
   }
 
   IconData _iconFor(SubscriptionTier tier) {
     switch (tier) {
       case SubscriptionTier.free:
-        return Icons.person_outline;
+        return Icons.explore_outlined;
       case SubscriptionTier.adventurer:
         return Icons.shield_outlined;
       case SubscriptionTier.champion:
@@ -606,102 +462,181 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _handleSubscribe(SubscriptionTier tier) {
-    // TODO: Integrate with platform IAP (RevenueCat / in_app_purchase).
-    // For now show a placeholder bottom sheet.
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _subscribePlaceholder(ctx, tier),
+      isScrollControlled: true,
+      builder: (ctx) => _planDurationSheet(ctx, tier),
     );
   }
 
-  Widget _subscribePlaceholder(BuildContext ctx, SubscriptionTier tier) {
+  Widget _planDurationSheet(BuildContext ctx, SubscriptionTier tier) {
     final accent = _accentFor(tier);
+    final monthly = tier.priceUsd;
+    final sixMonth = tier.priceForMonths(6);
+    final yearly = tier.priceForMonths(12);
+
     return Container(
       decoration: const BoxDecoration(
         color: _cardBase,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(
-          top: BorderSide(color: Colors.white12, width: 0.5),
-          left: BorderSide(color: Colors.white12, width: 0.5),
-          right: BorderSide(color: Colors.white12, width: 0.5),
-        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 24),
-              Icon(_iconFor(tier), color: accent, size: 48),
-              const SizedBox(height: 16),
               Text(
-                'UPGRADE TO ${tier.label.toUpperCase()}',
+                tier.label,
                 style: GoogleFonts.epilogue(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: accent,
-                  letterSpacing: 1.5,
-                  fontStyle: FontStyle.italic,
+                  color: Colors.white.withOpacity(0.9),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
-                tier.priceLabel,
-                style: GoogleFonts.epilogue(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'In-app purchases are coming soon.\n'
-                'This will connect to Apple / Google subscriptions.',
-                textAlign: TextAlign.center,
+                'Choose a plan',
                 style: GoogleFonts.epilogue(
                   fontSize: 13,
-                  color: Colors.white54,
-                  height: 1.5,
+                  color: Colors.white38,
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'GOT IT',
-                    style: GoogleFonts.epilogue(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
+
+              _planOption(
+                ctx: ctx,
+                accent: accent,
+                label: '1 Month',
+                price: monthly,
+                perMonth: monthly,
+              ),
+              const SizedBox(height: 10),
+
+              _planOption(
+                ctx: ctx,
+                accent: accent,
+                label: '6 Months',
+                price: sixMonth * 6,
+                perMonth: sixMonth,
+                badge: 'Save 15%',
+              ),
+              const SizedBox(height: 10),
+
+              _planOption(
+                ctx: ctx,
+                accent: accent,
+                label: '12 Months',
+                price: yearly * 12,
+                perMonth: yearly,
+                badge: 'Best deal',
+                highlighted: true,
+              ),
+
+              const SizedBox(height: 16),
+              Text(
+                'Payment processing coming soon.',
+                style: GoogleFonts.epilogue(
+                  fontSize: 11,
+                  color: Colors.white24,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _planOption({
+    required BuildContext ctx,
+    required Color accent,
+    required String label,
+    required double price,
+    required double perMonth,
+    String? badge,
+    bool highlighted = false,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(ctx),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: highlighted
+              ? accent.withOpacity(0.08)
+              : Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        label,
+                        style: GoogleFonts.epilogue(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badge,
+                            style: GoogleFonts.epilogue(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: accent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\$${perMonth.toStringAsFixed(2)} / mo',
+                    style: GoogleFonts.epilogue(
+                      fontSize: 12,
+                      color: Colors.white30,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '\$${price.toStringAsFixed(2)}',
+              style: GoogleFonts.epilogue(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: highlighted ? accent : Colors.white60,
+              ),
+            ),
+          ],
         ),
       ),
     );

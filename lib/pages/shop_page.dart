@@ -391,9 +391,9 @@ class ShopPage extends StatelessWidget {
             ),
             actions: [
               IconButton(
-                icon: const Icon(FontAwesomeIcons.coins),
-                color: redText,
-                onPressed: () {},
+                icon: const Icon(Icons.diamond_outlined),
+                color: const Color(0xFFE3D5B8),
+                onPressed: () => Navigator.pushNamed(context, '/subscription'),
               ),
               IconButton(
                 icon: const Icon(Icons.settings),

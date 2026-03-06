@@ -25,22 +25,22 @@ extension SubscriptionTierX on SubscriptionTier {
   String get label {
     switch (this) {
       case SubscriptionTier.free:
-        return 'The Forsaken';
+        return 'Wanderer';
       case SubscriptionTier.adventurer:
-        return 'The Blood-Sworn';
+        return 'Adventurer';
       case SubscriptionTier.champion:
-        return 'The Eldritch Weaver';
+        return 'Champion';
     }
   }
 
   String get tagline {
     switch (this) {
       case SubscriptionTier.free:
-        return 'The world owes you nothing';
+        return 'Begin your journey';
       case SubscriptionTier.adventurer:
-        return 'Bound by oath and blade';
+        return 'Deeper stories await';
       case SubscriptionTier.champion:
-        return 'The story bends to your will';
+        return 'The ultimate experience';
     }
   }
 
@@ -218,29 +218,24 @@ extension SubscriptionTierX on SubscriptionTier {
   /// Memory is rendered separately via [memoryTag] / [memoryExplanation].
   List<String> get features {
     switch (this) {
-      case SubscriptionTier.free:
-        return [
-          '$maxCredits credits / month',
-          aiModelLabel,
-          'Short, focused responses',
-          'Basic player tracking',
-        ];
       case SubscriptionTier.adventurer:
-        return [
-          '$maxCredits credits / month',
-          aiModelLabel,
-          'Longer, richer responses',
-          'Deep lore integration',
-          'Full player state tracking',
-        ];
+        return ['$maxCredits credits', aiModelLabel];
       case SubscriptionTier.champion:
-        return [
-          '$maxCredits credits / month',
-          aiModelLabel,
-          'Novel-quality prose',
-          'Butterfly-effect consequences',
-          'Elite storytelling AI',
-        ];
+        return ['$maxCredits credits', aiModelLabel];
+      case SubscriptionTier.free:
+        return ['$maxCredits credits', aiModelLabel];
+    }
+  }
+
+  /// Monthly price in USD for different billing periods.
+  double priceForMonths(int months) {
+    switch (months) {
+      case 6:
+        return priceUsd * 0.85; // ~15% off
+      case 12:
+        return priceUsd * 0.70; // ~30% off
+      default:
+        return priceUsd;
     }
   }
 
