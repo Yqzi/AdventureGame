@@ -200,6 +200,9 @@ class Player extends Equatable {
   final int questsCompleted;
   final int enemiesDefeated;
 
+  // ── Quest progression ──
+  final List<String> completedQuestIds;
+
   const Player({
     required this.id,
     required this.name,
@@ -221,6 +224,7 @@ class Player extends Equatable {
     this.currentLocation = 'Unknown',
     this.questsCompleted = 0,
     this.enemiesDefeated = 0,
+    this.completedQuestIds = const [],
   });
 
   // ─────────────────────────────────────────────────────────
@@ -436,6 +440,14 @@ class Player extends Equatable {
     return copyWith(questsCompleted: questsCompleted + 1);
   }
 
+  Player completeQuest(String questId) {
+    if (completedQuestIds.contains(questId)) return this;
+    return copyWith(
+      questsCompleted: questsCompleted + 1,
+      completedQuestIds: [...completedQuestIds, questId],
+    );
+  }
+
   Player incrementEnemiesDefeated() {
     return copyWith(enemiesDefeated: enemiesDefeated + 1);
   }
@@ -498,6 +510,7 @@ class Player extends Equatable {
     'currentLocation': currentLocation,
     'questsCompleted': questsCompleted,
     'enemiesDefeated': enemiesDefeated,
+    'completedQuestIds': completedQuestIds,
   };
 
   factory Player.fromJson(Map<String, dynamic> json) {
@@ -542,6 +555,11 @@ class Player extends Equatable {
       currentLocation: json['currentLocation'] as String? ?? 'Unknown',
       questsCompleted: json['questsCompleted'] as int? ?? 0,
       enemiesDefeated: json['enemiesDefeated'] as int? ?? 0,
+      completedQuestIds:
+          (json['completedQuestIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -570,6 +588,7 @@ class Player extends Equatable {
     String? currentLocation,
     int? questsCompleted,
     int? enemiesDefeated,
+    List<String>? completedQuestIds,
   }) {
     return Player(
       id: id ?? this.id,
@@ -592,6 +611,7 @@ class Player extends Equatable {
       currentLocation: currentLocation ?? this.currentLocation,
       questsCompleted: questsCompleted ?? this.questsCompleted,
       enemiesDefeated: enemiesDefeated ?? this.enemiesDefeated,
+      completedQuestIds: completedQuestIds ?? this.completedQuestIds,
     );
   }
 
@@ -617,6 +637,7 @@ class Player extends Equatable {
     currentLocation,
     questsCompleted,
     enemiesDefeated,
+    completedQuestIds,
   ];
 
   @override

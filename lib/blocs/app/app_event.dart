@@ -78,5 +78,10 @@ class SetPlayerNameEvent extends GameEvent {
   SetPlayerNameEvent(this.name);
 }
 
+class CompleteQuestEvent extends GameEvent {
+  final String questId;
+  CompleteQuestEvent(this.questId);
+}
+
 /// Reset player and all in-memory state (e.g. on account deletion / sign out).
 class ResetPlayerEvent extends GameEvent {}

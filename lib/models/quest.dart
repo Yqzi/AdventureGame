@@ -1,5 +1,3 @@
-import 'dart:math';
-
 // ─────────────────────────────────────────────────────────────
 //  QUEST DIFFICULTY
 // ─────────────────────────────────────────────────────────────
@@ -54,6 +52,7 @@ class Quest {
   final int recommendedLevel;
   final List<String> keyNPCs;
   final String failureCondition;
+  final List<String> loreKeys;
 
   const Quest({
     required this.id,
@@ -68,6 +67,7 @@ class Quest {
     required this.recommendedLevel,
     required this.failureCondition,
     this.keyNPCs = const [],
+    this.loreKeys = const [],
   });
 
   String get rewardLabel => '$goldReward Gold  ·  $xpReward XP';
@@ -83,60 +83,150 @@ class Quest {
     'reward': rewardLabel,
     'keyNPCs': keyNPCs,
     'failureCondition': failureCondition,
+    if (loreKeys.isNotEmpty) 'loreKeys': loreKeys,
   };
 
-  /// Pick 4 daily quests with a (2, 1, 1) location spread.
-  /// The "double" location rotates daily: Forest → Cave → Ruins.
-  /// Uses a day-based seed so the selection stays the same all day.
-  static List<Quest> dailyQuests({required int playerLevel, int count = 4}) {
-    final now = DateTime.now();
-    final daySeed = now.year * 10000 + now.month * 100 + now.day;
-    final rng = Random(daySeed);
+  // ───────────────────────────────────────────────────────────
+  //  QUEST PROGRESSION ORDER
+  // ───────────────────────────────────────────────────────────
+  //  Each set contains [Forest, Cave, Ruins].
+  //  All 3 quests must be completed before the next set unlocks.
+  //  Aligned by recommended level and narrative phase.
+  // ───────────────────────────────────────────────────────────
 
-    const locations = ['Forest', 'Cave', 'Ruins'];
-    // Rotate which location gets 2 quests each day
-    final doubleIndex = daySeed % 3;
-    final doubleLocation = locations[doubleIndex];
-    final singleLocations = [
-      locations[(doubleIndex + 1) % 3],
-      locations[(doubleIndex + 2) % 3],
-    ];
+  static const List<List<String>> progressionOrder = [
+    // ── Phase 1: First Steps (Lv 1–5) ──
+    [
+      'f_001',
+      'c_001',
+      'r_001',
+    ], // Goblin Camp · Cellar Dwellers · Haunted Barrow
+    [
+      'f_004',
+      'c_002',
+      'r_002',
+    ], // Missing Woodcutter · Glowing Depths · Vermin in Undercroft
+    [
+      'f_003',
+      'c_004',
+      'r_003',
+    ], // Poisoned Stream · Smuggler's Tunnel · Whispering Idol
+    ['f_002', 'c_005', 'r_004'], // Dire Wolves · Collapsed Shaft · Tomb Robbers
+    // ── Phase 2: Rising Action (Lv 5–10) ──
+    ['f_005', 'c_006', 'r_005'], // Bandit Ambush · Lurker Below · Restless Dead
+    ['f_006', 'c_007', 'r_006'], // Black Vine · First Trap · Sealed Library
+    // ── Phase 3: The Mystery Deepens (Lv 11–20) ──
+    [
+      'f_007',
+      'c_008',
+      'r_007',
+    ], // Fey Ambush · Mushroom Plague · Whispering Halls
+    [
+      'f_008',
+      'c_009',
+      'r_011',
+    ], // Vaelithi Deserter · Flesh Market · Shadow Stalker
+    [
+      'f_009',
+      'c_010',
+      'r_008',
+    ], // Beast of Thicket · Underground Arena · Grey Sentinels (first Tithebound)
+    // ── Phase 4: Mid-Game (Lv 20–28) ──
+    [
+      'f_010',
+      'c_011',
+      'r_009',
+    ], // Spider Nests · Bone Chime Corridor · Cursed Vault
+    [
+      'f_011',
+      'c_012',
+      'r_010',
+    ], // Verdant Terror · First Contact (Ossborn) · Plague Crypt
+    // ── Phase 5: Escalation (Lv 28–40) ──
+    [
+      'f_016',
+      'c_016',
+      'r_012',
+    ], // Thornwall Breach · Ward-Stone Thieves · Looping Corridor
+    [
+      'f_012',
+      'c_015',
+      'r_014',
+    ], // Crown of Thorns · Drake's Hoard · Sunken Sanctum
+    [
+      'f_014',
+      'c_013',
+      'r_016',
+    ], // Dragon's Hunting Ground · Prison of Echoes · The Wrong Room
+    // ── Phase 6: High Stakes (Lv 38–52) ──
+    [
+      'f_015',
+      'c_014',
+      'r_013',
+    ], // Orc War-Camp · Lava Veins · Tithebound Awakening
+    [
+      'f_013',
+      'c_017',
+      'r_015',
+    ], // Pyre Cult's Altar · Rite of Grafting · Cult of Valdris
+    // ── Phase 7: Deep Lore (Lv 55–65) ──
+    [
+      'f_017',
+      'c_020',
+      'r_017',
+    ], // Pale Root Incursion · Mad Ossborn · Tithebound War
+    [
+      'f_018',
+      'c_018',
+      'r_018',
+    ], // Shadows in Canopy · Void Rift · The Sound Returns
+    // ── Phase 8: Ancient Threats (Lv 68–78) ──
+    [
+      'f_019',
+      'c_019',
+      'r_019',
+    ], // Blight Beneath Vaelith · Titan's Chains · Elder's Confession
+    [
+      'f_020',
+      'c_023',
+      'r_020',
+    ], // God-Eater · Serpent of the Deep · Through the Choir
+    // ── Phase 9: Endgame (Lv 80–92) ──
+    [
+      'f_021',
+      'c_021',
+      'r_021',
+    ], // World Tree Burns · Devourer's Prison · Living Kingdom
+    [
+      'f_022',
+      'c_022',
+      'r_022',
+    ], // Verdant Court's Judgment · Demon Gate · Throne Knows Your Name
+    // ── Finale (Lv 100) ──
+    [
+      'f_023',
+      'c_024',
+      'r_023',
+    ], // Death's Grove · Heart of the Mountain · Severance Undone
+  ];
 
-    final low = (playerLevel - 10).clamp(1, 100);
-    final high = (playerLevel + 10).clamp(1, 100);
+  /// Returns the current set of 3 quests (one per location) based on
+  /// which quests the player has completed.
+  ///
+  /// Sets are defined by [progressionOrder]. All 3 quests in a set must
+  /// be completed before the next set unlocks.
+  static List<Quest> progressionQuests(Set<String> completedQuestIds) {
+    final questLookup = {for (final q in allQuests) q.id: q};
 
-    List<Quest> _pickFromLocation(String loc, int n) {
-      var pool = allQuests
-          .where(
-            (q) =>
-                q.location == loc &&
-                q.recommendedLevel >= low &&
-                q.recommendedLevel <= high,
-          )
-          .toList();
-
-      // Fallback: if not enough quests in level range, pick closest ones
-      if (pool.length < n) {
-        pool = allQuests.where((q) => q.location == loc).toList()
-          ..sort(
-            (a, b) => (a.recommendedLevel - playerLevel).abs().compareTo(
-              (b.recommendedLevel - playerLevel).abs(),
-            ),
-          );
+    for (final set in progressionOrder) {
+      final allDone = set.every((id) => completedQuestIds.contains(id));
+      if (!allDone) {
+        return set.map((id) => questLookup[id]!).toList();
       }
-
-      pool.shuffle(rng);
-      return pool.take(n).toList();
     }
 
-    final results = <Quest>[
-      ..._pickFromLocation(doubleLocation, 2),
-      ..._pickFromLocation(singleLocations[0], 1),
-      ..._pickFromLocation(singleLocations[1], 1),
-    ];
-
-    results.shuffle(rng);
-    return results;
+    // All sets completed — return the last set.
+    return progressionOrder.last.map((id) => questLookup[id]!).toList();
   }
 }
 
@@ -255,6 +345,7 @@ final List<Quest> allQuests = [
     xpReward: 85,
     recommendedLevel: 8,
     keyNPCs: ['Druid Theron'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The Black Vine\'s tendrils drag the player away, and the root-heart burrows deeper underground beyond reach.',
   ),
@@ -311,6 +402,7 @@ final List<Quest> allQuests = [
     xpReward: 120,
     recommendedLevel: 16,
     keyNPCs: ['Farmer Gregor'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The dire bear retreats to a new lair deeper in the thicket where it cannot be tracked.',
   ),
@@ -347,6 +439,7 @@ final List<Quest> allQuests = [
     xpReward: 140,
     recommendedLevel: 22,
     keyNPCs: ['Druid Theron'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The Verdant Terror\'s roots spread too deep and the bulb-core becomes unreachable underground.',
   ),
@@ -367,6 +460,7 @@ final List<Quest> allQuests = [
     xpReward: 190,
     recommendedLevel: 30,
     keyNPCs: ['Ranger Elara'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The dark crystal pulses and the treant\'s corruption spreads to the surrounding forest, sealing the grove forever.',
   ),
@@ -385,6 +479,7 @@ final List<Quest> allQuests = [
     xpReward: 300,
     recommendedLevel: 42,
     keyNPCs: ['High Pyromancer Vex', 'Spy Maren'],
+    loreKeys: ['hollows', 'deepMother'],
     failureCondition:
         'Vex completes the ritual and the pyre-altars ignite simultaneously, burning a scar through the outer Thornveil.',
   ),
@@ -494,6 +589,7 @@ final List<Quest> allQuests = [
     xpReward: 480,
     recommendedLevel: 70,
     keyNPCs: ['Caelen', 'Keeper of the World Tree'],
+    loreKeys: ['hollows', 'deepMother'],
     failureCondition:
         'The blight consumes the seal-stone entirely and burrows deeper into the World Tree\'s roots.',
   ),
@@ -514,6 +610,7 @@ final List<Quest> allQuests = [
     xpReward: 550,
     recommendedLevel: 78,
     keyNPCs: ['Last Cleric Soren'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The God-Eater consumes the last shrine and becomes too powerful to stop, leaving the forest godless.',
   ),
@@ -532,6 +629,7 @@ final List<Quest> allQuests = [
     xpReward: 700,
     recommendedLevel: 90,
     keyNPCs: ['Spirit of the World Tree'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The Hellfire Seed fully ignites and the World Tree collapses, destroying the heart of the Thornveil and severing the root network that sustains the forest.',
   ),
@@ -716,13 +814,14 @@ final List<Quest> allQuests = [
     objective:
         'Reach the source of the mushroom plague deep in the Hollows and destroy it.',
     aiObjective:
-        'A massive fungal heart pulses in a deep chamber, protected by toxic spore clouds and 4 fungal brutes. The player must reach the heart and destroy it (fire is most effective). Quest completes when the fungal heart is destroyed.',
+        'A massive fungal heart pulses in a deep chamber, protected by toxic spore clouds and 4 fungal brutes. The player must reach the heart and destroy it (fire is most effective). Herbalist Nessa, if present, recognises the spore-blight as kin to the corruption poisoning the forest streams above — "the same sickness, different roots." Quest completes when the fungal heart is destroyed.',
     location: 'Cave',
     difficulty: QuestDifficulty.perilous,
     goldReward: 500,
     xpReward: 120,
     recommendedLevel: 15,
     keyNPCs: ['Herbalist Nessa'],
+    loreKeys: ['worldTree'],
     failureCondition:
         'The fungal heart detonates a spore burst, infecting the entire tunnel system and driving out all miners.',
   ),
@@ -808,13 +907,14 @@ final List<Quest> allQuests = [
     objective:
         'Navigate the crumbling prison in the Hollows and reseal the binding before what\'s inside breaks free.',
     aiObjective:
-        'There are 4 broken ward-stones scattered through the prison corridors. The prisoner is an ancient demon sealed during the Sundering. An Ossborn elder watches from the shadows but will not help unless the player proves they understand the wards. The player must find and reactivate all 4 ward-stones by placing them back in their pedestals. Quest completes when the 4th ward-stone is placed and the binding reactivates.',
+        'There are 4 broken ward-stones scattered through the prison corridors. The prisoner is an ancient demon sealed during the Sundering. An Ossborn elder watches from the shadows but will not help unless the player proves they understand the wards. The elder may mutter that this is not the only wound the Sundering left — "there are other seals, in other places, failing the same way." The player must find and reactivate all 4 ward-stones by placing them back in their pedestals. Quest completes when the 4th ward-stone is placed and the binding reactivates.',
     location: 'Cave',
     difficulty: QuestDifficulty.suicidal,
     goldReward: 2000,
     xpReward: 300,
     recommendedLevel: 40,
     keyNPCs: ['Ossborn Elder'],
+    loreKeys: ['valdrisSeverance'],
     failureCondition:
         'The last ward-stone shatters and the ancient demon breaks free of the prison entirely.',
   ),
@@ -906,6 +1006,7 @@ final List<Quest> allQuests = [
     xpReward: 500,
     recommendedLevel: 65,
     keyNPCs: ['Ossborn Elder'],
+    loreKeys: ['valdrisSeverance'],
     failureCondition:
         'The rift stabilizes permanently and void creatures establish a beachhead in the deep Hollows.',
   ),
@@ -980,6 +1081,7 @@ final List<Quest> allQuests = [
     xpReward: 700,
     recommendedLevel: 88,
     keyNPCs: ['Forge Spirit'],
+    loreKeys: ['valdrisSeverance'],
     failureCondition:
         'The demon lord completes the gate\'s expansion and the demonic vanguard pours into the Hollows.',
   ),
@@ -1016,6 +1118,7 @@ final List<Quest> allQuests = [
     xpReward: 1000,
     recommendedLevel: 100,
     keyNPCs: ['Forge Spirit', 'Ossborn Elders'],
+    loreKeys: ['worldTree'],
     failureCondition:
         'The Heart fully awakens and the mountain begins to erupt from the inside out, collapsing every prison and seal in the Hollows.',
   ),
@@ -1158,6 +1261,7 @@ final List<Quest> allQuests = [
     xpReward: 100,
     recommendedLevel: 12,
     keyNPCs: ['Scholar Veyra'],
+    loreKeys: ['wardenCraft'],
     failureCondition:
         'The resonance bell cracks fully and releases a permanent psychic field over this section of the ruins.',
   ),
@@ -1169,13 +1273,14 @@ final List<Quest> allQuests = [
     objective:
         'Investigate the mysterious grey figures in the deeper Valdris ruins.',
     aiObjective:
-        'These are Tithebound — 3 of them patrol a section of the lower ruins in a repeating loop they cannot explain. They are hostile if the player enters their patrol path. They speak in broken fragments: "was not... a deal," "the sound... it takes." The player must either fight through them (they are resilient but slow) or find an alternate route around their patrol. Quest completes when the player passes through or clears the Tithebound patrol and reaches the chamber beyond, which contains a Valdris mural depicting a sky that appears to fold inward.',
+        'These are Tithebound — 3 of them patrol a section of the lower ruins in a repeating loop they cannot explain. They are hostile if the player enters their patrol path. They speak in broken fragments: "was not... a deal," "the sound... it takes." Scholar Veyra, if consulted, notes their compulsive guarding resembles descriptions of the Ossborn in the Hollows mining records — beings changed by proximity to something ancient. The player must either fight through them (they are resilient but slow) or find an alternate route around their patrol. Quest completes when the player passes through or clears the Tithebound patrol and reaches the chamber beyond, which contains a Valdris mural depicting a sky that appears to fold inward.',
     location: 'Ruins',
     difficulty: QuestDifficulty.perilous,
     goldReward: 550,
     xpReward: 130,
     recommendedLevel: 18,
     keyNPCs: ['Tithebound Sentinels'],
+    loreKeys: ['ossborn'],
     failureCondition:
         'The Tithebound force the player back and seal the corridor with a mechanism they shouldn\'t know how to operate.',
   ),
@@ -1212,6 +1317,7 @@ final List<Quest> allQuests = [
     xpReward: 160,
     recommendedLevel: 25,
     keyNPCs: ['Healer Senna'],
+    loreKeys: ['hollows'],
     failureCondition:
         'The plague miasma seeps to the surface, spreading the grey plague to the camp above.',
   ),
@@ -1253,6 +1359,7 @@ final List<Quest> allQuests = [
     xpReward: 190,
     recommendedLevel: 28,
     keyNPCs: ['Scholar Veyra'],
+    loreKeys: ['wardenCraft'],
     failureCondition:
         'The loop tightens and the corridors fold in on themselves, sealing the section permanently.',
   ),
@@ -1341,13 +1448,14 @@ final List<Quest> allQuests = [
     objective:
         'Navigate the Tithebound conflict in the deep ruins and reach the lowest accessible chamber.',
     aiObjective:
-        'Two Tithebound factions: 5 hostile and 3 passive. The hostile ones attack on sight. The passive ones will let the player pass if not threatened — one of them points deeper and whispers "don\'t go... deeper" but does not stop the player. The lowest accessible chamber contains a mural depicting a kingdom being pulled into the sky — but the sky is dark and the kingdom is intact, not destroyed. This contradicts everything historians believe about Valdris. Quest completes when the player sees the mural and returns alive.',
+        'Two Tithebound factions: 5 hostile and 3 passive. The hostile ones attack on sight. The passive ones will let the player pass if not threatened — one of them points deeper and whispers "don\'t go... deeper" but does not stop the player. The lowest accessible chamber contains a mural depicting a kingdom being pulled into the sky — but the sky is dark and the kingdom is intact, not destroyed. In the mural\'s background, a great tree and distant mountains are visible, suggesting whatever happened here touched more than just Valdris. This contradicts everything historians believe about Valdris. Quest completes when the player sees the mural and returns alive.',
     location: 'Ruins',
     difficulty: QuestDifficulty.suicidal,
     goldReward: 3500,
     xpReward: 400,
     recommendedLevel: 55,
     keyNPCs: ['Passive Tithebound'],
+    loreKeys: ['ossborn'],
     failureCondition:
         'The hostile Tithebound overwhelm the player and the passive ones seal the passage behind them.',
   ),

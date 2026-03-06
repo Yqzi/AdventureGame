@@ -1,15 +1,11 @@
-/// The Hollowed Codex — layered world lore injected into AI prompts
-/// for paid subscription tiers only.
+/// The Hollowed Codex — layered world lore injected into AI prompts.
 ///
 /// Structure:
 ///   • **Global lore** — creation myth, gods, factions, world state
 ///   • **Region lore** — one entry per quest location (Forest, Cave, Ruins)
 ///
-/// Free-tier users receive NO lore. Adventurer and Champion tiers both
-/// receive the global section + the region section that matches the
-/// active quest's location.
-
-import 'subscription.dart';
+/// All users receive the global section + the region section that matches
+/// the active quest's location.
 
 class LoreCodex {
   LoreCodex._(); // not instantiable
@@ -287,6 +283,120 @@ throne that is always visible. Reveal details through exploration, not \
 narration.''';
 
   // ───────────────────────────────────────────────────────
+  //  CROSS-REGION LORE FRAGMENTS
+  // ───────────────────────────────────────────────────────
+  //  Concise entity-specific entries included when a quest
+  //  references creatures, factions, or concepts from
+  //  another region. Keyed by tag; quests declare which
+  //  tags they need via Quest.loreKeys.
+  // ───────────────────────────────────────────────────────
+
+  static const Map<String, String> _loreFragments = {
+    'hollows':
+        'The Hollows are a vast network of caverns beneath the surface — '
+        'upper tunnels crowded with miners and smugglers, deeper passages '
+        'carved by no human hand. The Deep Mother\'s influence pervades the '
+        'depths: bioluminescent fungal growths spread upward, toxic spore '
+        'clouds drift through breached tunnels, and the stone itself pulses '
+        'with slow, ancient breath. Corruption seeps to the surface through '
+        'cracks in the rock, poisoning soil and water above. Ancient prisons '
+        'riddle the mid-depths, their ward-stones crumbling — titans chained '
+        'here, demons sealed behind binding pillars.',
+
+    'ossborn':
+        'The Ossborn are once-human monks who descended underground '
+        'generations ago. Their skin has gone translucent and paper-thin, '
+        'their eyes sealed shut beneath smooth bone, their movements guided '
+        'by tremorsense. They maintain the ancient prisons through the Rite '
+        'of Grafting: harvesting bones from dead wardens and fusing them into '
+        'their own skeletons, each grafted bone carrying a fragment of the '
+        'original warden\'s memory. They respond to threats against the '
+        'bindings without warning or mercy. They do not think in terms that '
+        'include negotiation.',
+
+    'deepMother':
+        'The Deep Mother is one of the three surviving gods of the Sundering. '
+        'She burrowed into the earth\'s core and claimed all that grows '
+        'beneath stone. Her influence pervades the Hollows as bioluminescent '
+        'fungal growths, toxic spore clouds, and living stone that pulses '
+        'with slow breath. The Heart of the Mountain — a living organ of '
+        'stone and magma at the Hollows\' deepest point — may be her own '
+        'heart, still beating.',
+
+    'forgeSpirit':
+        'The Forge Spirit is an ancient entity that tends the bindings and '
+        'seals in the deep Hollows. It works alongside the Ossborn but '
+        'considers them tools, not allies — useful bodies carrying '
+        'instructions the Spirit wrote millennia ago. Its deep forge is '
+        'where warden-craft is maintained and renewed.',
+
+    'tithebound':
+        'The Tithebound are remnants of an ancient species — tall, gaunt, '
+        'ash-grey skinned — whose name has been lost even to themselves. '
+        'They were drawn to the Valdris ruins by a resonance in the stone '
+        'and were hollowed out by the Nameless Choir over generations. They '
+        'now patrol corridors in loops they cannot explain, attacking '
+        'intruders with reflexive violence. They speak only in broken '
+        'fragments: "was not... a deal," "the sound... it takes," '
+        '"don\'t go... deeper."',
+
+    'namelessChoir':
+        'The Nameless Choir is not creatures, not spirits, but sound '
+        'itself — the noise a dimensional wound makes. It strips memory '
+        'with prolonged exposure: first small things (a face, a name), then '
+        'larger ones (purpose, identity). It woke once and took an entire '
+        'species — the Tithebound. After centuries of silence, it stirs '
+        'again in the deepest reaches of the Valdris ruins.',
+
+    'valdrisSeverance':
+        'The kingdom of Valdris was not destroyed — it was pulled whole '
+        'into a folded dimension by the Severance spell centuries ago. The '
+        'ruins on the surface are scars left behind. Beyond the Nameless '
+        'Choir lies Valdris intact: towers of pale stone, streets of dark '
+        'glass, looping citizens performing the memory of being alive.',
+
+    'vaelith':
+        'Vaelith is the Thorn-Sealed Kingdom of the elves, hidden behind '
+        'the Thornwall in the deep Thornveil Forest. Ruled by Queen Seylith '
+        'the Undying for four hundred years, the elves severed contact with '
+        'mortals three centuries ago. The Pale Root faction seeks to '
+        'overthrow Seylith, and a blight in the root-hollows withers their '
+        'ancient trees from within.',
+
+    'paleRoot':
+        'The Pale Root is a rebel faction within Vaelith. They seek to '
+        'overthrow Queen Seylith, claiming her long reign has calcified the '
+        'kingdom into a beautiful corpse. Assassinations dressed as hunting '
+        'accidents have claimed High Canopy lords. Some agents cross the '
+        'Thornwall to sabotage druidic shrines, wanting the barrier to fall '
+        'so Vaelith can expand by force.',
+
+    'feyCourts':
+        'The Fey Courts are sprites, wisps, and old trickster-spirits bound '
+        'by pacts that predate even the elves. When pacts hold, the fey are '
+        'mischievous but survivable. When pacts fray, they turn to ambush '
+        'and enchantment with no distinction between elf and human prey. '
+        'The Circle of Thorn druids serve as mediators, though their numbers '
+        'thin each decade.',
+
+    'worldTree':
+        'The World Tree stands at the heart of the Thornveil Forest — a '
+        'miles-high titan of bark and branch whose roots pierce the '
+        'underworld itself. Beneath it lie root-hollows where the elves '
+        'perform their sacred rites. A Hollow-corruption blight now withers '
+        'the roots from within, as though the World Tree itself is rejecting '
+        'the Thornwall\'s seal.',
+
+    'wardenCraft':
+        'Warden-craft traps were built by the ancient wardens who chained '
+        'the titans and sealed the demons during the Sundering. Pressure '
+        'plates trigger grinding stone walls, rune-etched tiles release '
+        'searing heat, bone chimes shatter into razor shrapnel, and '
+        'deadfalls bury intruders. The Ossborn inherited knowledge of every '
+        'trap through grafted warden-bones.',
+  };
+
+  // ───────────────────────────────────────────────────────
   //  LOOKUP
   // ───────────────────────────────────────────────────────
 
@@ -296,20 +406,20 @@ narration.''';
     'Ruins': _ruinsLore,
   };
 
-  /// Returns the lore context string for the given [location], [tier],
-  /// and [playerLevel].
+  /// Returns the lore context string for the given [location],
+  /// [playerLevel], and optional [loreKeys] for cross-region consistency.
   ///
-  /// • **Free tier** → empty string (no lore).
-  /// • **Paid tiers** → global lore + region-specific lore for [location].
+  /// • Global lore + region-specific lore for [location].
   /// • **Ruins + level ≥ 60** → additionally includes the Nameless Choir /
   ///   true-Valdris deep lore.
-  static String getForTier(
-    String? location,
-    SubscriptionTier tier, {
+  /// • **loreKeys** → concise lore fragments for entities from other
+  ///   regions that appear in this quest, ensuring narrative consistency
+  ///   regardless of the active map.
+  static String getLore(
+    String? location, {
     int playerLevel = 1,
+    List<String> loreKeys = const [],
   }) {
-    if (tier == SubscriptionTier.free) return '';
-
     final regionSection = _regionLore[location];
     final buf = StringBuffer();
     buf.writeln('=== THE HOLLOWED CODEX — WORLD LORE ===');
@@ -327,6 +437,31 @@ narration.''';
       buf.writeln('--- The Severance Depths ---');
       buf.writeln();
       buf.writeln(_ruinsDeepLore);
+    }
+    // Append cross-region lore fragments for narrative consistency.
+    if (loreKeys.isNotEmpty) {
+      final fragments = <String>[];
+      for (final key in loreKeys) {
+        final f = _loreFragments[key];
+        if (f != null) fragments.add(f);
+      }
+      if (fragments.isNotEmpty) {
+        buf.writeln();
+        buf.writeln('--- Cross-Region Lore (Narrative Consistency) ---');
+        buf.writeln();
+        buf.writeln(
+          'The following entities, species, or factions may be encountered '
+          'or referenced during this quest. Use this lore to maintain '
+          'consistency with the established world. Present it naturally '
+          'through the narrative — never as exposition dumps. If the player '
+          'has encountered these before, treat the lore as something the '
+          'world already established, not new information to announce.',
+        );
+        for (final fragment in fragments) {
+          buf.writeln();
+          buf.writeln(fragment);
+        }
+      }
     }
     return buf.toString();
   }

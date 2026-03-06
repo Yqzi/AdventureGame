@@ -867,8 +867,11 @@ class _GamePageState extends State<GamePage> {
                 totalXp: _totalXp,
                 itemsGained: List.unmodifiable(_itemsGained),
                 onReturnToGuild: () {
-                  // Delete saved session — quest is done
+                  // Mark quest as completed on the player
                   if (widget.questId != null) {
+                    context.read<GameBloc>().add(
+                      CompleteQuestEvent(widget.questId!),
+                    );
                     _sessionRepo.deleteSession(widget.questId!);
                   }
                   Navigator.of(

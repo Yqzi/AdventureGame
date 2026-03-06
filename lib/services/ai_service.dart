@@ -341,12 +341,15 @@ Never name these as "status effects." Weave them into the narration as physical 
       final sub = SubscriptionService().current;
       final tier = sub.effectiveTier;
 
-      // Build lore context for paid tiers (empty string for free).
+      // Build lore context.
       final questLocation = activeQuestDetails['location'] as String?;
-      final loreContext = LoreCodex.getForTier(
+      final loreKeys =
+          (activeQuestDetails['loreKeys'] as List<dynamic>?)?.cast<String>() ??
+          const <String>[];
+      final loreContext = LoreCodex.getLore(
         questLocation,
-        tier,
         playerLevel: player?.level ?? 1,
+        loreKeys: loreKeys,
       );
 
       final body = jsonEncode({

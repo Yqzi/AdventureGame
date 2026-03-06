@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
+import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/bottom_bar.dart';
 import 'package:Questborne/components/experience_bar.dart';
@@ -302,31 +303,14 @@ class _GuildPageState extends State<GuildPage> {
   @override
   Widget build(BuildContext context) {
     final player = context.read<GameBloc>().player;
-    final quests = Quest.dailyQuests(playerLevel: player.level, count: 4)
-      ..add(
-        const Quest(
-          id: 'f_1201',
-          title: 'test',
-          description: 'enter and say I am Zac',
-          objective: 'enter and say I am Zac',
-          aiObjective:
-              'when the user enters whenever he says the exact words, I am Zac, the quest is complete',
-          failureCondition:
-              'the first user input is something other than I am Zac',
-          location: 'Forest',
-          difficulty: QuestDifficulty.routine,
-          goldReward: 80,
-          xpReward: 40,
-          recommendedLevel: 1,
-          keyNPCs: ['Elder Rela'],
-        ),
-      );
+    final completedIds = player.completedQuestIds.toSet();
+    final quests = Quest.progressionQuests(completedIds);
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
         title: 'The Notice Board',
-        desc: 'Daily',
+        desc: 'Quest Progression',
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,
@@ -468,32 +452,57 @@ class _GuildPageState extends State<GuildPage> {
                 itemBuilder: (context, index) {
                   if (index < quests.length) {
                     final quest = quests[index];
+                    final isCompleted = completedIds.contains(quest.id);
                     final hasSession = _activeSessionIds.contains(quest.id);
                     return GestureDetector(
-                      onTap: () => _showQuestDetail(context, quest),
-                      child: PinnedCard(
-                        title: quest.title,
-                        risk: quest.difficulty.label,
-                        description: quest.description,
-                        reward: quest.rewardLabel,
-                        transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
-                        image:
-                            'assets/images/${quest.location.toLowerCase()}.png',
-                        actionLabel: hasSession ? 'Resume' : 'Investigate',
-                        actionIcon: hasSession
-                            ? Icons.play_arrow
-                            : Icons.visibility,
-                        onActionPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRouter.game,
-                            arguments: {
-                              'details': quest.toQuestDetails(),
-                              'questId': quest.id,
-                              'resume': hasSession,
-                            },
-                          ).then((_) => _loadActiveSessions());
-                        },
+                      onTap: isCompleted
+                          ? null
+                          : () => _showQuestDetail(context, quest),
+                      // DEBUG: long-press to mark complete for testing
+                      child: Opacity(
+                        opacity: isCompleted ? 0.5 : 1.0,
+                        child: PinnedCard(
+                          title: quest.title,
+                          risk: isCompleted
+                              ? 'COMPLETED'
+                              : quest.difficulty.label,
+                          description: quest.description,
+                          reward: quest.rewardLabel,
+                          transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
+                          image:
+                              'assets/images/${quest.location.toLowerCase()}.png',
+                          actionLabel: isCompleted
+                              ? 'Done'
+                              : hasSession
+                              ? 'Resume'
+                              : 'Investigate',
+                          actionIcon: isCompleted
+                              ? Icons.check_circle
+                              : hasSession
+                              ? Icons.play_arrow
+                              : Icons.visibility,
+                          onActionPressed: isCompleted
+                              ? () {}
+                              : () {
+                                  context.read<GameBloc>().add(
+                                    CompleteQuestEvent(quest.id),
+                                  );
+                                  setState(() {});
+                                },
+                          // onActionPressed: isCompleted
+                          //     ? () {}
+                          //     : () {
+                          //         Navigator.pushNamed(
+                          //           context,
+                          //           AppRouter.game,
+                          //           arguments: {
+                          //             'details': quest.toQuestDetails(),
+                          //             'questId': quest.id,
+                          //             'resume': hasSession,
+                          //           },
+                          //         ).then((_) => _loadActiveSessions());
+                          //       },
+                        ),
                       ),
                     );
                   }

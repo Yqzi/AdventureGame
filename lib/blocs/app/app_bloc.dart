@@ -52,6 +52,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<SavePlayerToCloudEvent>(_onSavePlayer);
     on<SetPlayerNameEvent>(_onSetPlayerName);
     on<ResetPlayerEvent>(_onResetPlayer);
+    on<CompleteQuestEvent>(_onCompleteQuest);
   }
 
   /// The current player — exposed for reading outside the bloc if needed.
@@ -123,6 +124,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _chatHistory = [];
     _sessionRepo.clearLocal();
     emit(GameInitial(player: _player));
+  }
+
+  void _onCompleteQuest(CompleteQuestEvent event, Emitter<GameState> emit) {
+    _player = _player.completeQuest(event.questId);
+    _autoSavePlayer();
   }
 
   // ─────────────────────────────────────────────────────────
