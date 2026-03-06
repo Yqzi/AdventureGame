@@ -210,6 +210,19 @@ class Quest {
     ], // Death's Grove · Heart of the Mountain · Severance Undone
   ];
 
+  /// Returns how many quest sets the player has fully completed.
+  static int completedSetCount(Set<String> completedQuestIds) {
+    int count = 0;
+    for (final set in progressionOrder) {
+      if (set.every((id) => completedQuestIds.contains(id))) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }
+
   /// Returns the current set of 3 quests (one per location) based on
   /// which quests the player has completed.
   ///

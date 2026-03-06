@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -13,37 +11,16 @@ import 'package:Questborne/components/cards.dart';
 import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/quest.dart';
 
 class ShopPage extends StatelessWidget {
   const ShopPage({super.key});
 
-  /// Pick 4 items whose level is near the player's level.
-  /// Uses a day-based seed so the selection stays the same all day.
-  /// Does NOT exclude owned items — they show as "SOLD" instead.
-  List<Item> _waresForDay(int playerLevel) {
-    final now = DateTime.now();
-    final daySeed = now.year * 10000 + now.month * 100 + now.day;
-
-    final low = (playerLevel - 10).clamp(1, 100);
-    final high = (playerLevel + 5).clamp(1, 100);
-
-    var pool = allItems
-        .where((i) => i.level >= low && i.level <= high)
-        .toList();
-
-    // Fallback: grab closest by level
-    if (pool.length < 4) {
-      pool = List.of(allItems)
-        ..sort(
-          (a, b) => (a.level - playerLevel).abs().compareTo(
-            (b.level - playerLevel).abs(),
-          ),
-        );
-    }
-
-    // Deterministic daily shuffle
-    pool.shuffle(Random(daySeed));
-    return pool.take(4).toList();
+  /// Items available based on quest progression.
+  /// All items from completed quest tiers are shown.
+  List<Item> _waresForProgression(Set<String> completedQuestIds) {
+    final completedSets = Quest.completedSetCount(completedQuestIds);
+    return Item.progressionShopItems(completedSets);
   }
 
   /// Check whether the player already owns this item.
@@ -369,7 +346,8 @@ class ShopPage extends StatelessWidget {
     return BlocBuilder<GameBloc, GameState>(
       builder: (context, state) {
         final player = context.read<GameBloc>().player;
-        final wares = _waresForDay(player.level);
+        final completedIds = player.completedQuestIds.toSet();
+        final wares = _waresForProgression(completedIds);
 
         // Sort: unsold first, sold at bottom
         final sorted = List<Item>.from(wares)

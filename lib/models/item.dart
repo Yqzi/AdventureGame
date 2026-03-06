@@ -90,6 +90,66 @@ class Item {
 
   /// Path to the item's image asset, derived from its id.
   String get imagePath => 'assets/images/items/$id.png';
+
+  // ───────────────────────────────────────────────────────────
+  //  SHOP PROGRESSION
+  // ───────────────────────────────────────────────────────────
+  //  Each entry maps to a quest-progression set index from
+  //  Quest.progressionOrder.  When set N is completed the items
+  //  in shopProgression[N+1] unlock.  Set 0 is available from
+  //  the start.
+  // ───────────────────────────────────────────────────────────
+
+  static const List<List<String>> shopProgression = [
+    // ── Phase 1: First Steps (sets 0-3) ──
+    ['wpn_001', 'arm_001', 'acc_001', 'rel_001'], // Start → Lv 1
+    ['wpn_002', 'arm_002', 'acc_002', 'rel_002'], // Set 0 done → Lv 5
+    [], // Set 1
+    [], // Set 2
+    // ── Phase 2: Rising Action (sets 4-5) ──
+    ['wpn_003', 'arm_003', 'acc_003', 'rel_003'], // Set 3 done → Lv 10
+    [], // Set 4
+    // ── Phase 3: The Mystery Deepens (sets 6-8) ──
+    ['wpn_004', 'arm_004', 'acc_004', 'rel_004'], // Set 5 done → Lv 15
+    ['wpn_005', 'arm_005', 'acc_005', 'rel_005'], // Set 6 done → Lv 20
+    [], // Set 7
+    // ── Phase 4: Mid-Game (sets 9-10) ──
+    ['wpn_006', 'arm_006', 'acc_006', 'rel_006'], // Set 8 done → Lv 25
+    [], // Set 9
+    // ── Phase 5: Escalation (sets 11-13) ──
+    ['wpn_007', 'arm_007', 'acc_007', 'rel_007'], // Set 10 done → Lv 30
+    ['wpn_008', 'arm_008', 'acc_008', 'rel_008'], // Set 11 done → Lv 35
+    [], // Set 12
+    // ── Phase 6: High Stakes (sets 14-15) ──
+    ['wpn_009', 'arm_009', 'acc_009', 'rel_009'], // Set 13 done → Lv 40
+    [], // Set 14
+    // ── Phase 7: Deep Lore (sets 16-17) ──
+    ['wpn_010', 'arm_010', 'acc_010', 'rel_010'], // Set 15 done → Lv 50
+    ['wpn_011', 'arm_011', 'acc_011', 'rel_011'], // Set 16 done → Lv 60
+    // ── Phase 8: Ancient Threats (sets 18-19) ──
+    ['wpn_012', 'arm_012', 'acc_012', 'rel_012'], // Set 17 done → Lv 70
+    [], // Set 18
+    // ── Phase 9: Endgame (sets 20-21) ──
+    ['wpn_013', 'arm_013', 'acc_013', 'rel_013'], // Set 19 done → Lv 80
+    ['wpn_014', 'arm_014', 'acc_014', 'rel_014'], // Set 20 done → Lv 90
+    // ── Finale (set 22) ──
+    ['wpn_015', 'arm_015', 'acc_015', 'rel_015'], // Set 21 done → Lv 100
+  ];
+
+  /// Returns all shop items unlocked for the given number of completed
+  /// quest sets.  Set 0 items are always available.
+  static List<Item> progressionShopItems(int completedSets) {
+    final itemLookup = {for (final i in allItems) i.id: i};
+    final available = <Item>[];
+    final limit = (completedSets + 1).clamp(0, shopProgression.length);
+    for (int i = 0; i < limit; i++) {
+      for (final id in shopProgression[i]) {
+        final item = itemLookup[id];
+        if (item != null) available.add(item);
+      }
+    }
+    return available;
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
