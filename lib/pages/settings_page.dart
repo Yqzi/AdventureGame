@@ -11,6 +11,7 @@ import 'package:Questborne/router.dart';
 import 'package:Questborne/services/auth_service.dart';
 import 'package:Questborne/services/game_session_repository.dart';
 import 'package:Questborne/services/settings_service.dart';
+import 'package:Questborne/services/subscription_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -128,12 +129,6 @@ class _SettingsPageState extends State<SettingsPage> {
           // ── General ──────────────────────────────────────
           _sectionHeader('GENERAL'),
           const SizedBox(height: 8),
-          _settingsTile(
-            icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            subtitle: 'Coming soon',
-            onTap: () => _showComingSoonSnack('Notifications'),
-          ),
           _divider(),
           _settingsTile(
             icon: Icons.workspace_premium_outlined,
@@ -650,21 +645,14 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true || !mounted) return;
 
     try {
-      // Delete all remote data for this user
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        await Supabase.instance.client
-            .from('player_saves')
-            .delete()
-            .eq('user_id', user.id);
-        await Supabase.instance.client
-            .from('game_sessions')
-            .delete()
-            .eq('user_id', user.id);
-      }
-      // Clear in-memory session cache
+      // Call the Edge Function which deletes all user data + the auth user
+      await Supabase.instance.client.functions.invoke('delete-account');
+
+      // Clear all local state
       GameSessionRepository().clearLocal();
-      // Reset player and all in-memory game state
+      SubscriptionService().clear();
+      await Supabase.instance.client.auth.signOut();
+
       if (mounted) {
         context.read<GameBloc>().add(ResetPlayerEvent());
       }

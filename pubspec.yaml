@@ -50,6 +50,7 @@ dependencies:
   sign_in_with_apple: ^6.1.4
   crypto: ^3.0.6
   device_info_plus: ^11.3.3
+  in_app_purchase: ^3.2.3
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +62,23 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  web:
+    generate: true
+    background_color: "#000000"
+  windows:
+    generate: true
+    icon_size: 256
+  macos:
+    generate: true
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

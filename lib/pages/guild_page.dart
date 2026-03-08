@@ -305,6 +305,8 @@ class _GuildPageState extends State<GuildPage> {
     final player = context.read<GameBloc>().player;
     final completedIds = player.completedQuestIds.toSet();
     final quests = Quest.progressionQuests(completedIds);
+    final completedSets = Quest.completedSetCount(completedIds);
+    final repeatables = Quest.availableRepeatables(completedSets);
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
@@ -427,7 +429,7 @@ class _GuildPageState extends State<GuildPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                "Open Bounties",
+                "Main Quests",
                 style: GoogleFonts.epilogue(
                   color: const Color(0xFFE3D5B8),
                   fontSize: 22,
@@ -447,9 +449,15 @@ class _GuildPageState extends State<GuildPage> {
             const SizedBox(height: 16),
             Expanded(
               child: ListView.separated(
-                itemCount: quests.length + 1,
+                itemCount:
+                    quests.length +
+                    (repeatables.isNotEmpty ? 1 : 0) // header
+                    +
+                    repeatables.length +
+                    1, // footer
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
+                  // ── Main quest cards ──
                   if (index < quests.length) {
                     final quest = quests[index];
                     final isCompleted = completedIds.contains(quest.id);
@@ -507,7 +515,109 @@ class _GuildPageState extends State<GuildPage> {
                     );
                   }
 
-                  // Footer: scribe notice
+                  // ── "Side Bounties" divider ──
+                  final repHeaderIdx = quests.length;
+                  if (repeatables.isNotEmpty && index == repHeaderIdx) {
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        left: 24,
+                        right: 24,
+                        top: 20,
+                        bottom: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DottedBorder(
+                              options: RectDottedBorderOptions(
+                                color: const Color(0xFF8D6E63),
+                                padding: EdgeInsets.zero,
+                                dashPattern: const [3, 4],
+                              ),
+                              child: Container(height: 0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.repeat,
+                                  color: const Color(0xFF8D6E63),
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "SIDE BOUNTIES",
+                                  style: GoogleFonts.epilogue(
+                                    color: const Color(0xFF8D6E63),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: DottedBorder(
+                              options: RectDottedBorderOptions(
+                                color: const Color(0xFF8D6E63),
+                                padding: EdgeInsets.zero,
+                                dashPattern: const [3, 4],
+                              ),
+                              child: Container(height: 0),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // ── Repeatable quest cards ──
+                  final repStart =
+                      repHeaderIdx + (repeatables.isNotEmpty ? 1 : 0);
+                  final repIdx = index - repStart;
+                  if (repIdx >= 0 && repIdx < repeatables.length) {
+                    final quest = repeatables[repIdx];
+                    final hasSession = _activeSessionIds.contains(quest.id);
+                    return GestureDetector(
+                      onTap: () => _showQuestDetail(context, quest),
+                      child: PinnedCard(
+                        title: quest.title,
+                        risk: quest.difficulty.label,
+                        description: quest.description,
+                        reward: quest.rewardLabel,
+                        transformationAngle: repIdx % 2 != 0 ? -0.02 : 0.02,
+                        image:
+                            'assets/images/${quest.location.toLowerCase()}.png',
+                        actionLabel: hasSession ? 'Resume' : 'Investigate',
+                        actionIcon: hasSession
+                            ? Icons.play_arrow
+                            : Icons.visibility,
+                        onActionPressed: () {
+                          context.read<GameBloc>().add(
+                            CompleteQuestEvent(quest.id),
+                          );
+                          setState(() {});
+                        },
+                        // onActionPressed: () {
+                        //   Navigator.pushNamed(
+                        //     context,
+                        //     AppRouter.game,
+                        //     arguments: {
+                        //       'details': quest.toQuestDetails(),
+                        //       'questId': quest.id,
+                        //       'resume': hasSession,
+                        //     },
+                        //   ).then((_) => _loadActiveSessions());
+                        // },
+                      ),
+                    );
+                  }
+
+                  // ── Footer ──
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
@@ -521,7 +631,7 @@ class _GuildPageState extends State<GuildPage> {
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            "Daily bounties refreshed at dawn...",
+                            "Complete quests to unlock new bounties...",
                             style: GoogleFonts.epilogue(
                               color: Colors.white38,
                               fontWeight: FontWeight.w500,

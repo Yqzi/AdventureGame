@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/models/chat_message.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/quest.dart';
 import 'package:Questborne/models/story_event.dart';
 import 'package:Questborne/utils/apply_story_effects.dart';
 import 'package:uuid/uuid.dart';
@@ -127,7 +128,18 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   }
 
   void _onCompleteQuest(CompleteQuestEvent event, Emitter<GameState> emit) {
-    _player = _player.completeQuest(event.questId);
+    final quest = repeatableQuests.cast<Quest?>().firstWhere(
+      (q) => q!.id == event.questId,
+      orElse: () => null,
+    );
+    if (quest != null && quest.isRepeatable) {
+      // Repeatable: award gold/XP but don't track in completedQuestIds.
+      _player = _player
+          .gainGold(quest.goldReward)
+          .gainExperience(quest.xpReward);
+    } else {
+      _player = _player.completeQuest(event.questId);
+    }
     _autoSavePlayer();
   }
 

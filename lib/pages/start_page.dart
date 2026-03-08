@@ -231,18 +231,23 @@ class _StartPageState extends State<StartPage> {
           children: [
             Expanded(
               child: customOutlinedButton(
-                title: 'ARCHIVES',
+                title: 'Premium',
+                icon: Icon(Icons.diamond_outlined, color: Colors.white),
                 glow: true,
                 letterSpacing: 1,
                 fontsize: 16,
                 onpressed: () {
-                  Navigator.pushReplacementNamed(context, AppRouter.shop);
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRouter.subscription,
+                  );
                 },
               ),
             ),
             Expanded(
               child: customOutlinedButton(
                 title: 'SETTINGS',
+                icon: Icon(Icons.settings, color: Colors.white),
                 glow: true,
                 letterSpacing: 1,
                 fontsize: 16,

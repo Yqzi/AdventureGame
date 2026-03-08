@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/subscription.dart';
+import 'package:Questborne/services/purchase_service.dart';
 import 'package:Questborne/services/subscription_service.dart';
 
 class SubscriptionPage extends StatefulWidget {
@@ -15,7 +16,9 @@ class SubscriptionPage extends StatefulWidget {
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
   final SubscriptionService _subService = SubscriptionService();
+  final PurchaseService _purchaseService = PurchaseService();
   bool _loading = true;
+  bool _purchasing = false;
   late UserSubscription _subscription;
 
   // ── Styling constants ─────────────────────────────────────
@@ -33,7 +36,60 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   void initState() {
     super.initState();
-    _loadSubscription();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _purchaseService.init();
+    _purchaseService.onPurchaseResult = _onPurchaseResult;
+    await _loadSubscription();
+  }
+
+  @override
+  void dispose() {
+    _purchaseService.onPurchaseResult = null;
+    super.dispose();
+  }
+
+  void _onPurchaseResult(SubscriptionTier tier, bool success, String? error) {
+    if (!mounted) return;
+    setState(() => _purchasing = false);
+    if (success) {
+      _loadSubscription();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _accentFor(tier).withOpacity(0.9),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          content: Text(
+            'Upgraded to ${tier.label}!',
+            style: GoogleFonts.epilogue(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    } else if (error != null && error != 'Purchase cancelled') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: redText.withOpacity(0.9),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          content: Text(
+            error,
+            style: GoogleFonts.epilogue(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _loadSubscription() async {
@@ -309,8 +365,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ),
 
-              // Upgrade button
-              if (!isCurrentTier && tier != SubscriptionTier.free) ...[
+              // Action button
+              if (!isCurrentTier) ...[
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -325,7 +381,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       ),
                     ),
                     child: Text(
-                      isChampion
+                      tier == SubscriptionTier.free
+                          ? 'Manage in Play Store'
+                          : isChampion
                           ? 'Upgrade to Champion'
                           : 'Upgrade to Adventurer',
                       style: GoogleFonts.epilogue(
@@ -462,97 +520,134 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _handleSubscribe(SubscriptionTier tier) {
+    if (_purchasing) return;
+
+    // Free tier = just show info, no purchase needed.
+    if (tier == SubscriptionTier.free) {
+      // Nothing to buy — user is already on free or can cancel via Play Store.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _freeAccent.withOpacity(0.9),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          content: Text(
+            'Manage your subscription in the Play Store to downgrade.',
+            style: GoogleFonts.epilogue(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Show the Play Store purchase sheet.
+    final storePrice = _purchaseService.storePriceFor(tier);
+    _showPurchaseSheet(tier, storePrice);
+  }
+
+  void _showPurchaseSheet(SubscriptionTier tier, String? storePrice) {
+    final accent = _accentFor(tier);
+    final productIds = tier.playStoreProductIds;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => _planDurationSheet(ctx, tier),
-    );
-  }
-
-  Widget _planDurationSheet(BuildContext ctx, SubscriptionTier tier) {
-    final accent = _accentFor(tier);
-    final monthly = tier.priceUsd;
-    final sixMonth = tier.priceForMonths(6);
-    final yearly = tier.priceForMonths(12);
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: _cardBase,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: _cardBase,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                tier.label,
-                style: GoogleFonts.epilogue(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white.withOpacity(0.9),
+                const SizedBox(height: 24),
+                Icon(_iconFor(tier), color: accent, size: 32),
+                const SizedBox(height: 12),
+                Text(
+                  tier.label,
+                  style: GoogleFonts.epilogue(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Choose a plan',
-                style: GoogleFonts.epilogue(
-                  fontSize: 13,
-                  color: Colors.white38,
+                const SizedBox(height: 4),
+                Text(
+                  'Choose a plan',
+                  style: GoogleFonts.epilogue(
+                    fontSize: 13,
+                    color: Colors.white38,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              _planOption(
-                ctx: ctx,
-                accent: accent,
-                label: '1 Month',
-                price: monthly,
-                perMonth: monthly,
-              ),
-              const SizedBox(height: 10),
-
-              _planOption(
-                ctx: ctx,
-                accent: accent,
-                label: '6 Months',
-                price: sixMonth * 6,
-                perMonth: sixMonth,
-                badge: 'Save 15%',
-              ),
-              const SizedBox(height: 10),
-
-              _planOption(
-                ctx: ctx,
-                accent: accent,
-                label: '12 Months',
-                price: yearly * 12,
-                perMonth: yearly,
-                badge: 'Best deal',
-                highlighted: true,
-              ),
-
-              const SizedBox(height: 16),
-              Text(
-                'Payment processing coming soon.',
-                style: GoogleFonts.epilogue(
-                  fontSize: 11,
-                  color: Colors.white24,
+                // ── Duration options ──
+                _planOption(
+                  ctx: ctx,
+                  tier: tier,
+                  accent: accent,
+                  label: '1 Month',
+                  months: 1,
+                  productId: productIds[1]!,
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                _planOption(
+                  ctx: ctx,
+                  tier: tier,
+                  accent: accent,
+                  label: '6 Months',
+                  months: 6,
+                  productId: productIds[6]!,
+                  badge: 'Save 15%',
+                ),
+                const SizedBox(height: 10),
+                _planOption(
+                  ctx: ctx,
+                  tier: tier,
+                  accent: accent,
+                  label: '12 Months',
+                  months: 12,
+                  productId: productIds[12]!,
+                  badge: 'Best deal',
+                  highlighted: true,
+                ),
+
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white38,
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -561,15 +656,43 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _planOption({
     required BuildContext ctx,
+    required SubscriptionTier tier,
     required Color accent,
     required String label,
-    required double price,
-    required double perMonth,
+    required int months,
+    required String productId,
     String? badge,
     bool highlighted = false,
   }) {
+    final storePrice = _purchaseService.storePriceForProduct(productId);
+    final perMonth = tier.priceForMonths(months);
+    final total = perMonth * months;
+
     return GestureDetector(
-      onTap: () => Navigator.pop(ctx),
+      onTap: () {
+        Navigator.pop(ctx);
+        setState(() => _purchasing = true);
+        final started = _purchaseService.buyProduct(productId);
+        if (!started) {
+          setState(() => _purchasing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: redText.withOpacity(0.9),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              content: Text(
+                'Product not available. Try again later.',
+                style: GoogleFonts.epilogue(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          );
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -619,7 +742,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '\$${perMonth.toStringAsFixed(2)} / mo',
+                    storePrice != null
+                        ? '$storePrice / $months mo'
+                        : '\$${perMonth.toStringAsFixed(2)} / mo',
                     style: GoogleFonts.epilogue(
                       fontSize: 12,
                       color: Colors.white30,
@@ -629,7 +754,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ),
             ),
             Text(
-              '\$${price.toStringAsFixed(2)}',
+              storePrice ?? '\$${total.toStringAsFixed(2)}',
               style: GoogleFonts.epilogue(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,

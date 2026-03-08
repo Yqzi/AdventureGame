@@ -53,6 +53,7 @@ class Quest {
   final List<String> keyNPCs;
   final String failureCondition;
   final List<String> loreKeys;
+  final bool isRepeatable;
 
   const Quest({
     required this.id,
@@ -68,6 +69,7 @@ class Quest {
     required this.failureCondition,
     this.keyNPCs = const [],
     this.loreKeys = const [],
+    this.isRepeatable = false,
   });
 
   String get rewardLabel => '$goldReward Gold  ·  $xpReward XP';
@@ -241,7 +243,352 @@ class Quest {
     // All sets completed — return the last set.
     return progressionOrder.last.map((id) => questLookup[id]!).toList();
   }
+
+  /// Returns repeatable quests available at the given progression.
+  /// Each tier unlocks after a certain number of completed quest sets.
+  static List<Quest> availableRepeatables(int completedSets) {
+    return repeatableQuests
+        .where((q) => completedSets >= _repeatableUnlockSet[q.id]!)
+        .toList();
+  }
+
+  /// Maps repeatable quest IDs to the set count required to unlock them.
+  static const Map<String, int> _repeatableUnlockSet = {
+    // Tier 1 — available from the start
+    'rep_f01': 0, 'rep_c01': 0, 'rep_r01': 0,
+    // Tier 2 — after Phase 2 (set 5)
+    'rep_f02': 5, 'rep_c02': 5, 'rep_r02': 5,
+    // Tier 3 — after Phase 3 (set 8)
+    'rep_f03': 8, 'rep_c03': 8, 'rep_r03': 8,
+    // Tier 4 — after Phase 5 (set 13)
+    'rep_f04': 13, 'rep_c04': 13, 'rep_r04': 13,
+    // Tier 5 — after Phase 8 (set 19)
+    'rep_f05': 19, 'rep_c05': 19, 'rep_r05': 19,
+  };
 }
+
+// ═════════════════════════════════════════════════════════════
+//  REPEATABLE QUESTS  —  Gold-farming side jobs
+//  Three per tier (one per map), unlock with progression.
+//  These don't block the questline and can be replayed.
+// ═════════════════════════════════════════════════════════════
+
+final List<Quest> repeatableQuests = [
+  // ── Tier 1: Available from the start ────────────────────
+  const Quest(
+    id: 'rep_f01',
+    title: 'Goblin Patrol',
+    description:
+        'Goblin scouts have been spotted along the forest edge again. '
+        'The militia posts a standing bounty — clear them out before they '
+        'raid another farmstead.',
+    objective: 'Hunt goblin scouts in the forest outskirts.',
+    aiObjective:
+        'There are 4-6 goblin scouts camped in a clearing. They have a lookout in a tree and crude traps around the perimeter. The player must kill or scatter all the goblins. Quest completes when the camp is cleared. The goblins always return — this is a standing bounty.',
+    location: 'Forest',
+    difficulty: QuestDifficulty.routine,
+    goldReward: 40,
+    xpReward: 15,
+    recommendedLevel: 1,
+    failureCondition:
+        'The goblins scatter into the brush and regroup deeper in the forest.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_c01',
+    title: 'Tunnel Vermin',
+    description:
+        'Rats and cave spiders infest the upper Hollows. The miners pay '
+        'good coin to anyone willing to clear them — the creatures breed '
+        'faster than the tunnels can be sealed.',
+    objective: 'Clear vermin from the upper Hollows mining tunnels.',
+    aiObjective:
+        'There are 6-8 giant rats and 2-3 cave spiders in a section of upper mining tunnels. The player must kill them all and destroy any nests found. Quest completes when the tunnel section is clear. The vermin always return.',
+    location: 'Cave',
+    difficulty: QuestDifficulty.routine,
+    goldReward: 40,
+    xpReward: 15,
+    recommendedLevel: 1,
+    failureCondition:
+        'The vermin overwhelm the player with sheer numbers and they have to retreat to the surface.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_r01',
+    title: 'Restless Bones',
+    description:
+        'The outer barrows of Valdris never stay quiet. Skeletons claw '
+        'free of their graves every few days. Historian Korval pays a '
+        'bounty to keep the camp entrance clear.',
+    objective: 'Lay restless undead to rest in the outer Valdris barrows.',
+    aiObjective:
+        'There are 4-6 skeletons rising from cracked gravestones in the outer barrows. The player must destroy them all and shatter any gravestones that glow with dark energy (2-3 active stones). Quest completes when all undead are destroyed and active gravestones shattered. They always reform.',
+    location: 'Ruins',
+    difficulty: QuestDifficulty.routine,
+    goldReward: 40,
+    xpReward: 15,
+    recommendedLevel: 1,
+    keyNPCs: ['Historian Korval'],
+    failureCondition:
+        'The skeletons push the player back to the camp and begin shambling toward the researchers.',
+    isRepeatable: true,
+  ),
+
+  // ── Tier 2: After Phase 2 (set 5 done) ─────────────────
+  const Quest(
+    id: 'rep_f02',
+    title: 'Bandit Bounty',
+    description:
+        'Bandit scouts patrol the trade roads near the Thornveil. '
+        'Merchants refuse to travel without armed escort. The bounty '
+        'board keeps this post pinned permanently.',
+    objective: 'Hunt bandit scouts along the Thornveil trade roads.',
+    aiObjective:
+        'There are 3-5 bandit scouts with a leader camped along a trade road. They have a crude barricade and one prisoner (a merchant). The player must defeat the bandits and free the merchant. Quest completes when the leader is dead and the merchant freed.',
+    location: 'Forest',
+    difficulty: QuestDifficulty.dangerous,
+    goldReward: 100,
+    xpReward: 35,
+    recommendedLevel: 8,
+    failureCondition:
+        'The bandits retreat with the merchant as hostage deeper into the forest.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_c02',
+    title: 'Ore Vein Escort',
+    description:
+        'A new ore vein has been found in the mid-Hollows but the tunnels '
+        'are prowled by cave creatures. Foreman Brick needs someone to '
+        'escort miners to the vein and back.',
+    objective: 'Escort miners safely through dangerous Hollows tunnels.',
+    aiObjective:
+        'The player must escort 3 miners through 2 tunnel sections. Each section has 2-3 cave creatures (blind crawlers, tunnel lurkers). The miners are non-combatants and will panic if attacked. Quest completes when all 3 miners reach the ore vein alive.',
+    location: 'Cave',
+    difficulty: QuestDifficulty.dangerous,
+    goldReward: 100,
+    xpReward: 35,
+    recommendedLevel: 8,
+    keyNPCs: ['Foreman Brick'],
+    failureCondition:
+        'A miner is killed and the others refuse to continue, retreating to the surface.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_r02',
+    title: 'Artifact Salvage',
+    description:
+        'Scholar Veyra needs cursed artifacts recovered from the upper '
+        'ruins before the scavengers sell them to collectors who have '
+        'no idea what they are handling.',
+    objective: 'Recover cursed artifacts from the upper Valdris ruins.',
+    aiObjective:
+        'There are 3 cursed artifacts scattered through the upper ruins chambers, each guarded by 1-2 undead or a shadow wisp. The player must collect all 3 and return them to Scholar Veyra\'s containment chest at the camp. Quest completes when all 3 artifacts are delivered.',
+    location: 'Ruins',
+    difficulty: QuestDifficulty.dangerous,
+    goldReward: 100,
+    xpReward: 35,
+    recommendedLevel: 8,
+    keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'One artifact activates during transport and the player must drop it, losing it to the ruins.',
+    isRepeatable: true,
+  ),
+
+  // ── Tier 3: After Phase 3 (set 8 done) ─────────────────
+  const Quest(
+    id: 'rep_f03',
+    title: 'Corruption Cleansing',
+    description:
+        'Hollow-corrupted undergrowth is spreading through the mid-forest. '
+        'Druid Theron\'s circle burns it back weekly, but they need '
+        'someone to clear the creatures that nest in the corrupted groves.',
+    objective: 'Clear Hollow-corrupted creatures from the mid-forest groves.',
+    aiObjective:
+        'There are 3-4 corrupted forest creatures (twisted wolves, blighted treants) in a corrupted grove. The undergrowth itself is hostile — thorny tendrils lash at anything nearby. The player must kill all corrupted creatures and burn the central corruption node (a pulsing dark mass at the grove\'s center). Quest completes when the node is destroyed.',
+    location: 'Forest',
+    difficulty: QuestDifficulty.perilous,
+    goldReward: 250,
+    xpReward: 80,
+    recommendedLevel: 18,
+    loreKeys: ['hollows'],
+    keyNPCs: ['Druid Theron'],
+    failureCondition:
+        'The corruption node pulses and the grove becomes too toxic to enter.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_c03',
+    title: 'Fungal Harvest',
+    description:
+        'The Deep Mother\'s spore blooms keep erupting in the mid-Hollows. '
+        'Herbalist Nessa needs someone to destroy the blooms before they '
+        'madden the miners — and to bring back samples she can study.',
+    objective: 'Destroy dangerous fungal blooms in the mid-Hollows.',
+    aiObjective:
+        'There are 4-5 bioluminescent fungal blooms growing in a mid-Hollows chamber. Each bloom is guarded by 1-2 spore-maddened creatures (cave bats, blind miners). The player must destroy all blooms (fire works best) and collect 1 spore sample safely. Quest completes when all blooms are destroyed and the sample is secured.',
+    location: 'Cave',
+    difficulty: QuestDifficulty.perilous,
+    goldReward: 250,
+    xpReward: 80,
+    recommendedLevel: 18,
+    keyNPCs: ['Herbalist Nessa'],
+    failureCondition:
+        'A spore cloud erupts and the player is forced to retreat before going mad.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_r03',
+    title: 'Tithebound Patrol',
+    description:
+        'Tithebound sentinels wander the mid-depth ruins in endless loops. '
+        'When they stray too close to the surface camp, someone has to '
+        'drive them back. The bounty is always posted.',
+    objective: 'Push back Tithebound patrols from the upper ruins.',
+    aiObjective:
+        'There are 2-3 Tithebound sentinels patrolling a corridor that leads toward the surface camp. They are slow but resilient. The player must either destroy them or force them back into the deeper ruins by blocking their patrol route (collapsing a side passage or activating a ward-stone). Quest completes when the patrol is cleared or redirected.',
+    location: 'Ruins',
+    difficulty: QuestDifficulty.perilous,
+    goldReward: 250,
+    xpReward: 80,
+    recommendedLevel: 18,
+    loreKeys: ['tithebound'],
+    failureCondition:
+        'The Tithebound push past the player and reach the surface camp, causing a panic.',
+    isRepeatable: true,
+  ),
+
+  // ── Tier 4: After Phase 5 (set 13 done) ────────────────
+  const Quest(
+    id: 'rep_f04',
+    title: 'Pale Root Skirmish',
+    description:
+        'Pale Root raiders have been ambushing patrols near the '
+        'Thornwall. The elves disavow them, but the attacks continue. '
+        'The bounty is high — these are no common bandits.',
+    objective: 'Engage Pale Root raiders near the Thornwall border.',
+    aiObjective:
+        'There are 3 Pale Root assassins hiding in the High Canopy near the Thornwall. They use poisoned darts and vanish between attacks. The player must track them through the canopy (disturbed branches, broken spider-silk tripwires) and eliminate all 3. Quest completes when all 3 Pale Root are dead or captured.',
+    location: 'Forest',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 600,
+    xpReward: 180,
+    recommendedLevel: 35,
+    loreKeys: ['paleRoot', 'feyCourts'],
+    failureCondition:
+        'The Pale Root vanish into the Thornwall where no mortal can follow.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_c04',
+    title: 'Deep Vein Patrol',
+    description:
+        'Creatures freed by failing ward-stones crawl up from the deep '
+        'Hollows. The Ossborn ignore anything that doesn\'t threaten their '
+        'seals. Foreman Brick needs surface folk to keep the mid-tunnels '
+        'passable.',
+    objective: 'Patrol the deep Hollows and clear escaped creatures.',
+    aiObjective:
+        'There are 2-3 deep Hollows creatures (void-touched crawlers, tunnel stalkers) loose in the mid-depth tunnels. They are stronger than surface creatures — adapted to darkness and silence. The player must hunt and kill them all. Quest completes when the patrol route is clear.',
+    location: 'Cave',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 600,
+    xpReward: 180,
+    recommendedLevel: 35,
+    loreKeys: ['ossborn', 'wardenCraft'],
+    failureCondition:
+        'The creatures retreat deeper into the Hollows where even Brick\'s miners won\'t follow.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_r04',
+    title: 'Resonance Suppression',
+    description:
+        'The hum in the deep ruins keeps spawning resonance nodes — '
+        'crystals that drive people mad. Scholar Veyra pays well to have '
+        'them shattered before the sound reaches the surface.',
+    objective: 'Destroy resonance nodes in the deep Valdris ruins.',
+    aiObjective:
+        'There are 3 resonance crystals in the deep ruins, each emitting a maddening hum. Each crystal is guarded by 1-2 Tithebound who are drawn to the sound. The crystals must be shattered (physical strikes or magic). Prolonged exposure to the hum causes disorientation. Quest completes when all 3 crystals are destroyed.',
+    location: 'Ruins',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 600,
+    xpReward: 180,
+    recommendedLevel: 35,
+    loreKeys: ['namelessChoir', 'wardenCraft'],
+    keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'The resonance overwhelms the player and they stagger back to the surface, ears ringing.',
+    isRepeatable: true,
+  ),
+
+  // ── Tier 5: After Phase 8 (set 19 done) ────────────────
+  const Quest(
+    id: 'rep_f05',
+    title: 'Verdant Court Errand',
+    description:
+        'The Verdant Court has tasked mortal champions with purging '
+        'corruption from sacred groves the elves cannot reach without '
+        'crossing the Thornwall. The pay is elvish silver — worth more '
+        'than human gold.',
+    objective: 'Purge corruption from a sacred grove for the Verdant Court.',
+    aiObjective:
+        'A sacred grove has been overtaken by Hollow corruption. 2 corrupted treants and 1 corruption heart (a massive pulsing node) occupy the grove. The treants are powerful — former guardians twisted by the Hollow. The player must destroy both treants and the corruption heart. Quest completes when the grove is cleansed.',
+    location: 'Forest',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 1500,
+    xpReward: 400,
+    recommendedLevel: 70,
+    loreKeys: ['hollows', 'feyCourts', 'worldTree'],
+    failureCondition:
+        'The corrupted treants absorb the grove\'s remaining life and become too powerful to fight.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_c05',
+    title: 'Binding Repair',
+    description:
+        'The ward-stones in the deep Hollows keep cracking. The Forge '
+        'Spirit can\'t tend them all. Someone must carry replacement '
+        'seal-stones to the failing pedestals before what\'s behind them '
+        'breaks free.',
+    objective:
+        'Deliver seal-stones to failing ward-stone pedestals in the deep Hollows.',
+    aiObjective:
+        'The player must deliver 3 seal-stones (heavy, one at a time) to 3 failing pedestals in the deep Hollows. Each pedestal is in a different chamber. The path between them is patrolled by void creatures and escaped prisoners. The player must fight through or sneak past. Quest completes when all 3 seal-stones are placed.',
+    location: 'Cave',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 1500,
+    xpReward: 400,
+    recommendedLevel: 70,
+    loreKeys: ['forgeSpirit', 'wardenCraft'],
+    keyNPCs: ['Forge Spirit'],
+    failureCondition:
+        'A seal-stone shatters in transit and the player must retreat before the ward fully collapses.',
+    isRepeatable: true,
+  ),
+  const Quest(
+    id: 'rep_r05',
+    title: 'Dimensional Seal',
+    description:
+        'Minor tears keep opening near the Severance wound — reality '
+        'fraying at the edges. Aware Tithebound elders mark them. '
+        'Someone must close them before the Nameless Choir leaks through.',
+    objective: 'Seal minor dimensional tears near the Severance wound.',
+    aiObjective:
+        'There are 2 minor dimensional tears in the deepest ruins, leaking the Nameless Choir\'s influence. Each tear is surrounded by a zone of disorientation. The player must place a resonance dampener (provided by Scholar Veyra) at each tear to collapse it. 1-2 hostile Tithebound guard each tear, drawn to the sound. Quest completes when both tears are sealed.',
+    location: 'Ruins',
+    difficulty: QuestDifficulty.suicidal,
+    goldReward: 1500,
+    xpReward: 400,
+    recommendedLevel: 70,
+    loreKeys: ['namelessChoir', 'valdrisSeverance'],
+    keyNPCs: ['Scholar Veyra'],
+    failureCondition:
+        'The Choir\'s sound intensifies and the player loses orientation, forced to retreat before memories are stripped.',
+    isRepeatable: true,
+  ),
+];
 
 // ═════════════════════════════════════════════════════════════
 //  ALL GAME QUESTS  —  Three maps: Forest · Cave · Ruins
