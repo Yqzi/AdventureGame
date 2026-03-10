@@ -4,7 +4,7 @@
 //  ITEM TYPE
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-enum ItemType { weapon, armor, accessory, relic }
+enum ItemType { weapon, armor, accessory, relic, spell }
 
 extension ItemTypeExtension on ItemType {
   String get label {
@@ -17,6 +17,8 @@ extension ItemTypeExtension on ItemType {
         return 'ACCESSORY';
       case ItemType.relic:
         return 'RELIC';
+      case ItemType.spell:
+        return 'SPELL';
     }
   }
 
@@ -30,6 +32,8 @@ extension ItemTypeExtension on ItemType {
         return 'ðŸ’';
       case ItemType.relic:
         return 'ðŸ”®';
+      case ItemType.spell:
+        return '✨';
     }
   }
 }
@@ -57,6 +61,8 @@ class Item {
   // â”€â”€ Special passive / active effect â”€â”€
   final String effect;
 
+  final int manaCost;
+
   const Item({
     required this.id,
     required this.name,
@@ -71,11 +77,13 @@ class Item {
     this.agility = 0,
     this.health = 0,
     this.effect = '',
+    this.manaCost = 0,
   });
 
   /// Human-readable stat summary shown on shop cards.
   String get statSummary {
     final parts = <String>[];
+    if (manaCost > 0) parts.add('$manaCost MP');
     if (attack > 0) parts.add('+$attack ATK');
     if (defense > 0) parts.add('+$defense DEF');
     if (magic > 0) parts.add('+$magic MAG');
@@ -89,7 +97,8 @@ class Item {
   String get priceLabel => '$price Gold';
 
   /// Path to the item's image asset, derived from its id.
-  String get imagePath => 'assets/images/items/$id.png';
+  String get imagePath =>
+      'assets/images/items/$id.${type == ItemType.spell ? 'jpg' : 'png'}';
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  SHOP PROGRESSION
@@ -102,38 +111,122 @@ class Item {
 
   static const List<List<String>> shopProgression = [
     // â”€â”€ Phase 1: First Steps (sets 0-3) â”€â”€
-    ['wpn_001', 'arm_001', 'acc_001', 'rel_001'], // Start â†’ Lv 1
-    ['wpn_002', 'arm_002', 'acc_002', 'rel_002'], // Set 0 done â†’ Lv 5
+    ['wpn_001', 'arm_001', 'acc_001', 'rel_001', 'spl_001'], // Start â†’ Lv 1
+    [
+      'wpn_002',
+      'arm_002',
+      'acc_002',
+      'rel_002',
+      'spl_002',
+    ], // Set 0 done â†’ Lv 5
     [], // Set 1
     [], // Set 2
     // â”€â”€ Phase 2: Rising Action (sets 4-5) â”€â”€
-    ['wpn_003', 'arm_003', 'acc_003', 'rel_003'], // Set 3 done â†’ Lv 10
+    [
+      'wpn_003',
+      'arm_003',
+      'acc_003',
+      'rel_003',
+      'spl_003',
+    ], // Set 3 done â†’ Lv 10
     [], // Set 4
     // â”€â”€ Phase 3: The Mystery Deepens (sets 6-8) â”€â”€
-    ['wpn_004', 'arm_004', 'acc_004', 'rel_004'], // Set 5 done â†’ Lv 15
-    ['wpn_005', 'arm_005', 'acc_005', 'rel_005'], // Set 6 done â†’ Lv 20
+    [
+      'wpn_004',
+      'arm_004',
+      'acc_004',
+      'rel_004',
+      'spl_004',
+    ], // Set 5 done â†’ Lv 15
+    [
+      'wpn_005',
+      'arm_005',
+      'acc_005',
+      'rel_005',
+      'spl_005',
+    ], // Set 6 done â†’ Lv 20
     [], // Set 7
     // â”€â”€ Phase 4: Mid-Game (sets 9-10) â”€â”€
-    ['wpn_006', 'arm_006', 'acc_006', 'rel_006'], // Set 8 done â†’ Lv 25
+    [
+      'wpn_006',
+      'arm_006',
+      'acc_006',
+      'rel_006',
+      'spl_006',
+    ], // Set 8 done â†’ Lv 25
     [], // Set 9
     // â”€â”€ Phase 5: Escalation (sets 11-13) â”€â”€
-    ['wpn_007', 'arm_007', 'acc_007', 'rel_007'], // Set 10 done â†’ Lv 30
-    ['wpn_008', 'arm_008', 'acc_008', 'rel_008'], // Set 11 done â†’ Lv 35
+    [
+      'wpn_007',
+      'arm_007',
+      'acc_007',
+      'rel_007',
+      'spl_007',
+    ], // Set 10 done â†’ Lv 30
+    [
+      'wpn_008',
+      'arm_008',
+      'acc_008',
+      'rel_008',
+      'spl_008',
+    ], // Set 11 done â†’ Lv 35
     [], // Set 12
     // â”€â”€ Phase 6: High Stakes (sets 14-15) â”€â”€
-    ['wpn_009', 'arm_009', 'acc_009', 'rel_009'], // Set 13 done â†’ Lv 40
+    [
+      'wpn_009',
+      'arm_009',
+      'acc_009',
+      'rel_009',
+      'spl_009',
+    ], // Set 13 done â†’ Lv 40
     [], // Set 14
     // â”€â”€ Phase 7: Deep Lore (sets 16-17) â”€â”€
-    ['wpn_010', 'arm_010', 'acc_010', 'rel_010'], // Set 15 done â†’ Lv 50
-    ['wpn_011', 'arm_011', 'acc_011', 'rel_011'], // Set 16 done â†’ Lv 60
+    [
+      'wpn_010',
+      'arm_010',
+      'acc_010',
+      'rel_010',
+      'spl_010',
+    ], // Set 15 done â†’ Lv 50
+    [
+      'wpn_011',
+      'arm_011',
+      'acc_011',
+      'rel_011',
+      'spl_011',
+    ], // Set 16 done â†’ Lv 60
     // â”€â”€ Phase 8: Ancient Threats (sets 18-19) â”€â”€
-    ['wpn_012', 'arm_012', 'acc_012', 'rel_012'], // Set 17 done â†’ Lv 70
+    [
+      'wpn_012',
+      'arm_012',
+      'acc_012',
+      'rel_012',
+      'spl_012',
+    ], // Set 17 done â†’ Lv 70
     [], // Set 18
     // â”€â”€ Phase 9: Endgame (sets 20-21) â”€â”€
-    ['wpn_013', 'arm_013', 'acc_013', 'rel_013'], // Set 19 done â†’ Lv 80
-    ['wpn_014', 'arm_014', 'acc_014', 'rel_014'], // Set 20 done â†’ Lv 90
+    [
+      'wpn_013',
+      'arm_013',
+      'acc_013',
+      'rel_013',
+      'spl_013',
+    ], // Set 19 done â†’ Lv 80
+    [
+      'wpn_014',
+      'arm_014',
+      'acc_014',
+      'rel_014',
+      'spl_014',
+    ], // Set 20 done â†’ Lv 90
     // â”€â”€ Finale (set 22) â”€â”€
-    ['wpn_015', 'arm_015', 'acc_015', 'rel_015'], // Set 21 done â†’ Lv 100
+    [
+      'wpn_015',
+      'arm_015',
+      'acc_015',
+      'rel_015',
+      'spl_015',
+    ], // Set 21 done â†’ Lv 100
   ];
 
   /// Returns all shop items unlocked for the given number of completed
@@ -1363,6 +1456,295 @@ final List<Item> allItems = [
     effect:
         'World Wound: all damage +20%. Once per battle, open a rift that erases one enemy ability permanently. Immune to all debuffs. Nearby enemies lose 3% stats per turn.',
   ),
+
+  // ═══════════════════════════════════════════════════════════
+  //  S P E L L S
+  // ═══════════════════════════════════════════════════════════
+
+  // ── spl_001 · GLOBAL · The Sundering ──────────────────
+  const Item(
+    id: 'spl_001',
+    name: 'Shard Bolt',
+    description:
+        'A jagged bolt of crystallised Sundering energy hurled at the '
+        'enemy. The fragments hum with the echo of the blow that cracked '
+        'reality — even a sliver carries that ancient violence.',
+    type: ItemType.spell,
+    rarity: Rarity.common,
+    level: 1,
+    price: 80,
+    magic: 3,
+    manaCost: 5,
+    effect: 'Hurls a Sundering shard dealing damage based on MAG.',
+  ),
+
+  // ── spl_002 · FOREST · Thornveil ──────────────────────
+  const Item(
+    id: 'spl_002',
+    name: 'Thornlash',
+    description:
+        'The Thornveil responds to those who speak its old names. This '
+        'invocation calls a whip of living thorns from the forest floor '
+        'to lash and bind enemies in barbed vine.',
+    type: ItemType.spell,
+    rarity: Rarity.common,
+    level: 5,
+    price: 120,
+    magic: 4,
+    manaCost: 8,
+    effect:
+        'Lashes a target with thorned vine, dealing MAG damage and slowing them for 2 turns.',
+  ),
+
+  // ── spl_003 · CAVE · The Hollows ──────────────────────
+  const Item(
+    id: 'spl_003',
+    name: 'Stoneskin',
+    description:
+        'The deep stone of the Hollows remembers the Warden-craft — the '
+        'old art of binding earth to flesh. This ward coats the caster '
+        'in a shell of living rock that turns aside blades.',
+    type: ItemType.spell,
+    rarity: Rarity.common,
+    level: 10,
+    price: 200,
+    magic: 5,
+    defense: 3,
+    manaCost: 10,
+    effect:
+        'Grants a stone shield absorbing damage equal to 50% MAG for 3 turns.',
+  ),
+
+  // ── spl_004 · RUINS · Valdris ─────────────────────────
+  const Item(
+    id: 'spl_004',
+    name: 'Arcane Missile',
+    description:
+        'The Court Arcanists of Valdris refined raw mana into precise '
+        'bolts that track their targets through corridors and around '
+        'cover. The spell is elementary by their standards — and '
+        'devastating by anyone else\'s.',
+    type: ItemType.spell,
+    rarity: Rarity.rare,
+    level: 15,
+    price: 350,
+    magic: 8,
+    manaCost: 12,
+    effect:
+        'Fires 3 homing bolts of arcane energy, each dealing MAG-scaled damage.',
+  ),
+
+  // ── spl_005 · GLOBAL · The Hollow ─────────────────────
+  const Item(
+    id: 'spl_005',
+    name: 'Hollow Drain',
+    description:
+        'A forbidden technique that channels the Hollow\'s hunger. The '
+        'caster opens a hairline crack between worlds and the void drinks '
+        'from the enemy\'s life force, returning a fraction to the caster.',
+    type: ItemType.spell,
+    rarity: Rarity.rare,
+    level: 20,
+    price: 500,
+    magic: 10,
+    manaCost: 15,
+    effect:
+        'Drains enemy HP equal to 80% MAG and heals caster for half the amount.',
+  ),
+
+  // ── spl_006 · FOREST · World Tree ─────────────────────
+  const Item(
+    id: 'spl_006',
+    name: 'Verdant Bloom',
+    description:
+        'A prayer to the World Tree channelled through living wood. '
+        'Golden-green light blooms around the caster, knitting wounds '
+        'and purging corruption. The Vaelithi healers called this the '
+        'Firstbloom — the simplest gift the Tree still gives.',
+    type: ItemType.spell,
+    rarity: Rarity.rare,
+    level: 25,
+    price: 700,
+    magic: 12,
+    manaCost: 18,
+    effect: 'Heals caster for 120% MAG and removes one negative status effect.',
+  ),
+
+  // ── spl_007 · CAVE · Forge Spirit ─────────────────────
+  const Item(
+    id: 'spl_007',
+    name: 'Molten Surge',
+    description:
+        'Deep beneath the Hollows, the Forge Spirit still hammers at '
+        'its eternal anvil. This invocation borrows a breath of its '
+        'fire — liquid stone erupts from the ground in a searing wave '
+        'that melts armour and flesh alike.',
+    type: ItemType.spell,
+    rarity: Rarity.rare,
+    level: 30,
+    price: 1000,
+    magic: 15,
+    attack: 5,
+    manaCost: 22,
+    effect:
+        'Erupts magma dealing heavy MAG damage and reducing enemy DEF by 15% for 3 turns.',
+  ),
+
+  // ── spl_008 · RUINS · Tithebound ──────────────────────
+  const Item(
+    id: 'spl_008',
+    name: 'Soul Tithe',
+    description:
+        'The Tithebound of Valdris paid their debts in soul-stuff, not '
+        'coin. This grim enchantment exacts the same price from an enemy '
+        '— tearing away a sliver of their essence to fuel the caster\'s '
+        'next strike.',
+    type: ItemType.spell,
+    rarity: Rarity.rare,
+    level: 35,
+    price: 1400,
+    magic: 18,
+    manaCost: 25,
+    effect:
+        'Steals enemy ATK/MAG by 10% for 3 turns and boosts caster\'s next attack by 30%.',
+  ),
+
+  // ── spl_009 · GLOBAL · The Radiant One ────────────────
+  const Item(
+    id: 'spl_009',
+    name: 'Radiant Judgement',
+    description:
+        'A column of searing light called down in the Radiant One\'s '
+        'name. The Firstborn God of light may be diminished, but this '
+        'echo of divine wrath still burns — especially against creatures '
+        'of the Hollow.',
+    type: ItemType.spell,
+    rarity: Rarity.epic,
+    level: 40,
+    price: 2000,
+    magic: 22,
+    manaCost: 30,
+    effect:
+        'Holy damage dealing 150% MAG. Deals double damage to Hollow-corrupted enemies.',
+  ),
+
+  // ── spl_010 · FOREST · Fey Courts ─────────────────────
+  const Item(
+    id: 'spl_010',
+    name: 'Fey Mirage',
+    description:
+        'The Fey Courts deal in glamour and misdirection. This charm '
+        'wraps the caster in layers of illusory doubles that confuse '
+        'enemies, causing their attacks to strike at phantoms while the '
+        'real caster moves unseen.',
+    type: ItemType.spell,
+    rarity: Rarity.epic,
+    level: 50,
+    price: 3000,
+    magic: 25,
+    agility: 10,
+    manaCost: 35,
+    effect:
+        'Creates illusions granting 50% evasion for 3 turns. Next attack from stealth deals +40% damage.',
+  ),
+
+  // ── spl_011 · CAVE · Deep Mother ──────────────────────
+  const Item(
+    id: 'spl_011',
+    name: 'Earthen Maw',
+    description:
+        'The Deep Mother\'s hunger given form. The ground splits open '
+        'into a jagged maw of stone teeth that clamps shut on the enemy, '
+        'crushing and trapping them in the earth\'s grip.',
+    type: ItemType.spell,
+    rarity: Rarity.epic,
+    level: 60,
+    price: 4500,
+    magic: 30,
+    attack: 10,
+    manaCost: 40,
+    effect:
+        'Traps an enemy for 2 turns dealing 100% MAG each turn. Trapped enemies cannot act.',
+  ),
+
+  // ── spl_012 · RUINS · Nameless Choir ──────────────────
+  const Item(
+    id: 'spl_012',
+    name: 'Chorus of Unmaking',
+    description:
+        'The Nameless Choir sang the walls of Valdris into existence — '
+        'and their imprisoned echoes still know the counter-melody. This '
+        'spell unleashes a discordant wail that unravels enchantments, '
+        'wards, and the will to fight.',
+    type: ItemType.spell,
+    rarity: Rarity.epic,
+    level: 70,
+    price: 6500,
+    magic: 35,
+    manaCost: 45,
+    effect:
+        'AoE sonic damage dealing 120% MAG. Dispels all enemy buffs and silences for 2 turns.',
+  ),
+
+  // ── spl_013 · GLOBAL · Death ──────────────────────────
+  const Item(
+    id: 'spl_013',
+    name: 'Death\'s Whisper',
+    description:
+        'Death in this world is not an ending but a patient collector. '
+        'This forbidden invocation borrows Death\'s voice for a single '
+        'syllable — a whisper that makes mortal things remember they '
+        'are mortal. The strong can resist. The weak simply stop.',
+    type: ItemType.spell,
+    rarity: Rarity.mythic,
+    level: 80,
+    price: 10000,
+    magic: 45,
+    manaCost: 55,
+    effect:
+        'Chance to instantly kill enemies below 25% HP. Otherwise deals 200% MAG damage.',
+  ),
+
+  // ── spl_014 · RUINS · Severance ───────────────────────
+  const Item(
+    id: 'spl_014',
+    name: 'Severance Rift',
+    description:
+        'A controlled fragment of the Severance — the spell that folded '
+        'the Valdris kingdom into a dimension that should not exist. '
+        'This tears a brief rift in space that swallows attacks and '
+        'redirects them back at the attacker.',
+    type: ItemType.spell,
+    rarity: Rarity.mythic,
+    level: 90,
+    price: 16000,
+    magic: 55,
+    defense: 15,
+    manaCost: 65,
+    effect:
+        'Opens a dimensional rift absorbing all damage for 2 turns, then detonates for 250% absorbed damage.',
+  ),
+
+  // ── spl_015 · GLOBAL · The Sundering Wound ────────────
+  const Item(
+    id: 'spl_015',
+    name: 'Worldbreak',
+    description:
+        'The ultimate expression of Sundering magic — a spell that '
+        'reopens the original wound between worlds for a heartbeat. '
+        'Reality screams. Everything in the blast radius is touched by '
+        'the raw stuff of creation and un-creation simultaneously. '
+        'Nothing survives unchanged.',
+    type: ItemType.spell,
+    rarity: Rarity.mythic,
+    level: 100,
+    price: 24000,
+    magic: 70,
+    attack: 25,
+    manaCost: 80,
+    effect:
+        'Cataclysmic damage dealing 400% MAG to all enemies. Reduces all enemy stats by 20% permanently. Once per battle.',
+  ),
 ];
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1384,6 +1766,10 @@ List<Item> get allAccessories =>
 /// All relics in the game.
 List<Item> get allRelics =>
     allItems.where((i) => i.type == ItemType.relic).toList();
+
+/// All spells in the game.
+List<Item> get allSpellItems =>
+    allItems.where((i) => i.type == ItemType.spell).toList();
 
 /// Items filtered by level range (inclusive).
 List<Item> itemsForLevelRange(int minLevel, int maxLevel) =>

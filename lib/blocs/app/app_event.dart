@@ -59,10 +59,12 @@ class ResumeQuestEvent extends GameEvent {
   final Map<String, dynamic> questDetails;
   final List<Map<String, String>> conversationHistory;
   final List<String> lastOptions;
+  final Map<String, dynamic>? playerState;
   ResumeQuestEvent({
     required this.questDetails,
     required this.conversationHistory,
     this.lastOptions = const [],
+    this.playerState,
   });
 }
 
@@ -85,3 +87,15 @@ class CompleteQuestEvent extends GameEvent {
 
 /// Reset player and all in-memory state (e.g. on account deletion / sign out).
 class ResetPlayerEvent extends GameEvent {}
+
+/// Player died during a quest — penalise by resetting the current set's progress.
+class QuestFailedPenaltyEvent extends GameEvent {
+  final String questId;
+  QuestFailedPenaltyEvent(this.questId);
+}
+
+/// Player casts a spell from the hotbar during a quest.
+class CastSpellEvent extends GameEvent {
+  final Item spell;
+  CastSpellEvent(this.spell);
+}

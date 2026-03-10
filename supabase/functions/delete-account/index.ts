@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate_limit.ts";
 
 // ── Main handler ───────────────────────────────────────────
 
@@ -36,6 +37,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const userId = user.id;
+
+    // ── Rate limiting: 3 requests per 60 seconds ──
+    const rateCheck = await checkRateLimit(supabaseAdmin, userId, "delete-account", {
+      maxRequests: 3,
+      windowSeconds: 60,
+    });
+    if (!rateCheck.allowed) {
+      return jsonError(
+        `Too many requests. Try again in ${rateCheck.retryAfterSeconds}s.`,
+        429,
+      );
+    }
 
     // ── Delete all user data from every table ──
     // Each delete is wrapped individually so a missing table doesn't abort.

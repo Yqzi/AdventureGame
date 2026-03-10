@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import 'package:Questborne/components/loot_notification.dart';
 import 'package:Questborne/components/narrative_skeleton.dart';
 import 'package:Questborne/components/quest_complete_overlay.dart';
 import 'package:Questborne/components/quest_failed_overlay.dart';
+import 'package:Questborne/components/spell_hotbar.dart';
 import 'package:Questborne/router.dart';
 import 'package:Questborne/components/stat_bar.dart';
 import 'package:Questborne/components/typewriter_text.dart';
@@ -99,6 +101,7 @@ class _GamePageState extends State<GamePage> {
               questDetails: widget.details,
               conversationHistory: session.conversationHistory,
               lastOptions: session.lastOptions,
+              playerState: session.playerState,
             ),
           );
           return;
@@ -159,6 +162,7 @@ class _GamePageState extends State<GamePage> {
         conversationHistory: history,
         questDetails: widget.details,
         lastOptions: lastOptions,
+        playerState: bloc.player.toJson(),
         savedAt: DateTime.now(),
       );
       await _sessionRepo.saveSession(session);
@@ -823,6 +827,45 @@ class _GamePageState extends State<GamePage> {
                             },
                           ),
 
+                          // ── Spell hotbar ──
+                          if (!_questDone && !_questFailedDone)
+                            BlocBuilder<GameBloc, GameState>(
+                              buildWhen: (prev, curr) {
+                                final prevP = _playerFromState(prev);
+                                final currP = _playerFromState(curr);
+                                return prevP?.currentMana !=
+                                        currP?.currentMana ||
+                                    prevP?.inventory.length !=
+                                        currP?.inventory.length;
+                              },
+                              builder: (context, state) {
+                                final p = _playerFromState(state);
+                                if (p == null) return const SizedBox.shrink();
+                                final spells = p.spellItems;
+                                if (spells.isEmpty)
+                                  return const SizedBox.shrink();
+                                final isActive =
+                                    state is! GameLoading &&
+                                    state is! GameStreamingNarrative;
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 2,
+                                  ),
+                                  child: SpellHotbar(
+                                    spells: spells,
+                                    currentMana: p.currentMana,
+                                    enabled: isActive,
+                                    onCast: (spell) {
+                                      context.read<GameBloc>().add(
+                                        CastSpellEvent(spell),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+
                           // ── Text input ──
                           if (!_questDone && !_questFailedDone)
                             Padding(
@@ -885,8 +928,11 @@ class _GamePageState extends State<GamePage> {
               QuestFailedOverlay(
                 questTitle: widget.details['title'] ?? 'Quest',
                 onReturnToGuild: () {
-                  // Delete saved session — quest failed
+                  // Penalise: reset completed quests in the current set.
                   if (widget.questId != null) {
+                    context.read<GameBloc>().add(
+                      QuestFailedPenaltyEvent(widget.questId!),
+                    );
                     _sessionRepo.deleteSession(widget.questId!);
                   }
                   Navigator.of(
@@ -1154,10 +1200,18 @@ class GeminiTextField extends StatelessWidget {
       absorbing: !isEnabled,
       child: TextField(
         controller: _controller,
+        maxLength: 500,
+        inputFormatters: [LengthLimitingTextInputFormatter(500)],
         style: GoogleFonts.epilogue(
           color: isEnabled ? Colors.white : Colors.grey,
         ), // Grey out text if disabled
-
+        buildCounter:
+            (
+              context, {
+              required currentLength,
+              required isFocused,
+              maxLength,
+            }) => null,
         onSubmitted: (value) {
           if (isEnabled && value.trim().isNotEmpty) {
             // Only call onSend if enabled

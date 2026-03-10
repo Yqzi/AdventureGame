@@ -217,7 +217,11 @@ Field rules:
 - manaRestored: Mana recovered. Rare — only through rest or specific items.
 - goldGained: Gold found, earned, or looted. 0 if none. Keep amounts realistic and scaled to difficulty.
 - goldLost: Gold spent, stolen, dropped, or extorted. 0 if none.
-- xpGained: Experience earned. Exploration/dialogue=5-15. Minor combat=15-30. Major encounter=30-60. Boss/quest completion=80-120. Scale with difficulty — harder quests give more XP.
+- xpGained: Experience earned. Scale to BOTH the action AND the player's current level.
+  Base values (at level 1): Exploration/dialogue=5-15. Minor combat=15-30. Major encounter=30-60. Boss/quest completion=80-150.
+  Multiply base values by max(1, floor(player_level / 2)).
+  Examples: Level 1 goblin fight = 20×1 = 20. Level 10 troll fight = 50×5 = 250. Level 20 dungeon boss = 120×10 = 1200. Level 50 perilous boss = 150×25 = 3750.
+  Scale with difficulty — harder quests give toward the high end of base ranges.
 - statusAdded: One of "poisoned","burning","frozen","blessed","shielded","weakened", or null.
 - statusRemoved: Same options, or null.
 - itemGained: Item ID string if player found/received something, or null.
@@ -246,6 +250,8 @@ Before narrating the outcome of any player action, you MUST internally evaluate 
 
 Check the player's stats, equipped items, inventory, status effects, HP, and MP. These are provided in the "Current Player State" context with every message.
 
+CRITICAL: The "Current Player State" is ALWAYS the source of truth. It reflects real-time changes. If the player's current equipment or inventory differs from what was mentioned in previous story turns, the player has acquired or changed gear between turns. ALWAYS trust the current state over story history. Do not claim the player lacks an item that appears in their current state.
+
 Rules:
 - If the player attempts something their stats support (high ATK for a powerful strike, high AGI for a dodge, high MAG for a spell), narrate success with appropriate flair.
 - If the player attempts something BEYOND their capabilities (casting a spell with 0 MP, fighting with 1 HP, picking a lock with no agility or tools), let them TRY in the story — but they FAIL. Narrate the attempt and its natural failure. There may be consequences: alerting guards, wasting time, injuring themselves, breaking a tool.
@@ -270,6 +276,21 @@ STATUS EFFECTS:
 - If WEAKENED, they are diminished — attacks hit softer, movements are slower, willpower falters.
 
 Never name these as "status effects." Weave them into the narration as physical and emotional experiences.
+
+=== MAGIC & SPELLS ===
+
+The player may cast spells they have purchased. When a player casts a spell, their message will describe it (e.g., "I cast Shard Bolt"). Their available spells are listed in the player context with MP costs and effect descriptions.
+
+Rules for spell narration:
+- Narrate the spell being cast with vivid, sensory detail — the crackle of arcane energy, the rumble of earth magic, the shimmer of a ward forming.
+- The spell's power scales with the player's MAG stat. A high-MAG player's spell is devastating; a low-MAG player's is weaker.
+- Offensive spells deal damage to enemies. The AI decides how effective it is based on the situation, enemy type, and difficulty.
+- Healing spells restore HP or cleanse status effects. Set "heal" and/or "statusRemoved" in EFFECTS.
+- Defensive spells provide protection. You may add "shielded" status, or narrate reduced incoming damage.
+- If a player tries to cast a spell they cannot afford (out of MP), the spell fizzles — narrate the failure naturally.
+- The manaSpent field in EFFECTS should be 0 when a spell is cast via the hotbar (mana is already deducted). Only set manaSpent > 0 if the player casts a spell through typed commands.
+- Equipment with spell-boosting effects (e.g., "spell attacks deal 15% bonus damage") MUST amplify the spell's effectiveness in the narrative.
+- NEVER mention MP costs, stats, or game mechanics. Describe everything through the fiction.
 """;
 
   AIService();
@@ -277,7 +298,17 @@ Never name these as "status effects." Weave them into the narration as physical 
   /// Returns the safety settings list to send to the Edge Function.
   List<Map<String, String>> _buildSafetyPayload() {
     final settings = SettingsService();
-    String _levelStr(int level) => level == 2 ? 'medium' : 'high';
+    String _levelStr(int level) {
+      switch (level) {
+        case 1:
+          return 'low';
+        case 2:
+          return 'medium';
+        default:
+          return 'high';
+      }
+    }
+
     return [
       {
         'category': 'hateSpeech',
@@ -318,7 +349,14 @@ Never name these as "status effects." Weave them into the narration as physical 
     try {
       // Refresh the session to ensure a valid access token
       final authClient = Supabase.instance.client.auth;
-      await authClient.refreshSession();
+      try {
+        await authClient.refreshSession();
+      } catch (_) {
+        // Refresh failed — sign out so the user is prompted to re-authenticate.
+        await authClient.signOut();
+        yield 'Your session has expired. Please sign in again.';
+        return;
+      }
       final session = authClient.currentSession;
       if (session == null) {
         yield 'You must be signed in to play.';
@@ -359,10 +397,10 @@ Never name these as "status effects." Weave them into the narration as physical 
         'systemPersona': _systemPersona,
         'safetySettings': _buildSafetyPayload(),
         'deviceId': deviceId,
-        'model': tier.aiModel,
+        'model': SubscriptionTier.champion.aiModel,
         'temperature': tier.temperature,
         'maxOutputTokens': tier.maxOutputTokens,
-        if (tier == SubscriptionTier.champion) 'thinkingLevel': 'medium',
+        // if (tier == SubscriptionTier.champion) 'thinkingLevel': 'medium',
         if (tier.tierPromptAppend.isNotEmpty)
           'tierPromptAppend': tier.tierPromptAppend,
         if (loreContext.isNotEmpty) 'loreContext': loreContext,
@@ -382,6 +420,9 @@ Never name these as "status effects." Weave them into the narration as physical 
 
       if (streamed.statusCode != 200) {
         final errorBody = await streamed.stream.bytesToString();
+        print('=== AI ERROR RESPONSE (${streamed.statusCode}) ===');
+        print(errorBody);
+        print('=== END AI ERROR RESPONSE ===');
         try {
           final decoded = jsonDecode(errorBody);
           yield decoded['error'] ?? 'Server error (${streamed.statusCode})';
@@ -438,7 +479,7 @@ Never name these as "status effects." Weave them into the narration as physical 
   }
 
   /// Basic player context for the free tier — name, level, HP/MP, location,
-  /// and equipped weapon name only. Keeps the payload small.
+  /// equipped items, and inventory.
   String _formatBasicPlayerContext(Player player) {
     final parts = <String>[
       'Name: ${player.name}',
@@ -447,11 +488,39 @@ Never name these as "status effects." Weave them into the narration as physical 
       'MP: ${player.currentMana}/${player.maxMana}',
       'Location: ${player.currentLocation}',
     ];
-    final weapon = player.equipment.weapon;
-    parts.add('Weapon: ${weapon?.name ?? '[unarmed]'}');
+    final eq = player.equipment;
+    final equipped = <String>[];
+    for (final entry in {
+      'Weapon': eq.weapon,
+      'Armor': eq.armor,
+      'Accessory': eq.accessory,
+      'Relic': eq.relic,
+    }.entries) {
+      final item = entry.value;
+      if (item != null) {
+        final effect = item.effect.isNotEmpty
+            ? ' [Effect: ${item.effect}]'
+            : '';
+        equipped.add('${entry.key}: ${item.name}$effect');
+      }
+    }
+    parts.add(
+      equipped.isEmpty
+          ? 'Equipment: [none]'
+          : 'Equipment: ${equipped.join(' | ')}',
+    );
+    if (player.inventory.isNotEmpty) {
+      parts.add('Inventory: ${player.inventory.map((i) => i.name).join(', ')}');
+    }
     if (player.statusEffects.isNotEmpty) {
       parts.add(
         'Status: ${player.statusEffects.map((e) => e.label).join(', ')}',
+      );
+    }
+    final spells = player.spellItems;
+    if (spells.isNotEmpty) {
+      parts.add(
+        'Known Spells: ${spells.map((s) => '${s.name} (${s.manaCost} MP)').join(', ')}',
       );
     }
     return parts.join('\n');
@@ -482,7 +551,10 @@ Never name these as "status effects." Weave them into the narration as physical 
       final item = entry.value;
       if (item != null) {
         final stats = item.statSummary;
-        equipped.add('${entry.key}: ${item.name} ($stats)');
+        final effect = item.effect.isNotEmpty
+            ? ' [Effect: ${item.effect}]'
+            : '';
+        equipped.add('${entry.key}: ${item.name} ($stats)$effect');
       } else {
         equipped.add('${entry.key}: [empty]');
       }
@@ -497,6 +569,12 @@ Never name these as "status effects." Weave them into the narration as physical 
     if (player.inventory.isNotEmpty) {
       parts.add(
         'Inventory: ${player.inventory.map((i) => '${i.name} (${i.type.label})').join(', ')}',
+      );
+    }
+    final spells = player.spellItems;
+    if (spells.isNotEmpty) {
+      parts.add(
+        'Known Spells: ${spells.map((s) => '${s.name} (${s.manaCost} MP — ${s.effect})').join(' | ')}',
       );
     }
     return parts.join('\n');

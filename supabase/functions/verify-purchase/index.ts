@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate_limit.ts";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -54,6 +55,18 @@ Deno.serve(async (req: Request) => {
     } = await supabaseUser.auth.getUser();
     if (userError || !user) {
       return jsonError("Invalid or expired token", 401);
+    }
+
+    // ── Rate limiting: 5 requests per 60 seconds ──
+    const rateCheck = await checkRateLimit(supabaseAdmin, user.id, "verify-purchase", {
+      maxRequests: 5,
+      windowSeconds: 60,
+    });
+    if (!rateCheck.allowed) {
+      return jsonError(
+        `Too many requests. Try again in ${rateCheck.retryAfterSeconds}s.`,
+        429,
+      );
     }
 
     // ── Parse body ──

@@ -40,6 +40,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     on<StartNewQuestEvent>(_onStartNewQuest);
     on<PlayerCommandEvent>(_onPlayerCommand);
+    on<CastSpellEvent>(_onCastSpell);
     on<EquipItemEvent>(_onEquipItem);
     on<UnequipSlotEvent>(_onUnequipSlot);
     on<BuyItemEvent>(_onBuyItem);
@@ -54,6 +55,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<SetPlayerNameEvent>(_onSetPlayerName);
     on<ResetPlayerEvent>(_onResetPlayer);
     on<CompleteQuestEvent>(_onCompleteQuest);
+    on<QuestFailedPenaltyEvent>(_onQuestFailedPenalty);
   }
 
   /// The current player — exposed for reading outside the bloc if needed.
@@ -119,6 +121,28 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _saveService.savePlayer(_player).catchError((_) {});
   }
 
+  /// Fire-and-forget helper to persist the current quest session
+  /// (conversation history + options) after every AI response.
+  void _autoSaveSession({List<String> lastOptions = const []}) {
+    final questId = _currentActiveQuest['id'] as String?;
+    if (questId == null || _chatHistory.isEmpty) return;
+    final history = _chatHistory
+        .map((m) => {
+              'sender': m.sender == MessageSender.player ? 'player' : 'ai',
+              'text': m.text,
+            })
+        .toList();
+    final session = GameSession(
+      questId: questId,
+      conversationHistory: history,
+      questDetails: _currentActiveQuest,
+      lastOptions: lastOptions,
+      playerState: _player.toJson(),
+      savedAt: DateTime.now(),
+    );
+    _sessionRepo.saveSession(session).catchError((_) {});
+  }
+
   void _onResetPlayer(ResetPlayerEvent event, Emitter<GameState> emit) {
     _player = Player.create(id: _uuid.v4(), name: 'Adventurer');
     _currentActiveQuest = {};
@@ -137,10 +161,65 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _player = _player
           .gainGold(quest.goldReward)
           .gainExperience(quest.xpReward);
+      // Auto level-up (restores HP/MP to full on each level gained).
+      while (_player.canLevelUp) {
+        _player = _player.levelUp();
+      }
     } else {
+      // Look up the main quest to award its gold/XP.
+      final mainQuest = allQuests.cast<Quest?>().firstWhere(
+        (q) => q!.id == event.questId,
+        orElse: () => null,
+      );
+      if (mainQuest != null) {
+        _player = _player
+            .gainGold(mainQuest.goldReward)
+            .gainExperience(mainQuest.xpReward);
+      }
       _player = _player.completeQuest(event.questId);
+
+      // Auto level-up (restores HP/MP to full on each level gained).
+      while (_player.canLevelUp) {
+        _player = _player.levelUp();
+      }
+
+      // If the entire current set is now complete, full-restore HP/MP.
+      final completedIds = _player.completedQuestIds.toSet();
+      final currentSet = Quest.currentSetIds(completedIds);
+      if (currentSet != null &&
+          currentSet.every((id) => completedIds.contains(id))) {
+        _player = _player.fullRestore();
+      }
     }
     _autoSavePlayer();
+    emit(GameInitial(player: _player));
+  }
+
+  void _onQuestFailedPenalty(
+    QuestFailedPenaltyEvent event,
+    Emitter<GameState> emit,
+  ) {
+    // Find which set this quest belongs to.
+    final setIds = Quest.setContaining(event.questId);
+    if (setIds != null) {
+      // Remove any completed quest IDs from this set.
+      final updated = _player.completedQuestIds
+          .where((id) => !setIds.contains(id))
+          .toList();
+      // Recalculate questsCompleted count.
+      final removedCount = _player.completedQuestIds.length - updated.length;
+      _player = _player.copyWith(
+        completedQuestIds: updated,
+        questsCompleted: (_player.questsCompleted - removedCount).clamp(
+          0,
+          99999,
+        ),
+      );
+    }
+    // Full-restore HP after death so player can try again.
+    _player = _player.fullRestore();
+    _autoSavePlayer();
+    emit(GameInitial(player: _player));
   }
 
   // ─────────────────────────────────────────────────────────
@@ -149,21 +228,38 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// The AI appends <!--OPTIONS:[...]-->  and <!--EFFECTS:{...}--> at the end.
   static final RegExp _effectsPattern = RegExp(
-    r'<!--EFFECTS:(.*?)-->',
+    r'<!--\s*EFFECTS\s*:\s*(.*?)\s*-->',
     dotAll: true,
   );
 
   static final RegExp _optionsPattern = RegExp(
-    r'<!--OPTIONS:(.*?)-->',
+    r'<!--\s*OPTIONS\s*:\s*(.*?)\s*-->',
+    dotAll: true,
+  );
+
+  /// Fallback patterns for when the AI deviates from the expected format.
+  static final RegExp _effectsFallback = RegExp(
+    r'EFFECTS\s*:\s*(\{[^}]*\})',
+    dotAll: true,
+  );
+  static final RegExp _optionsFallback = RegExp(
+    r'OPTIONS\s*:\s*(\[[^\]]*\])',
+    dotAll: true,
+  );
+
+  /// Aggressively strip any leaked metadata from the narrative.
+  static final RegExp _leakedMetadata = RegExp(
+    r'<!--.*?-->|EFFECTS\s*:\s*\{[^}]*\}|OPTIONS\s*:\s*\[[^\]]*\]|```json\s*\{[^}]*\}\s*```|```json\s*\[[^\]]*\]\s*```|```\s*\{[^}]*\}\s*```|```\s*\[[^\]]*\]\s*```',
     dotAll: true,
   );
 
   /// Splits the raw AI response into (cleanNarrative, StoryEffects?, options).
   ({String narrative, StoryEffects? effects, List<String> options})
   _parseResponse(String raw) {
-    // Extract effects
+    // Extract effects — try primary pattern, then fallback
     StoryEffects? effects;
-    final effectsMatch = _effectsPattern.firstMatch(raw);
+    final effectsMatch =
+        _effectsPattern.firstMatch(raw) ?? _effectsFallback.firstMatch(raw);
     if (effectsMatch != null) {
       try {
         final json = jsonDecode(effectsMatch.group(1)!) as Map<String, dynamic>;
@@ -173,9 +269,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     }
 
-    // Extract options
+    // Extract options — try primary pattern, then fallback
     List<String> options = [];
-    final optionsMatch = _optionsPattern.firstMatch(raw);
+    final optionsMatch =
+        _optionsPattern.firstMatch(raw) ?? _optionsFallback.firstMatch(raw);
     if (optionsMatch != null) {
       try {
         final decoded = jsonDecode(optionsMatch.group(1)!) as List<dynamic>;
@@ -185,11 +282,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     }
 
-    // Clean narrative — remove both markers
-    String narrative = raw
-        .replaceAll(_effectsPattern, '')
-        .replaceAll(_optionsPattern, '')
-        .trim();
+    // Clean narrative — aggressively strip all metadata patterns
+    String narrative = raw.replaceAll(_leakedMetadata, '').trim();
 
     return (narrative: narrative, effects: effects, options: options);
   }
@@ -206,8 +300,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _chatHistory = [];
     _memoryManager.reset();
 
-    // Restore HP & MP for the new quest but keep level, gold, inventory, etc.
-    _player = _player.fullRestore();
+    // HP persists across quests — no full restore here.
+    // Player only heals when completing an entire quest set.
 
     emit(GameLoading(message: 'Starting your quest...', player: _player));
 
@@ -241,9 +335,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
         // During streaming, show text but strip the markers if partially visible
         final displayText = accumulatedRaw
-            .replaceAll(_effectsPattern, '')
-            .replaceAll(_optionsPattern, '')
+            .replaceAll(_leakedMetadata, '')
             .trim();
+        if (_chatHistory.isEmpty) continue;
         _chatHistory.last.text = displayText;
 
         emit(
@@ -256,12 +350,19 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
 
       // ── Stream complete — parse effects and apply ──
+      print('=== RAW AI RESPONSE (StartNewQuest) ===');
+      print(accumulatedRaw);
+      print('=== END RAW AI RESPONSE ===');
+
       final parsed = _parseResponse(accumulatedRaw);
       _chatHistory.last.text = parsed.narrative;
       _chatHistory.last.isComplete = true;
 
+      StoryEffects? displayEffects = parsed.effects;
       if (parsed.effects != null) {
-        _player = applyStoryEffects(_player, parsed.effects!);
+        final result = applyStoryEffects(_player, parsed.effects!);
+        _player = result.player;
+        displayEffects = result.effects;
       }
 
       _autoSavePlayer();
@@ -272,13 +373,18 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           activeQuest: _currentActiveQuest,
           player: _player,
           options: parsed.options,
-          effects: parsed.effects,
+          effects: displayEffects,
         ),
       );
+
+      _autoSaveSession(lastOptions: parsed.options);
+
     } catch (error, stackTrace) {
       print('Error during AI stream for StartNewQuest: $error\n$stackTrace');
-      _chatHistory.last.text = 'Error: $error';
-      _chatHistory.last.isComplete = true;
+      if (_chatHistory.isNotEmpty) {
+        _chatHistory.last.text = 'Error: $error';
+        _chatHistory.last.isComplete = true;
+      }
       emit(GameError('Failed to start quest: $error', player: _player));
     }
   }
@@ -293,8 +399,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   ) async {
     _currentActiveQuest = event.questDetails;
 
-    // Restore HP & MP for the resumed quest
-    _player = _player.fullRestore();
+    // Use the current global player (HP persists across quests).
+    // Don't restore from the session snapshot — it has stale HP.
+
+    // Reset conversation memory so the rolling summary index doesn't
+    // reference the previous session's message count.
+    _memoryManager.reset();
 
     // Rebuild _chatHistory from the saved conversation
     _chatHistory = event.conversationHistory.map((m) {
@@ -389,9 +499,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
         // Strip markers from display during streaming
         final displayText = accumulatedRaw
-            .replaceAll(_effectsPattern, '')
-            .replaceAll(_optionsPattern, '')
+            .replaceAll(_leakedMetadata, '')
             .trim();
+        if (_chatHistory.isEmpty) continue;
         _chatHistory.last.text = displayText;
 
         emit(
@@ -404,12 +514,20 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
 
       // ── Stream complete — parse effects and apply ──
+      print('=== RAW AI RESPONSE (PlayerCommand) ===');
+      print(accumulatedRaw);
+      print('=== END RAW AI RESPONSE ===');
+
       final parsed = _parseResponse(accumulatedRaw);
+      if (_chatHistory.isEmpty) return;
       _chatHistory.last.text = parsed.narrative;
       _chatHistory.last.isComplete = true;
 
+      StoryEffects? displayEffects = parsed.effects;
       if (parsed.effects != null) {
-        _player = applyStoryEffects(_player, parsed.effects!);
+        final result = applyStoryEffects(_player, parsed.effects!);
+        _player = result.player;
+        displayEffects = result.effects;
       }
 
       _autoSavePlayer();
@@ -420,14 +538,151 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           activeQuest: _currentActiveQuest,
           player: _player,
           options: parsed.options,
-          effects: parsed.effects,
+          effects: displayEffects,
         ),
       );
+
+      _autoSaveSession(lastOptions: parsed.options);
+
     } catch (error, stackTrace) {
       print('Error during AI stream for PlayerCommand: $error\n$stackTrace');
-      _chatHistory.last.text = 'Error: $error';
-      _chatHistory.last.isComplete = true;
+      if (_chatHistory.isNotEmpty) {
+        _chatHistory.last.text = 'Error: $error';
+        _chatHistory.last.isComplete = true;
+      }
       emit(GameError('Failed to process command: $error', player: _player));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  CAST SPELL
+  // ─────────────────────────────────────────────────────────
+
+  Future<void> _onCastSpell(
+    CastSpellEvent event,
+    Emitter<GameState> emit,
+  ) async {
+    final spell = event.spell;
+
+    // Guard: must have an active quest and enough mana.
+    if (_currentActiveQuest.isEmpty) {
+      emit(GameError('No active quest.', player: _player));
+      return;
+    }
+    if (_player.currentMana < spell.manaCost) {
+      emit(
+        GameError('Not enough mana to cast ${spell.name}.', player: _player),
+      );
+      return;
+    }
+
+    // Deduct mana upfront so the AI sees the reduced MP.
+    _player = _player.spendMana(spell.manaCost);
+
+    // Build a structured command the AI will narrate.
+    final command = 'I cast ${spell.name}. (${spell.effect})';
+
+    // Add the player's "cast" message to chat history.
+    _chatHistory.add(
+      ChatMessage(
+        id: _uuid.v4(),
+        sender: MessageSender.player,
+        text: 'Cast ${spell.name}',
+        timestamp: DateTime.now(),
+        isComplete: true,
+      ),
+    );
+
+    // Add a placeholder for the AI response.
+    _chatHistory.add(
+      ChatMessage.aiStreaming(
+        id: _uuid.v4(),
+        text: '',
+        timestamp: DateTime.now(),
+      ),
+    );
+
+    emit(
+      GameStreamingNarrative(
+        messages: List.from(_chatHistory),
+        activeQuest: _currentActiveQuest,
+        player: _player,
+      ),
+    );
+
+    String accumulatedRaw = '';
+    try {
+      final tier = SubscriptionService().current.effectiveTier;
+      final conversationCtx = _memoryManager.buildContextForAI(
+        _chatHistory.where((m) => m.isComplete).toList(),
+        tier,
+      );
+
+      await for (final chunk in _aiService.streamResponse(
+        command,
+        _currentActiveQuest,
+        player: _player,
+        conversationContext: conversationCtx.isNotEmpty
+            ? conversationCtx
+            : null,
+      )) {
+        accumulatedRaw += chunk;
+
+        final displayText = accumulatedRaw
+            .replaceAll(_leakedMetadata, '')
+            .trim();
+        if (_chatHistory.isEmpty) continue;
+        _chatHistory.last.text = displayText;
+
+        emit(
+          GameStreamingNarrative(
+            messages: List.from(_chatHistory),
+            activeQuest: _currentActiveQuest,
+            player: _player,
+          ),
+        );
+      }
+
+      final parsed = _parseResponse(accumulatedRaw);
+      if (_chatHistory.isEmpty) return;
+      _chatHistory.last.text = parsed.narrative;
+      _chatHistory.last.isComplete = true;
+
+      // Apply effects — note: mana was already deducted, so zero-out
+      // any AI-reported manaSpent to avoid double-spending.
+      StoryEffects? displayEffects = parsed.effects;
+      if (parsed.effects != null) {
+        final corrected = parsed.effects!.copyWith(manaSpent: 0);
+        final result = applyStoryEffects(_player, corrected);
+        _player = result.player;
+        // Show the original mana cost in the loot notification.
+        displayEffects = result.effects.copyWith(manaSpent: spell.manaCost);
+      } else {
+        // Even without AI effects, show the mana cost.
+        displayEffects = StoryEffects(manaSpent: spell.manaCost);
+      }
+
+      _autoSavePlayer();
+
+      emit(
+        GameLoaded(
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          options: parsed.options,
+          effects: displayEffects,
+        ),
+      );
+
+      _autoSaveSession(lastOptions: parsed.options);
+
+    } catch (error, stackTrace) {
+      print('Error during AI stream for CastSpell: $error\n$stackTrace');
+      if (_chatHistory.isNotEmpty) {
+        _chatHistory.last.text = 'Error: $error';
+        _chatHistory.last.isComplete = true;
+      }
+      emit(GameError('Failed to cast spell: $error', player: _player));
     }
   }
 

@@ -50,9 +50,9 @@ extension SubscriptionTierX on SubscriptionTier {
       case SubscriptionTier.free:
         return 0;
       case SubscriptionTier.adventurer:
-        return 0; // TODO: restore to 4.99 for production
+        return 4.99;
       case SubscriptionTier.champion:
-        return 0; // TODO: restore to 9.99 for production
+        return 9.99;
     }
   }
 
@@ -90,9 +90,9 @@ extension SubscriptionTierX on SubscriptionTier {
       case SubscriptionTier.free:
         return 'gemini-2.5-flash';
       case SubscriptionTier.adventurer:
-        return 'gemini-3-flash';
+        return 'gemini-3-flash-preview';
       case SubscriptionTier.champion:
-        return 'gemini-3.1-pro';
+        return 'gemini-3.1-pro-preview';
     }
   }
 
@@ -123,11 +123,11 @@ extension SubscriptionTierX on SubscriptionTier {
   int get maxOutputTokens {
     switch (this) {
       case SubscriptionTier.free:
-        return 400;
+        return 2000;
       case SubscriptionTier.adventurer:
-        return 600;
+        return 6000;
       case SubscriptionTier.champion:
-        return 1000;
+        return 10096;
     }
   }
 

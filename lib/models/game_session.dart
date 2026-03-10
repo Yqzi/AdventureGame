@@ -13,6 +13,9 @@ class GameSession {
   /// The last set of options the AI presented, so resume shows them again.
   final List<String> lastOptions;
 
+  /// Serialised player state (HP, mana, gold, inventory, etc.).
+  final Map<String, dynamic>? playerState;
+
   final DateTime savedAt;
 
   const GameSession({
@@ -20,6 +23,7 @@ class GameSession {
     required this.conversationHistory,
     required this.questDetails,
     this.lastOptions = const [],
+    this.playerState,
     required this.savedAt,
   });
 
@@ -28,6 +32,7 @@ class GameSession {
     'conversationHistory': conversationHistory,
     'questDetails': questDetails,
     'lastOptions': lastOptions,
+    'playerState': playerState,
     'savedAt': savedAt.toIso8601String(),
   };
 
@@ -40,6 +45,9 @@ class GameSession {
     lastOptions:
         (json['lastOptions'] as List?)?.map((e) => e.toString()).toList() ??
         const [],
+    playerState: json['playerState'] != null
+        ? Map<String, dynamic>.from(json['playerState'] as Map)
+        : null,
     savedAt: DateTime.parse(json['savedAt'] as String),
   );
 

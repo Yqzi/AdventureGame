@@ -79,6 +79,25 @@ class StoryEffects {
     );
   }
 
+  StoryEffects copyWith({int? damage, int? manaSpent}) {
+    return StoryEffects(
+      damage: damage ?? this.damage,
+      heal: heal,
+      manaSpent: manaSpent ?? this.manaSpent,
+      manaRestored: manaRestored,
+      goldGained: goldGained,
+      goldLost: goldLost,
+      xpGained: xpGained,
+      statusAdded: statusAdded,
+      statusRemoved: statusRemoved,
+      itemGainedId: itemGainedId,
+      itemLostId: itemLostId,
+      newLocation: newLocation,
+      questCompleted: questCompleted,
+      questFailed: questFailed,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'damage': damage,
     'heal': heal,

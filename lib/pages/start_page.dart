@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/components/buttons.dart';
@@ -32,6 +34,77 @@ class _StartPageState extends State<StartPage> {
   void initState() {
     super.initState();
     _validateSession();
+    _showConsentIfFirstLaunch();
+  }
+
+  Future<void> _showConsentIfFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('data_consent_shown') == true) return;
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E120E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Data & Privacy',
+          style: GoogleFonts.epilogue(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Questborne collects your sign-in info, game progress, and '
+              'sends your in-game actions to Google Gemini AI to generate '
+              'story responses. We never sell your data.',
+              style: GoogleFonts.epilogue(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => launchUrl(
+                Uri.parse(
+                  'https://yqzi.github.io/AdventureGame/privacy-policy.html',
+                ),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: Text(
+                'Read our Privacy Policy',
+                style: GoogleFonts.epilogue(
+                  color: redText,
+                  fontSize: 14,
+                  decoration: TextDecoration.underline,
+                  decorationColor: redText,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: redText,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                prefs.setBool('data_consent_shown', true);
+                Navigator.pop(ctx);
+              },
+              child: Text('I Understand', style: GoogleFonts.epilogue()),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Try refreshing the session — if the user was deleted on Supabase,

@@ -3,15 +3,21 @@ import 'package:Questborne/models/story_event.dart';
 import 'package:Questborne/models/item.dart';
 
 /// Takes the current player and the AI-generated effects,
-/// returns the updated player with all changes applied.
-Player applyStoryEffects(
+/// returns a record with the updated player and the effects corrected
+/// to reflect actual values (e.g. damage after defense reduction).
+({Player player, StoryEffects effects}) applyStoryEffects(
   Player player,
   StoryEffects effects, {
   List<Item> allItems = const [],
 }) {
+  var correctedEffects = effects;
+
   // ── Damage & Healing ──
   if (effects.damage > 0) {
+    final hpBefore = player.currentHealth;
     player = player.takeDamage(effects.damage);
+    final actualDamage = hpBefore - player.currentHealth;
+    correctedEffects = correctedEffects.copyWith(damage: actualDamage);
   }
   if (effects.heal > 0) {
     player = player.heal(effects.heal);
@@ -35,8 +41,6 @@ Player applyStoryEffects(
 
   // ── Experience & auto level-up ──
   if (effects.xpGained > 0) {
-    print("effects.xpGained");
-    print(effects.xpGained);
     player = player.gainExperience(effects.xpGained);
     while (player.canLevelUp) {
       player = player.levelUp();
@@ -75,7 +79,7 @@ Player applyStoryEffects(
     player = player.copyWith(currentLocation: effects.newLocation);
   }
 
-  return player;
+  return (player: player, effects: correctedEffects);
 }
 
 /// Converts a status name string from the AI into a [StatusEffect] enum.

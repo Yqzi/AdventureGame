@@ -212,6 +212,26 @@ class Quest {
     ], // Death's Grove · Heart of the Mountain · Severance Undone
   ];
 
+  /// Returns the quest IDs in the set that contains [questId], or null
+  /// if the quest is not part of any progression set.
+  static List<String>? setContaining(String questId) {
+    for (final set in progressionOrder) {
+      if (set.contains(questId)) return set;
+    }
+    return null;
+  }
+
+  /// Returns the IDs of the *most-recently-unlocked* incomplete set,
+  /// or null if all sets are done.
+  static List<String>? currentSetIds(Set<String> completedQuestIds) {
+    for (final set in progressionOrder) {
+      if (!set.every((id) => completedQuestIds.contains(id))) {
+        return set;
+      }
+    }
+    return null;
+  }
+
   /// Returns how many quest sets the player has fully completed.
   static int completedSetCount(Set<String> completedQuestIds) {
     int count = 0;

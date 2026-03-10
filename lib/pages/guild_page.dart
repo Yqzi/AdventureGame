@@ -8,6 +8,7 @@ import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/bottom_bar.dart';
 import 'package:Questborne/components/experience_bar.dart';
+import 'package:Questborne/components/stat_bar.dart';
 import 'package:Questborne/components/cards.dart';
 import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/quest.dart';
@@ -300,9 +301,45 @@ class _GuildPageState extends State<GuildPage> {
     );
   }
 
+  Widget _buildStatRow(
+    String label,
+    int current,
+    int max,
+    double consumed,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 26,
+          child: Text(
+            label,
+            style: GoogleFonts.epilogue(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        Expanded(
+          child: StatBar(consumed: consumed, color: color, height: 5),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$current/$max',
+          style: GoogleFonts.epilogue(
+            color: color.withOpacity(0.7),
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final player = context.read<GameBloc>().player;
+    final player = context.watch<GameBloc>().player;
     final completedIds = player.completedQuestIds.toSet();
     final quests = Quest.progressionQuests(completedIds);
     final completedSets = Quest.completedSetCount(completedIds);
@@ -424,6 +461,31 @@ class _GuildPageState extends State<GuildPage> {
             ),
             const SizedBox(height: 10),
             ExperienceBar(player: player),
+            const SizedBox(height: 10),
+
+            // ─── HP / MP bars ───
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _buildStatRow(
+                    'HP',
+                    player.currentHealth,
+                    player.maxHealth,
+                    player.healthConsumed,
+                    const Color(0xFFCC3333),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildStatRow(
+                    'MP',
+                    player.currentMana,
+                    player.maxMana,
+                    player.manaConsumed,
+                    const Color(0xFF3377CC),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
 
             Padding(
@@ -467,6 +529,14 @@ class _GuildPageState extends State<GuildPage> {
                           ? null
                           : () => _showQuestDetail(context, quest),
                       // DEBUG: long-press to mark complete for testing
+                      onLongPress: isCompleted
+                          ? null
+                          : () {
+                              context.read<GameBloc>().add(
+                                CompleteQuestEvent(quest.id),
+                              );
+                              setState(() {});
+                            },
                       child: Opacity(
                         opacity: isCompleted ? 0.5 : 1.0,
                         child: PinnedCard(
@@ -489,27 +559,28 @@ class _GuildPageState extends State<GuildPage> {
                               : hasSession
                               ? Icons.play_arrow
                               : Icons.visibility,
-                          onActionPressed: isCompleted
-                              ? () {}
-                              : () {
-                                  context.read<GameBloc>().add(
-                                    CompleteQuestEvent(quest.id),
-                                  );
-                                  setState(() {});
-                                },
+                          // test quest progression
                           // onActionPressed: isCompleted
                           //     ? () {}
                           //     : () {
-                          //         Navigator.pushNamed(
-                          //           context,
-                          //           AppRouter.game,
-                          //           arguments: {
-                          //             'details': quest.toQuestDetails(),
-                          //             'questId': quest.id,
-                          //             'resume': hasSession,
-                          //           },
-                          //         ).then((_) => _loadActiveSessions());
+                          //         context.read<GameBloc>().add(
+                          //           CompleteQuestEvent(quest.id),
+                          //         );
+                          //         setState(() {});
                           //       },
+                          onActionPressed: isCompleted
+                              ? () {}
+                              : () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRouter.game,
+                                    arguments: {
+                                      'details': quest.toQuestDetails(),
+                                      'questId': quest.id,
+                                      'resume': hasSession,
+                                    },
+                                  ).then((_) => _loadActiveSessions());
+                                },
                         ),
                       ),
                     );

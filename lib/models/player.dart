@@ -92,6 +92,8 @@ class Equipment extends Equatable {
         return accessory;
       case ItemType.relic:
         return relic;
+      case ItemType.spell:
+        return null;
     }
   }
 
@@ -106,6 +108,8 @@ class Equipment extends Equatable {
         return copyWith(accessory: item);
       case ItemType.relic:
         return copyWith(relic: item);
+      case ItemType.spell:
+        return this; // Spells stay in inventory, not equipped
     }
   }
 
@@ -120,6 +124,8 @@ class Equipment extends Equatable {
         return Equipment(weapon: weapon, armor: armor, relic: relic);
       case ItemType.relic:
         return Equipment(weapon: weapon, armor: armor, accessory: accessory);
+      case ItemType.spell:
+        return this; // Spells are not equipped
     }
   }
 
@@ -292,11 +298,23 @@ class Player extends Equatable {
   bool get hasMana => currentMana > 0;
 
   // ─────────────────────────────────────────────────────────
+  //  SPELLS
+  // ─────────────────────────────────────────────────────────
+
+  /// Spell-type items the player owns in their inventory.
+  List<Item> get spellItems =>
+      inventory.where((i) => i.type == ItemType.spell).toList();
+
+  /// Whether the player can cast a given spell item right now.
+  bool canCastSpell(Item spell) => currentMana >= spell.manaCost;
+
+  // ─────────────────────────────────────────────────────────
   //  LEVELLING
   // ─────────────────────────────────────────────────────────
 
   /// XP required to reach the next level.
-  int get experienceToNextLevel => level * 100 + (level * level * 10);
+  /// Quadratic curve: easy early levels, significantly harder later.
+  int get experienceToNextLevel => level * 80 + (level * level * 12);
 
   /// Whether the player has enough XP to level up.
   bool get canLevelUp => experience >= experienceToNextLevel;

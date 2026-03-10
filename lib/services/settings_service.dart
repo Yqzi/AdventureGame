@@ -22,9 +22,9 @@ class SettingsService {
   }
 
   // ── Safety thresholds ────────────────────────────────────────
-  // Stored as ints: 2 = medium, 3 = high (default)
+  // Stored as ints: 1 = low (permissive), 2 = medium, 3 = high (strict)
 
-  static int _clampLevel(int? v) => (v == null || v < 2 || v > 3) ? 3 : v;
+  static int _clampLevel(int? v) => (v == null || v < 1 || v > 3) ? 1 : v;
 
   int get hateSpeechLevel => _clampLevel(_prefs.getInt(_keyHateSpeech));
   set hateSpeechLevel(int v) => _prefs.setInt(_keyHateSpeech, v);
@@ -39,24 +39,28 @@ class SettingsService {
   /// Human-readable label for a given safety level int.
   static String levelLabel(int level) {
     switch (level) {
+      case 1:
+        return 'Low';
       case 2:
         return 'Medium';
       case 3:
         return 'High';
       default:
-        return 'High';
+        return 'Low';
     }
   }
 
   /// Description for a given safety level int.
   static String levelDescription(int level) {
     switch (level) {
+      case 1:
+        return 'Permissive — suited for dark fantasy';
       case 2:
         return 'Balanced filtering';
       case 3:
         return 'Strict content filtering';
       default:
-        return 'Strict content filtering';
+        return 'Permissive — suited for dark fantasy';
     }
   }
 }

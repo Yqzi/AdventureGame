@@ -47,3 +47,17 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 
 - [ ] **Skill Trees:** When leveling up, give the player a choice between active skills or passive perks to put points into (e.g., "Choose: +5 Max HP or unlock 'Cleave' skill").
 - [ ] **Visual Gear Changes:** If the player equips a legendary Relic, ensure the UI updates to show an aura or a specific visual indicator, making their gear feel tangible.
+
+
+<!-- -user status throguh quests -->
+-user heals after quest progression, 
+-dies resets quest progression
+-add tpm checks
+-user chances should be not based off ai
+-clicking topleft goes back fro some reason
+-items can be spammed
+-credit spend is not limited on free tier
+-make anonymous sign ons not allowed to play the ai or just remove anonymous
+
+V2
+-image gen

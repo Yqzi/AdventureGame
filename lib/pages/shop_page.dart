@@ -164,6 +164,8 @@ class ShopPage extends StatelessWidget {
                     spacing: 16,
                     runSpacing: 8,
                     children: [
+                      if (item.manaCost > 0)
+                        _statChip('MP', '${item.manaCost}', Colors.cyanAccent),
                       if (item.attack > 0)
                         _statChip('ATK', '+${item.attack}', Colors.redAccent),
                       if (item.defense > 0)

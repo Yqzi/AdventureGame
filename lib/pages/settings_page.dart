@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
@@ -169,6 +171,33 @@ class _SettingsPageState extends State<SettingsPage> {
             titleColor: redText,
           ),
 
+          const SizedBox(height: 24),
+
+          // ── Legal ────────────────────────────────────────
+          _sectionHeader('LEGAL'),
+          const SizedBox(height: 8),
+          _settingsTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            subtitle: 'How we handle your data',
+            onTap: () => launchUrl(
+              Uri.parse(
+                'https://yqzi.github.io/AdventureGame/privacy-policy.html',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.description_outlined,
+            title: 'Terms of Service',
+            subtitle: 'Rules and conditions of use',
+            onTap: () => launchUrl(
+              Uri.parse('https://yqzi.github.io/AdventureGame/terms.html'),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+
           const SizedBox(height: 40),
         ],
       ),
@@ -277,12 +306,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Color _levelColor(int level) {
     switch (level) {
+      case 1:
+        return Colors.orange;
       case 2:
         return Colors.amber;
       case 3:
         return Colors.greenAccent;
       default:
-        return Colors.greenAccent;
+        return Colors.orange;
     }
   }
 
@@ -367,6 +398,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     TextField(
                       controller: controller,
                       maxLength: 20,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r"[a-zA-Z\s\-']"),
+                        ),
+                      ],
                       autofocus: true,
                       style: GoogleFonts.epilogue(
                         color: Colors.white,
@@ -529,7 +565,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Text('Choose a filtering level', style: _sublabel()),
                 ),
                 const SizedBox(height: 12),
-                for (int i = 2; i <= 3; i++)
+                for (int i = 1; i <= 3; i++)
                   _safetyOption(
                     ctx: ctx,
                     level: i,
