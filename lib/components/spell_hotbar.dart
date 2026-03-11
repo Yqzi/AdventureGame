@@ -47,40 +47,46 @@ class SpellHotbar extends StatelessWidget {
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
               opacity: canCast ? 1.0 : 0.38,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: color.withOpacity(canCast ? 0.50 : 0.15),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      spell.name,
-                      style: GoogleFonts.epilogue(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
-                      ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: color.withOpacity(canCast ? 0.50 : 0.15),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${spell.manaCost} MP',
-                      style: GoogleFonts.epilogue(
-                        color: color.withOpacity(0.6),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        spell.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.epilogue(
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        '${spell.manaCost} MP',
+                        style: GoogleFonts.epilogue(
+                          color: color.withOpacity(0.6),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

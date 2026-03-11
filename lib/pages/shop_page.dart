@@ -31,6 +31,7 @@ class ShopPage extends StatelessWidget {
       if (player.equipment.armor != null) player.equipment.armor!.id,
       if (player.equipment.accessory != null) player.equipment.accessory!.id,
       if (player.equipment.relic != null) player.equipment.relic!.id,
+      if (player.equipment.spell != null) player.equipment.spell!.id,
     };
     return ownedIds.contains(item.id);
   }

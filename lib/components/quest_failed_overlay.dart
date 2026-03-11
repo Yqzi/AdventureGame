@@ -160,6 +160,19 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
                               color: greyText.withAlpha(150),
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Progression reset warning
+                          Text(
+                            'Your quest set progress has been reset.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.crimsonPro(
+                              fontSize: 13,
+                              decoration: TextDecoration.none,
+                              color: _bloodRed.withAlpha(180),
+                              height: 1.4,
+                            ),
+                          ),
                           const SizedBox(height: 24),
 
                           _ornamentDivider(),

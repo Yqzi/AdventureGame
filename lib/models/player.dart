@@ -52,13 +52,20 @@ class Equipment extends Equatable {
   final Item? armor;
   final Item? accessory;
   final Item? relic;
+  final Item? spell;
 
-  const Equipment({this.weapon, this.armor, this.accessory, this.relic});
+  const Equipment({
+    this.weapon,
+    this.armor,
+    this.accessory,
+    this.relic,
+    this.spell,
+  });
 
   /// Total bonus for a given stat across all equipped items.
   int totalBonus(String stat) {
     int total = 0;
-    for (final item in [weapon, armor, accessory, relic]) {
+    for (final item in [weapon, armor, accessory, relic, spell]) {
       if (item == null) continue;
       switch (stat) {
         case 'attack':
@@ -93,7 +100,7 @@ class Equipment extends Equatable {
       case ItemType.relic:
         return relic;
       case ItemType.spell:
-        return null;
+        return spell;
     }
   }
 
@@ -109,7 +116,7 @@ class Equipment extends Equatable {
       case ItemType.relic:
         return copyWith(relic: item);
       case ItemType.spell:
-        return this; // Spells stay in inventory, not equipped
+        return copyWith(spell: item);
     }
   }
 
@@ -117,15 +124,40 @@ class Equipment extends Equatable {
   Equipment unequip(ItemType type) {
     switch (type) {
       case ItemType.weapon:
-        return Equipment(armor: armor, accessory: accessory, relic: relic);
+        return Equipment(
+          armor: armor,
+          accessory: accessory,
+          relic: relic,
+          spell: spell,
+        );
       case ItemType.armor:
-        return Equipment(weapon: weapon, accessory: accessory, relic: relic);
+        return Equipment(
+          weapon: weapon,
+          accessory: accessory,
+          relic: relic,
+          spell: spell,
+        );
       case ItemType.accessory:
-        return Equipment(weapon: weapon, armor: armor, relic: relic);
+        return Equipment(
+          weapon: weapon,
+          armor: armor,
+          relic: relic,
+          spell: spell,
+        );
       case ItemType.relic:
-        return Equipment(weapon: weapon, armor: armor, accessory: accessory);
+        return Equipment(
+          weapon: weapon,
+          armor: armor,
+          accessory: accessory,
+          spell: spell,
+        );
       case ItemType.spell:
-        return this; // Spells are not equipped
+        return Equipment(
+          weapon: weapon,
+          armor: armor,
+          accessory: accessory,
+          relic: relic,
+        );
     }
   }
 
@@ -134,12 +166,14 @@ class Equipment extends Equatable {
     Item? armor,
     Item? accessory,
     Item? relic,
+    Item? spell,
   }) {
     return Equipment(
       weapon: weapon ?? this.weapon,
       armor: armor ?? this.armor,
       accessory: accessory ?? this.accessory,
       relic: relic ?? this.relic,
+      spell: spell ?? this.spell,
     );
   }
 
@@ -148,6 +182,7 @@ class Equipment extends Equatable {
     'armor': armor?.id,
     'accessory': accessory?.id,
     'relic': relic?.id,
+    'spell': spell?.id,
   };
 
   /// Reconstruct equipment from saved item IDs using the master item list.
@@ -160,11 +195,12 @@ class Equipment extends Equatable {
       armor: itemLookup[json['armor']],
       accessory: itemLookup[json['accessory']],
       relic: itemLookup[json['relic']],
+      spell: itemLookup[json['spell']],
     );
   }
 
   @override
-  List<Object?> get props => [weapon, armor, accessory, relic];
+  List<Object?> get props => [weapon, armor, accessory, relic, spell];
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -301,9 +337,12 @@ class Player extends Equatable {
   //  SPELLS
   // ─────────────────────────────────────────────────────────
 
-  /// Spell-type items the player owns in their inventory.
-  List<Item> get spellItems =>
-      inventory.where((i) => i.type == ItemType.spell).toList();
+  /// Spell-type items the player owns (equipped + inventory).
+  List<Item> get spellItems {
+    final spells = inventory.where((i) => i.type == ItemType.spell).toList();
+    if (equipment.spell != null) spells.insert(0, equipment.spell!);
+    return spells;
+  }
 
   /// Whether the player can cast a given spell item right now.
   bool canCastSpell(Item spell) => currentMana >= spell.manaCost;

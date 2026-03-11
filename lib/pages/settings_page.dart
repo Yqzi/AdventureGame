@@ -151,17 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // ── Danger zone ──────────────────────────────────
           _sectionHeader('ACCOUNT', color: redText),
           const SizedBox(height: 8),
-          if (_auth.isGuest)
-            _settingsTile(
-              icon: Icons.link,
-              title: 'Link Account',
-              subtitle: 'Sign in with Google to save your progress',
-              onTap: () => _linkWithGoogle(),
-              iconColor: _creamText,
-              titleColor: Colors.white,
-            ),
 
-          _divider(),
           _settingsTile(
             icon: Icons.delete_forever,
             title: 'Delete Account',
@@ -634,38 +624,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
-  }
-
-  // ── Link account (guest → Google) ────────────────────────
-
-  Future<void> _linkWithGoogle() async {
-    try {
-      await _auth.linkWithGoogle();
-      if (!mounted) return;
-      // Reload player data for the new account
-      context.read<GameBloc>().add(LoadPlayerFromCloudEvent());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: _cardColor,
-          content: Text(
-            'Account linked successfully!',
-            style: GoogleFonts.epilogue(color: Colors.white),
-          ),
-        ),
-      );
-      setState(() {});
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: _cardColor,
-          content: Text(
-            'Failed to link account: $e',
-            style: GoogleFonts.epilogue(color: Colors.white),
-          ),
-        ),
-      );
-    }
   }
 
   // ── Delete account ───────────────────────────────────────

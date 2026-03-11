@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:Questborne/models/chat_message.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/skill_check.dart';
 import 'package:Questborne/models/story_event.dart';
 
 abstract class AppState extends Equatable {
@@ -59,12 +60,14 @@ class GameLoaded extends GameState {
   final Player player;
   final List<String> options;
   final StoryEffects? effects;
+  final SkillCheckResult? skillCheck;
   GameLoaded({
     required this.messages,
     required this.activeQuest,
     required this.player,
     this.options = const [],
     this.effects,
+    this.skillCheck,
   });
 }
 
@@ -72,10 +75,12 @@ class GameStreamingNarrative extends GameState {
   final List<ChatMessage> messages;
   final Map<String, dynamic> activeQuest;
   final Player player;
+  final SkillCheckResult? skillCheck;
   GameStreamingNarrative({
     required this.messages,
     required this.activeQuest,
     required this.player,
+    this.skillCheck,
   });
 }
 

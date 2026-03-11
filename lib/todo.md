@@ -50,14 +50,17 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 
 
 <!-- -user status throguh quests -->
--user heals after quest progression, 
--dies resets quest progression
--add tpm checks
--user chances should be not based off ai
--clicking topleft goes back fro some reason
--items can be spammed
+<!-- -user heals after quest progression,  -->
+<!-- -dies resets quest progression -->
+<!-- -clicking topleft goes back fro some reason -->
+<!-- -make anonymous sign ons not allowed to play the ai or just remove anonymous -->
+<!-- -fix subsccirption models with actual numbers -->
 -credit spend is not limited on free tier
--make anonymous sign ons not allowed to play the ai or just remove anonymous
+-user chances should be not based off ai
+-items can be spammed
+-use flash lite free tier maybe
+-add turn limit on quests to fail.
+-add tpm checks
 
 V2
 -image gen

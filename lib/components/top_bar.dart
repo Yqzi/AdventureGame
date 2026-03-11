@@ -37,6 +37,8 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor,
       centerTitle: true,
+      automaticallyImplyLeading: false,
+      leading: leading,
       title: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -65,7 +67,6 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
             ),
         ],
       ),
-      leading: leading,
       actions: actions,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(2),

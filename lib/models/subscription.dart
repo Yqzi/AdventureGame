@@ -50,9 +50,9 @@ extension SubscriptionTierX on SubscriptionTier {
       case SubscriptionTier.free:
         return 0;
       case SubscriptionTier.adventurer:
-        return 4.99;
+        return 7.99;
       case SubscriptionTier.champion:
-        return 9.99;
+        return 14.99;
     }
   }
 
@@ -88,22 +88,22 @@ extension SubscriptionTierX on SubscriptionTier {
   String get aiModel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'gemini-2.5-flash';
+        return 'gemini-2.5-flash-lite';
       case SubscriptionTier.adventurer:
-        return 'gemini-3-flash-preview';
+        return 'gemini-2.5-pro';
       case SubscriptionTier.champion:
-        return 'gemini-3.1-pro-preview';
+        return 'gemini-3-flash-preview';
     }
   }
 
   String get aiModelLabel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'Gemini 2.5 Flash';
+        return 'Gemini 2.5 Flash Lite';
       case SubscriptionTier.adventurer:
-        return 'Gemini 3 Flash';
+        return 'Gemini 2.5 Pro';
       case SubscriptionTier.champion:
-        return 'Gemini 3.1 Pro';
+        return 'Gemini 3 Flash';
     }
   }
 
@@ -125,9 +125,9 @@ extension SubscriptionTierX on SubscriptionTier {
       case SubscriptionTier.free:
         return 2000;
       case SubscriptionTier.adventurer:
-        return 6000;
+        return 4000;
       case SubscriptionTier.champion:
-        return 10096;
+        return 6096;
     }
   }
 
@@ -135,11 +135,11 @@ extension SubscriptionTierX on SubscriptionTier {
   int get maxCredits {
     switch (this) {
       case SubscriptionTier.free:
-        return 30;
+        return 25;
       case SubscriptionTier.adventurer:
         return 150;
       case SubscriptionTier.champion:
-        return 500;
+        return 600;
     }
   }
 

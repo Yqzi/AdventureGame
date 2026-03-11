@@ -19,9 +19,9 @@ const PRODUCT_TIERS: Record<string, { tier: string; maxCredits: number; duration
   questborne_adventurer_6month:   { tier: "adventurer", maxCredits: 150, durationDays: 180 },
   questborne_adventurer_yearly:   { tier: "adventurer", maxCredits: 150, durationDays: 365 },
   // Champion
-  questborne_champion_monthly:    { tier: "champion",   maxCredits: 500, durationDays: 30 },
-  questborne_champion_6month:     { tier: "champion",   maxCredits: 500, durationDays: 180 },
-  questborne_champion_yearly:     { tier: "champion",   maxCredits: 500, durationDays: 365 },
+  questborne_champion_monthly:    { tier: "champion",   maxCredits: 600, durationDays: 30 },
+  questborne_champion_6month:     { tier: "champion",   maxCredits: 600, durationDays: 180 },
+  questborne_champion_yearly:     { tier: "champion",   maxCredits: 600, durationDays: 365 },
 };
 
 // ── Main handler ───────────────────────────────────────────

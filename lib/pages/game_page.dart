@@ -8,6 +8,7 @@ import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/blocs/app/app_state.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/animated_coin_counter.dart';
+import 'package:Questborne/components/dice_roll_notification.dart';
 import 'package:Questborne/components/loot_notification.dart';
 import 'package:Questborne/components/narrative_skeleton.dart';
 import 'package:Questborne/components/quest_complete_overlay.dart';
@@ -19,6 +20,7 @@ import 'package:Questborne/components/typewriter_text.dart';
 import 'package:Questborne/models/chat_message.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
+import 'package:Questborne/models/skill_check.dart';
 import 'package:Questborne/models/story_event.dart';
 import 'package:Questborne/models/game_session.dart';
 import 'package:Questborne/services/game_session_repository.dart';
@@ -59,6 +61,9 @@ class _GamePageState extends State<GamePage> {
 
   /// Currently showing loot notification effects (null = hidden).
   StoryEffects? _pendingEffects;
+
+  /// Currently showing dice roll notification (null = hidden).
+  SkillCheckResult? _pendingDiceRoll;
 
   /// Whether the AI has signalled quest completion (player hasn't dismissed yet).
   bool _questDone = false;
@@ -179,7 +184,31 @@ class _GamePageState extends State<GamePage> {
       // Only allow sending command if the AI is not currently processing or streaming
       if (currentState is! GameLoading &&
           currentState is! GameStreamingNarrative) {
-        context.read<GameBloc>().add(PlayerCommandEvent(command));
+        // Check if the player is explicitly casting a spell.
+        // Only intercept clear cast-intent phrases, not any mention of
+        // a spell name (e.g. "shoot myself with a shard bolt" should NOT
+        // auto-cast Shard Bolt at the enemy).
+        final player = context.read<GameBloc>().player;
+        final lower = command.toLowerCase();
+        Item? matchedSpell;
+        for (final spell in player.spellItems) {
+          final name = spell.name.toLowerCase();
+          // Match: "cast <spell>", "use <spell>", or just the spell name
+          // alone (possibly with "!" or trailing space).
+          final isCastIntent =
+              lower == name ||
+              lower.startsWith('cast $name') ||
+              lower.startsWith('use $name');
+          if (isCastIntent) {
+            matchedSpell = spell;
+            break;
+          }
+        }
+        if (matchedSpell != null && player.canCastSpell(matchedSpell)) {
+          context.read<GameBloc>().add(CastSpellEvent(matchedSpell));
+        } else {
+          context.read<GameBloc>().add(PlayerCommandEvent(command));
+        }
         _controller.clear(); // Clear input field after sending
       }
     }
@@ -331,8 +360,25 @@ class _GamePageState extends State<GamePage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: BlocListener<GameBloc, GameState>(
-        listenWhen: (prev, curr) => curr is GameLoaded,
+        listenWhen: (prev, curr) {
+          if (curr is GameLoaded) return true;
+          // Only fire for the first streaming emit that carries a dice roll.
+          if (curr is GameStreamingNarrative && curr.skillCheck != null) {
+            final prevHadRoll =
+                prev is GameStreamingNarrative && prev.skillCheck != null;
+            return !prevHadRoll;
+          }
+          return false;
+        },
         listener: (context, state) {
+          // Show dice roll as soon as streaming starts (immediate feedback).
+          if (state is GameStreamingNarrative &&
+              state.skillCheck != null &&
+              _pendingDiceRoll == null) {
+            setState(() {
+              _pendingDiceRoll = state.skillCheck;
+            });
+          }
           if (state is GameLoaded) {
             // Accumulate rewards from every response
             final fx = state.effects;
@@ -670,9 +716,11 @@ class _GamePageState extends State<GamePage> {
                                   blendMode: BlendMode.dstIn,
                                   child: ListView.builder(
                                     controller: _scroll,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 32,
+                                    padding: const EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      top: 32,
+                                      bottom: 60,
                                     ),
                                     itemCount: aiMessages.length * 2 - 1,
                                     itemBuilder: (context, index) {
@@ -887,6 +935,22 @@ class _GamePageState extends State<GamePage> {
                 ],
               ),
             ),
+
+            // ── Dice roll notification overlay ──
+            if (_pendingDiceRoll != null)
+              DiceRollNotification(
+                key: ValueKey(
+                  'dice_${_pendingDiceRoll!.naturalRoll}_${_pendingDiceRoll!.actionType}',
+                ),
+                result: _pendingDiceRoll!,
+                onComplete: () {
+                  if (mounted) {
+                    setState(() {
+                      _pendingDiceRoll = null;
+                    });
+                  }
+                },
+              ),
 
             // ── Loot notification overlay ──
             if (_pendingEffects != null)

@@ -125,10 +125,6 @@ class _StartPageState extends State<StartPage> {
   // ── Auth actions ────────────────────────────────────────────
 
   Future<void> _handleGoogle() async {
-    // If already signed in as guest, link + migrate data to Google account
-    if (_auth.isGuest) {
-      return _performAuth(() => _auth.linkWithGoogle());
-    }
     return _performAuth(() => _auth.signInWithGoogle());
   }
 
@@ -136,9 +132,6 @@ class _StartPageState extends State<StartPage> {
     // TODO: add linkWithApple when Apple Sign-In linking is needed
     return _performAuth(() => _auth.signInWithApple());
   }
-
-  Future<void> _handleGuest() async =>
-      _performAuth(() => _auth.signInAsGuest());
 
   Future<void> _performAuth(Future Function() action) async {
     setState(() {
@@ -412,43 +405,6 @@ class _StartPageState extends State<StartPage> {
           ),
           const SizedBox(height: 14),
         ],
-        Row(
-          children: [
-            Expanded(
-              child: Divider(
-                color: borderGrey.withOpacity(0.5),
-                thickness: 0.5,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'OR',
-                style: GoogleFonts.epilogue(
-                  color: Colors.white30,
-                  fontSize: 12,
-                  letterSpacing: 2,
-                  decoration: TextDecoration.none,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Divider(
-                color: borderGrey.withOpacity(0.5),
-                thickness: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        _buildProviderButton(
-          label: 'Continue as Guest',
-          icon: FontAwesomeIcons.userSecret,
-          color: Colors.transparent,
-          textColor: Colors.white70,
-          borderColor: borderGrey,
-          onTap: _handleGuest,
-        ),
         const SizedBox(height: 16),
         if (_errorMessage != null) ...[
           Row(
@@ -475,17 +431,6 @@ class _StartPageState extends State<StartPage> {
             child: CircularProgressIndicator(color: redText, strokeWidth: 2.5),
           ),
         const SizedBox(height: 16),
-        Text(
-          'Guest progress is saved locally.\nSign in to sync across devices.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.epilogue(
-            color: Colors.white24,
-            fontSize: 11,
-            letterSpacing: 0.5,
-            height: 1.5,
-            decoration: TextDecoration.none,
-          ),
-        ),
       ],
     );
   }

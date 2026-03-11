@@ -7,6 +7,8 @@ import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/quest.dart';
 import 'package:Questborne/models/story_event.dart';
 import 'package:Questborne/utils/apply_story_effects.dart';
+import 'package:Questborne/utils/skill_check_engine.dart';
+import 'package:Questborne/models/skill_check.dart';
 import 'package:uuid/uuid.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/blocs/app/app_state.dart';
@@ -127,10 +129,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     final questId = _currentActiveQuest['id'] as String?;
     if (questId == null || _chatHistory.isEmpty) return;
     final history = _chatHistory
-        .map((m) => {
-              'sender': m.sender == MessageSender.player ? 'player' : 'ai',
-              'text': m.text,
-            })
+        .map(
+          (m) => {
+            'sender': m.sender == MessageSender.player ? 'player' : 'ai',
+            'text': m.text,
+          },
+        )
         .toList();
     final session = GameSession(
       questId: questId,
@@ -176,6 +180,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
             .gainGold(mainQuest.goldReward)
             .gainExperience(mainQuest.xpReward);
       }
+
+      // Capture the current set BEFORE marking the quest complete.
+      final setBeforeComplete = Quest.currentSetIds(
+        _player.completedQuestIds.toSet(),
+      );
+
       _player = _player.completeQuest(event.questId);
 
       // Auto level-up (restores HP/MP to full on each level gained).
@@ -183,11 +193,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _player = _player.levelUp();
       }
 
-      // If the entire current set is now complete, full-restore HP/MP.
+      // If the set that was in progress is now fully complete, full-restore.
       final completedIds = _player.completedQuestIds.toSet();
-      final currentSet = Quest.currentSetIds(completedIds);
-      if (currentSet != null &&
-          currentSet.every((id) => completedIds.contains(id))) {
+      if (setBeforeComplete != null &&
+          setBeforeComplete.every((id) => completedIds.contains(id))) {
         _player = _player.fullRestore();
       }
     }
@@ -378,7 +387,6 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       );
 
       _autoSaveSession(lastOptions: parsed.options);
-
     } catch (error, stackTrace) {
       print('Error during AI stream for StartNewQuest: $error\n$stackTrace');
       if (_chatHistory.isNotEmpty) {
@@ -470,16 +478,36 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       ),
     );
 
+    // ── Skill check: roll dice BEFORE streaming starts ──
+    final questDifficulty = _currentActiveQuest['difficulty'] as String?;
+    final skillCheck = SkillCheckEngine.performCheck(
+      playerInput: event.command,
+      player: _player,
+      questDifficulty: questDifficulty,
+    );
+
     emit(
       GameStreamingNarrative(
         messages: List.from(_chatHistory),
         activeQuest: _currentActiveQuest,
         player: _player,
+        skillCheck: skillCheck,
       ),
     );
 
     String accumulatedRaw = "";
     try {
+      // Build the prompt. If a skill check was triggered, prepend the
+      // result so the AI knows the outcome and MUST narrate accordingly.
+      String aiPrompt = event.command;
+      if (skillCheck != null) {
+        aiPrompt =
+            '${event.command}\n\n'
+            '[SKILL CHECK: ${skillCheck.summary}. '
+            'You MUST narrate the outcome matching this result. '
+            'Do NOT override the dice.]';
+      }
+
       // Build conversation context based on subscription tier.
       final tier = SubscriptionService().current.effectiveTier;
       final conversationCtx = _memoryManager.buildContextForAI(
@@ -488,7 +516,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       );
 
       await for (final chunk in _aiService.streamResponse(
-        event.command,
+        aiPrompt,
         _currentActiveQuest,
         player: _player,
         conversationContext: conversationCtx.isNotEmpty
@@ -539,11 +567,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           player: _player,
           options: parsed.options,
           effects: displayEffects,
+          skillCheck: skillCheck,
         ),
       );
 
       _autoSaveSession(lastOptions: parsed.options);
-
     } catch (error, stackTrace) {
       print('Error during AI stream for PlayerCommand: $error\n$stackTrace');
       if (_chatHistory.isNotEmpty) {
@@ -602,16 +630,34 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       ),
     );
 
+    // ── Skill check for spell casting — roll BEFORE streaming starts ──
+    final questDifficulty = _currentActiveQuest['difficulty'] as String?;
+    final skillCheck = SkillCheckEngine.performCheck(
+      playerInput: command,
+      player: _player,
+      questDifficulty: questDifficulty,
+    );
+
     emit(
       GameStreamingNarrative(
         messages: List.from(_chatHistory),
         activeQuest: _currentActiveQuest,
         player: _player,
+        skillCheck: skillCheck,
       ),
     );
 
     String accumulatedRaw = '';
     try {
+      String aiPrompt = command;
+      if (skillCheck != null) {
+        aiPrompt =
+            '$command\n\n'
+            '[SKILL CHECK: ${skillCheck.summary}. '
+            'You MUST narrate the outcome matching this result. '
+            'Do NOT override the dice.]';
+      }
+
       final tier = SubscriptionService().current.effectiveTier;
       final conversationCtx = _memoryManager.buildContextForAI(
         _chatHistory.where((m) => m.isComplete).toList(),
@@ -619,7 +665,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       );
 
       await for (final chunk in _aiService.streamResponse(
-        command,
+        aiPrompt,
         _currentActiveQuest,
         player: _player,
         conversationContext: conversationCtx.isNotEmpty
@@ -671,11 +717,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           player: _player,
           options: parsed.options,
           effects: displayEffects,
+          skillCheck: skillCheck,
         ),
       );
 
       _autoSaveSession(lastOptions: parsed.options);
-
     } catch (error, stackTrace) {
       print('Error during AI stream for CastSpell: $error\n$stackTrace');
       if (_chatHistory.isNotEmpty) {

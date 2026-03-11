@@ -104,6 +104,13 @@ class InventoryPage extends StatelessWidget {
                               item: equipment.relic,
                               slotType: ItemType.relic,
                             ),
+                            const SizedBox(height: 14),
+                            _EquippedSlotTile(
+                              icon: FontAwesomeIcons.wandMagicSparkles,
+                              slotLabel: 'SPELL',
+                              item: equipment.spell,
+                              slotType: ItemType.spell,
+                            ),
                           ],
                         ),
                       ),

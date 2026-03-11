@@ -40,10 +40,6 @@ class _LoginPageState extends State<LoginPage> {
     await _performAuth(() => _auth.signInWithApple());
   }
 
-  Future<void> _handleGuest() async {
-    await _performAuth(() => _auth.signInAsGuest());
-  }
-
   Future<void> _performAuth(Future Function() action) async {
     setState(() {
       _loading = true;
@@ -109,20 +105,6 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 14),
                     ],
 
-                    // ── Divider ──
-                    _buildDivider(),
-                    const SizedBox(height: 14),
-
-                    // ── Guest button ──
-                    _buildProviderButton(
-                      label: 'Continue as Guest',
-                      icon: FontAwesomeIcons.userSecret,
-                      color: Colors.transparent,
-                      textColor: Colors.white70,
-                      borderColor: borderGrey,
-                      onTap: _handleGuest,
-                    ),
-
                     const SizedBox(height: 24),
 
                     // ── Error ──
@@ -138,8 +120,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                    const SizedBox(height: 48),
-                    _buildGuestDisclaimer(),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -267,32 +247,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ── Divider ─────────────────────────────────────────────────
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(color: borderGrey.withOpacity(0.5), thickness: 0.5),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'OR',
-            style: GoogleFonts.epilogue(
-              color: Colors.white30,
-              fontSize: 12,
-              letterSpacing: 2,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(color: borderGrey.withOpacity(0.5), thickness: 0.5),
-        ),
-      ],
-    );
-  }
-
   // ── Error message ───────────────────────────────────────────
 
   Widget _buildError() {
@@ -312,21 +266,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Guest disclaimer ────────────────────────────────────────
-
-  Widget _buildGuestDisclaimer() {
-    return Text(
-      'Guest progress is saved locally.\nSign in to sync across devices.',
-      textAlign: TextAlign.center,
-      style: GoogleFonts.epilogue(
-        color: Colors.white24,
-        fontSize: 11,
-        letterSpacing: 0.5,
-        height: 1.5,
       ),
     );
   }
