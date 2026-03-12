@@ -56,11 +56,13 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 <!-- -make anonymous sign ons not allowed to play the ai or just remove anonymous -->
 <!-- -fix subsccirption models with actual numbers -->
 <!-- -user chances should be not based off ai -->
--credit spend is not limited on free tier, (check if works)
--items can be spammed
--use flash lite free tier maybe
+<!-- -credit spend is not limited on free tier, (check if works) -->
 -add turn limit on quests to fail.
+-items can be spammed
 -add tpm checks
+
+<!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 
 V2
 -image gen
+-maybe skill check should be handled by the ai to see what function should run

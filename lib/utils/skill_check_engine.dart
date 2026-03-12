@@ -185,12 +185,107 @@ class SkillCheckEngine {
     ]),
   ];
 
+  // Ambiguous combat verbs that need equipment context to resolve.
+  static const _ambiguousVerbs = [
+    'target',
+    'attack again',
+    'strike again',
+    'hit again',
+    'attack it',
+    'hit it',
+    'strike it',
+    'attack them',
+    'hit them',
+    'strike them',
+    'use my weapon',
+    'use weapon',
+    'shoot again',
+    'fire again',
+    'cast again',
+  ];
+
+  static const _rangedWeaponKeywords = [
+    'bow',
+    'crossbow',
+    'sling',
+    'longbow',
+    'shortbow',
+  ];
+
+  static const _magicWeaponKeywords = [
+    'staff',
+    'wand',
+    'scepter',
+    'orb',
+    'tome',
+    'grimoire',
+  ];
+
+  /// Infer action type from the player's equipped weapon name.
+  static ActionType _inferFromEquipment(Player player) {
+    final weaponName = player.equipment.weapon?.name.toLowerCase() ?? '';
+    if (_rangedWeaponKeywords.any((kw) => weaponName.contains(kw))) {
+      return ActionType.rangedAttack;
+    }
+    if (_magicWeaponKeywords.any((kw) => weaponName.contains(kw))) {
+      return ActionType.offensiveMagic;
+    }
+    // If no weapon but has a spell equipped, default to magic.
+    if (player.equipment.weapon == null && player.equipment.spell != null) {
+      return ActionType.offensiveMagic;
+    }
+    return ActionType.meleeAttack;
+  }
+
   /// Classify a player's text input into an [ActionType].
   ///
+  /// Pass the [player] to resolve ambiguous verbs ("target the enemy",
+  /// "attack again") based on equipped weapon type.
+  ///
+  // Short phrases meaning "repeat my last action".
+  static const _repeatPhrases = [
+    'again',
+    'do it again',
+    'do that again',
+    'repeat',
+    'same thing',
+    'one more time',
+    'same move',
+    'same attack',
+    'keep going',
+    'continue attacking',
+  ];
+
   /// Returns [ActionType.none] for non-action inputs (dialogue, looking
   /// around, simple exploration).
-  static ActionType classifyAction(String input) {
-    final lower = input.toLowerCase();
+  ///
+  /// Pass [lastPlayerInput] so bare repeat words ("again") can re-classify
+  /// the previous command.
+  static ActionType classifyAction(
+    String input, {
+    Player? player,
+    String? lastPlayerInput,
+  }) {
+    final lower = input.toLowerCase().trim();
+
+    // "Again" / "repeat" — re-classify the last player command.
+    if (lastPlayerInput != null) {
+      final isRepeat = _repeatPhrases.any((p) => lower == p || lower == 'i $p');
+      if (isRepeat) {
+        // Recursively classify the previous input (without lastPlayerInput
+        // to avoid infinite loops).
+        return classifyAction(lastPlayerInput, player: player);
+      }
+    }
+
+    // Check for ambiguous combat verbs that need equipment context.
+    if (player != null) {
+      for (final verb in _ambiguousVerbs) {
+        if (lower.contains(verb)) {
+          return _inferFromEquipment(player);
+        }
+      }
+    }
 
     // Defensive magic keywords override offensive if present.
     final hasDefensiveKeyword = [
@@ -351,8 +446,13 @@ class SkillCheckEngine {
     required String playerInput,
     required Player player,
     required String? questDifficulty,
+    String? lastPlayerInput,
   }) {
-    final action = classifyAction(playerInput);
+    final action = classifyAction(
+      playerInput,
+      player: player,
+      lastPlayerInput: lastPlayerInput,
+    );
     if (action == ActionType.none) return null;
 
     final roll = rollD20();

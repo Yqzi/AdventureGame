@@ -97,6 +97,23 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     }
   }
 
+  /// Hard turn cap — quest auto-fails if this is reached.
+  /// Very generous leeway for exploration, side conversations, and bad rolls.
+  int _maxTurns(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'routine':
+        return 30;
+      case 'dangerous':
+        return 45;
+      case 'perilous':
+        return 65;
+      case 'suicidal':
+        return 100;
+      default:
+        return 50;
+    }
+  }
+
   /// Track repeated actions and return the prompt tag if repeating.
   String _trackRepeat(String actionLabel) {
     if (actionLabel == _lastActionLabel) {
@@ -516,10 +533,21 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     // ── Skill check: roll dice BEFORE streaming starts ──
     final questDifficulty = _currentActiveQuest['difficulty'] as String?;
+    // Find the previous player command for "again" / "repeat" detection.
+    final previousPlayerMsg = _chatHistory
+        .where(
+          (m) =>
+              m.sender == MessageSender.player &&
+              m.isComplete &&
+              m.text != event.command,
+        )
+        .lastOrNull
+        ?.text;
     final skillCheck = SkillCheckEngine.performCheck(
       playerInput: event.command,
       player: _player,
       questDifficulty: questDifficulty,
+      lastPlayerInput: previousPlayerMsg,
     );
 
     emit(
@@ -540,9 +568,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       final difficulty =
           _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
       final expectedTurns = _expectedTurns(difficulty);
+      final maxTurns = _maxTurns(difficulty);
 
       String aiPrompt =
-          '${event.command}\n\n[TURN $turnNumber of ~$expectedTurns]';
+          '${event.command}\n\n[TURN $turnNumber of ~$expectedTurns, HARD LIMIT $maxTurns]';
       if (skillCheck != null) {
         aiPrompt +=
             '\n[SKILL CHECK: ${skillCheck.summary}. '
@@ -603,6 +632,32 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         final result = applyStoryEffects(_player, parsed.effects!);
         _player = result.player;
         displayEffects = result.effects;
+      }
+
+      // ── Hard turn limit: auto-fail if max turns reached ──
+      final turnCount = _chatHistory
+          .where((m) => m.sender == MessageSender.player && m.isComplete)
+          .length;
+      final diff = _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
+      if (turnCount >= _maxTurns(diff) &&
+          displayEffects?.questCompleted != true &&
+          displayEffects?.questFailed != true) {
+        displayEffects = StoryEffects(
+          damage: displayEffects?.damage ?? 0,
+          heal: displayEffects?.heal ?? 0,
+          manaSpent: displayEffects?.manaSpent ?? 0,
+          manaRestored: displayEffects?.manaRestored ?? 0,
+          goldGained: displayEffects?.goldGained ?? 0,
+          goldLost: displayEffects?.goldLost ?? 0,
+          xpGained: displayEffects?.xpGained ?? 0,
+          statusAdded: displayEffects?.statusAdded,
+          statusRemoved: displayEffects?.statusRemoved,
+          itemGainedId: displayEffects?.itemGainedId,
+          itemLostId: displayEffects?.itemLostId,
+          newLocation: displayEffects?.newLocation,
+          questCompleted: false,
+          questFailed: true,
+        );
       }
 
       _autoSavePlayer();
@@ -679,10 +734,20 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     // ── Skill check for spell casting — roll BEFORE streaming starts ──
     final questDifficulty = _currentActiveQuest['difficulty'] as String?;
+    final previousPlayerMsg = _chatHistory
+        .where(
+          (m) =>
+              m.sender == MessageSender.player &&
+              m.isComplete &&
+              m.text != command,
+        )
+        .lastOrNull
+        ?.text;
     final skillCheck = SkillCheckEngine.performCheck(
       playerInput: command,
       player: _player,
       questDifficulty: questDifficulty,
+      lastPlayerInput: previousPlayerMsg,
     );
 
     emit(
@@ -703,8 +768,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       final difficulty =
           _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
       final expectedTurns = _expectedTurns(difficulty);
+      final maxTurns = _maxTurns(difficulty);
 
-      String aiPrompt = '$command\n\n[TURN $turnNumber of ~$expectedTurns]';
+      String aiPrompt =
+          '$command\n\n[TURN $turnNumber of ~$expectedTurns, HARD LIMIT $maxTurns]';
       if (skillCheck != null) {
         aiPrompt +=
             '\n[SKILL CHECK: ${skillCheck.summary}. '
@@ -762,6 +829,32 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       } else {
         // Even without AI effects, show the mana cost.
         displayEffects = StoryEffects(manaSpent: spell.manaCost);
+      }
+
+      // ── Hard turn limit: auto-fail if max turns reached ──
+      final turnCount = _chatHistory
+          .where((m) => m.sender == MessageSender.player && m.isComplete)
+          .length;
+      final diff = _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
+      if (turnCount >= _maxTurns(diff) &&
+          displayEffects?.questCompleted != true &&
+          displayEffects?.questFailed != true) {
+        displayEffects = StoryEffects(
+          damage: displayEffects?.damage ?? 0,
+          heal: displayEffects?.heal ?? 0,
+          manaSpent: displayEffects?.manaSpent ?? 0,
+          manaRestored: displayEffects?.manaRestored ?? 0,
+          goldGained: displayEffects?.goldGained ?? 0,
+          goldLost: displayEffects?.goldLost ?? 0,
+          xpGained: displayEffects?.xpGained ?? 0,
+          statusAdded: displayEffects?.statusAdded,
+          statusRemoved: displayEffects?.statusRemoved,
+          itemGainedId: displayEffects?.itemGainedId,
+          itemLostId: displayEffects?.itemLostId,
+          newLocation: displayEffects?.newLocation,
+          questCompleted: false,
+          questFailed: true,
+        );
       }
 
       _autoSavePlayer();
