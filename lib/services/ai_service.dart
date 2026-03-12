@@ -522,12 +522,7 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
         print('=== AI ERROR RESPONSE (${streamed.statusCode}) ===');
         print(errorBody);
         print('=== END AI ERROR RESPONSE ===');
-        try {
-          final decoded = jsonDecode(errorBody);
-          yield decoded['error'] ?? 'Server error (${streamed.statusCode})';
-        } catch (_) {
-          yield 'Server error (${streamed.statusCode})';
-        }
+        yield _friendlyError(streamed.statusCode, errorBody);
         return;
       }
 
@@ -540,7 +535,40 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
       }
     } catch (e) {
       print('Error streaming narrative: $e');
-      yield 'An error occurred while the AI was thinking: $e';
+      yield 'Something went wrong. Check your internet connection and try again.';
+    }
+  }
+
+  /// Maps HTTP status codes and server error bodies to user-friendly messages.
+  String _friendlyError(int statusCode, String body) {
+    // Try to extract the server's error message first.
+    String? serverMsg;
+    try {
+      final decoded = jsonDecode(body);
+      serverMsg = decoded['error'] as String?;
+    } catch (_) {}
+
+    // If the server already sent a friendly message, use it.
+    if (serverMsg != null && !serverMsg.startsWith('Gemini')) {
+      return serverMsg;
+    }
+
+    switch (statusCode) {
+      case 401:
+        return 'Your session has expired. Please sign in again.';
+      case 403:
+        return 'Sign in with Google or Apple to play quests.';
+      case 429:
+        return serverMsg ??
+            'Too many requests — please wait a moment and try again.';
+      case 502:
+      case 503:
+        return serverMsg ??
+            'The AI service is temporarily unavailable. Please try again in a moment. Your credit has been refunded.';
+      case 500:
+        return 'Something went wrong on our end. Please try again.';
+      default:
+        return 'Something went wrong. Please try again.';
     }
   }
 
