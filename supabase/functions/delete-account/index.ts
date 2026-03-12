@@ -38,14 +38,23 @@ Deno.serve(async (req: Request) => {
 
     const userId = user.id;
 
-    // ── Rate limiting: 3 requests per 60 seconds ──
-    const rateCheck = await checkRateLimit(supabaseAdmin, userId, "delete-account", {
-      maxRequests: 3,
-      windowSeconds: 60,
-    });
-    if (!rateCheck.allowed) {
+    // ── Rate limiting: 3 requests per 60 seconds (atomic) ──
+    const { data: rateResult, error: rateError } = await supabaseAdmin.rpc(
+      "check_rate_limit",
+      {
+        p_user_id: userId,
+        p_function_name: "delete-account",
+        p_max_requests: 3,
+        p_window_seconds: 60,
+      },
+    );
+    if (rateError) {
+      console.error("Rate limit check failed:", rateError);
+      return jsonError("Rate limit check failed", 500);
+    }
+    if (!rateResult.allowed) {
       return jsonError(
-        `Too many requests. Try again in ${rateCheck.retryAfterSeconds}s.`,
+        `Too many requests. Try again in ${rateResult.retryAfterSeconds}s.`,
         429,
       );
     }

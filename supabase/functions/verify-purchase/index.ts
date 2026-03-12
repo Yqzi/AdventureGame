@@ -57,14 +57,23 @@ Deno.serve(async (req: Request) => {
       return jsonError("Invalid or expired token", 401);
     }
 
-    // ── Rate limiting: 5 requests per 60 seconds ──
-    const rateCheck = await checkRateLimit(supabaseAdmin, user.id, "verify-purchase", {
-      maxRequests: 5,
-      windowSeconds: 60,
-    });
-    if (!rateCheck.allowed) {
+    // ── Rate limiting: 5 requests per 60 seconds (atomic) ──
+    const { data: rateResult, error: rateError } = await supabaseAdmin.rpc(
+      "check_rate_limit",
+      {
+        p_user_id: user.id,
+        p_function_name: "verify-purchase",
+        p_max_requests: 5,
+        p_window_seconds: 60,
+      },
+    );
+    if (rateError) {
+      console.error("Rate limit check failed:", rateError);
+      return jsonError("Rate limit check failed", 500);
+    }
+    if (!rateResult.allowed) {
       return jsonError(
-        `Too many requests. Try again in ${rateCheck.retryAfterSeconds}s.`,
+        `Too many requests. Try again in ${rateResult.retryAfterSeconds}s.`,
         429,
       );
     }

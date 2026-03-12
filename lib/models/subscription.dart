@@ -88,7 +88,7 @@ extension SubscriptionTierX on SubscriptionTier {
   String get aiModel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'gemini-2.5-flash-lite';
+        return 'gemini-2.5-flash';
       case SubscriptionTier.adventurer:
         return 'gemini-2.5-pro';
       case SubscriptionTier.champion:
@@ -99,7 +99,7 @@ extension SubscriptionTierX on SubscriptionTier {
   String get aiModelLabel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'Gemini 2.5 Flash Lite';
+        return 'Gemini 2.5 Flash';
       case SubscriptionTier.adventurer:
         return 'Gemini 2.5 Pro';
       case SubscriptionTier.champion:
