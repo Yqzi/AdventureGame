@@ -202,16 +202,6 @@ class _DiceRollNotificationState extends State<DiceRollNotification>
                   // Modifier + total vs DC.
                   if (_settled) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      'd20: ${r.naturalRoll}$modText = ${r.total}  vs  DC ${r.dc}',
-                      style: GoogleFonts.epilogue(
-                        color: const Color(0xFFE3D5B8).withOpacity(0.5),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
 
                     // Outcome badge.
                     Container(

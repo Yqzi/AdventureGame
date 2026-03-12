@@ -236,6 +236,18 @@ class _LootNotificationState extends State<LootNotification>
       );
     }
 
+    if (effects.levelsGained > 0) {
+      items.add(
+        _lootRow(
+          icon: FontAwesomeIcons.arrowUp,
+          iconColor: const Color(0xFFFFD700),
+          label:
+              'Level Up!${effects.levelsGained > 1 ? ' (+${effects.levelsGained} levels)' : ''}',
+          labelColor: const Color(0xFFFFD700),
+        ),
+      );
+    }
+
     return items;
   }
 
@@ -276,5 +288,6 @@ bool hasVisibleEffects(StoryEffects? effects) {
       effects.itemGainedId != null ||
       effects.heal > 0 ||
       effects.manaRestored > 0 ||
-      effects.damage > 0;
+      effects.damage > 0 ||
+      effects.levelsGained > 0;
 }

@@ -57,9 +57,10 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 <!-- -fix subsccirption models with actual numbers -->
 <!-- -user chances should be not based off ai -->
 <!-- -credit spend is not limited on free tier, (check if works) -->
--add turn limit on quests to fail.
+<!-- -add turn limit on quests to fail. -->
 -items can be spammed
 -add tpm checks
+-remove testing long pause quest complete
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 

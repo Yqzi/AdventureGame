@@ -39,6 +39,7 @@ class StoryEffects {
   final String? newLocation;
   final bool questCompleted;
   final bool questFailed;
+  final int levelsGained;
 
   const StoryEffects({
     this.damage = 0,
@@ -55,6 +56,7 @@ class StoryEffects {
     this.newLocation,
     this.questCompleted = false,
     this.questFailed = false,
+    this.levelsGained = 0,
   });
 
   /// No effects at all — useful as a default.
@@ -79,7 +81,7 @@ class StoryEffects {
     );
   }
 
-  StoryEffects copyWith({int? damage, int? manaSpent}) {
+  StoryEffects copyWith({int? damage, int? manaSpent, int? levelsGained}) {
     return StoryEffects(
       damage: damage ?? this.damage,
       heal: heal,
@@ -95,6 +97,7 @@ class StoryEffects {
       newLocation: newLocation,
       questCompleted: questCompleted,
       questFailed: questFailed,
+      levelsGained: levelsGained ?? this.levelsGained,
     );
   }
 
@@ -130,5 +133,6 @@ class StoryEffects {
       itemLostId != null ||
       newLocation != null ||
       questCompleted ||
-      questFailed;
+      questFailed ||
+      levelsGained > 0;
 }

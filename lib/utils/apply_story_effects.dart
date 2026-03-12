@@ -40,10 +40,16 @@ import 'package:Questborne/models/item.dart';
   }
 
   // ── Experience & auto level-up ──
+  int levelsGained = 0;
   if (effects.xpGained > 0) {
+    final levelBefore = player.level;
     player = player.gainExperience(effects.xpGained);
     while (player.canLevelUp) {
       player = player.levelUp();
+    }
+    levelsGained = player.level - levelBefore;
+    if (levelsGained > 0) {
+      correctedEffects = correctedEffects.copyWith(levelsGained: levelsGained);
     }
   }
 

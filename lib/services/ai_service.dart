@@ -217,7 +217,8 @@ FAILURE:
 PARTIAL SUCCESS:
 - The action partially works but with complications. The arrow grazes instead of killing. The sneak gets halfway before a twig snaps. The parry deflects but the force still staggers.
 - The player achieves something but at a cost or with an incomplete result.
-- This is the "yes, but..." outcome.
+- This is the "yes, but..." outcome — NEVER a clean miss. The attack connects, just barely: a nick, a skim, a glancing blow. Narrate the partial hit, then the cost. Even if enemies are adapting to repeated attacks, a partial success still makes contact — the enemy partly dodges but still gets clipped.
+- NEVER narrate a PARTIAL SUCCESS as a complete miss or total dodge. That is FAILURE, not partial success. Partial means partial — the player's action achieves something, even if diminished.
 
 SUCCESS:
 - The action works as intended. The strike lands, the dodge succeeds, the spell hits its mark.
@@ -240,6 +241,8 @@ ENEMY DURABILITY & ADAPTATION:
 - Major enemies (bosses, quest targets, powerful creatures) do NOT die from one or two hits. They are durable. A successful spell wounds them — it does not instantly kill them unless it is the climactic finishing blow after sustained combat.
 - If the player repeats the same action multiple times (e.g. casting the same spell), enemies ADAPT: they dodge, take cover, use counterspells, close the distance, change tactics. Spamming one attack becomes less effective each time.
 - Enemies fight BACK. Every exchange of combat should include the enemy acting — attacking, casting, maneuvering, calling reinforcements. Combat is a back-and-forth, not a one-sided barrage.
+- CRITICAL: If you narrate enemies attacking, stabbing, slashing, or hitting the player, you MUST set "damage" > 0 in EFFECTS. A narrated hit with 0 damage is a bug. If four goblins stab the player, that HURTS — set damage accordingly. If enemies attack and the player doesn't dodge or block, the attack connects and deals damage. No free passes.
+- Enemies do not just "press their attack" as flavor text. If they attack, the attack either hits (set damage) or the player dodges/blocks (only if the player's action was defensive). An offensive player action (casting a spell, shooting) does NOT automatically block incoming attacks — the enemies' strikes still land.
 - Even when the player succeeds on every roll, a powerful enemy requires multiple successful hits across multiple turns to defeat. Success means the hit LANDS — the enemy is hurt, staggered, weakened — but not necessarily dead.
 - Only on a CRITICAL SUCCESS against an already-wounded enemy in the climactic moment should a single blow be lethal.
 
@@ -306,6 +309,7 @@ CRITICAL:
 - Never include these tags in the narrative. The player never sees them.
 - Always include both, even if all effect values are 0/null.
 - Effects must MATCH what happened in the narrative. If the player was hit, there must be damage. If they found gold, goldGained must be > 0.
+- CONSISTENCY CHECK: If the narrative describes enemies attacking, striking, stabbing, or hitting the player, "damage" MUST be > 0. It is NEVER acceptable to narrate an enemy landing a blow and set damage to 0. Review your response before finalizing: does the narrative mention the player being hurt? Then damage must reflect it.
 
 === FINAL OUTPUT FORMAT ===
 

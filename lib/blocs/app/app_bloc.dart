@@ -34,6 +34,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   String? _lastActionLabel;
   int _repeatCount = 0;
 
+  /// True when enemies are actively in melee range attacking the player.
+  /// Makes ranged/magic rolls harder (concentration/aim disrupted).
+  bool _underMeleePressure = false;
+
   GameBloc({required AIService aiService})
     : _aiService = aiService,
       super(
@@ -361,6 +365,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _memoryManager.reset();
     _lastActionLabel = null;
     _repeatCount = 0;
+    _underMeleePressure = false;
 
     // HP persists across quests — no full restore here.
     // Player only heals when completing an entire quest set.
@@ -548,6 +553,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       player: _player,
       questDifficulty: questDifficulty,
       lastPlayerInput: previousPlayerMsg,
+      repeatCount: _repeatCount,
+      underMeleePressure: _underMeleePressure,
     );
 
     emit(
@@ -633,6 +640,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _player = result.player;
         displayEffects = result.effects;
       }
+
+      // Track whether enemies dealt damage — means they're in melee range.
+      _underMeleePressure = (displayEffects?.damage ?? 0) > 0;
 
       // ── Hard turn limit: auto-fail if max turns reached ──
       final turnCount = _chatHistory
@@ -748,6 +758,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       player: _player,
       questDifficulty: questDifficulty,
       lastPlayerInput: previousPlayerMsg,
+      repeatCount: _repeatCount,
+      underMeleePressure: _underMeleePressure,
     );
 
     emit(
@@ -830,6 +842,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         // Even without AI effects, show the mana cost.
         displayEffects = StoryEffects(manaSpent: spell.manaCost);
       }
+
+      // Track whether enemies dealt damage — means they're in melee range.
+      _underMeleePressure = (parsed.effects?.damage ?? 0) > 0;
 
       // ── Hard turn limit: auto-fail if max turns reached ──
       final turnCount = _chatHistory

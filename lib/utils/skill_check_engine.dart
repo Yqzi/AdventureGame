@@ -412,6 +412,28 @@ class SkillCheckEngine {
     return mod;
   }
 
+  /// Penalty for repeating the same action type multiple times in a row.
+  /// -2 per consecutive repeat after the first (repeat 2 = -2, 3 = -4, etc.).
+  static int getRepetitionPenalty(int repeatCount) {
+    if (repeatCount < 2) return 0;
+    return -2 * (repeatCount - 1);
+  }
+
+  /// Penalty for attempting ranged or magic actions while under melee pressure.
+  /// Enemies closing in makes it hard to aim or concentrate.
+  static int getMeleePressurePenalty(
+    ActionType action,
+    bool underMeleePressure,
+  ) {
+    if (!underMeleePressure) return 0;
+    if (action == ActionType.rangedAttack ||
+        action == ActionType.offensiveMagic ||
+        action == ActionType.defensiveMagic) {
+      return -3;
+    }
+    return 0;
+  }
+
   // ─────────────────────────────────────────────────────────
   //  DIFFICULTY CLASS
   // ─────────────────────────────────────────────────────────
@@ -447,6 +469,8 @@ class SkillCheckEngine {
     required Player player,
     required String? questDifficulty,
     String? lastPlayerInput,
+    int repeatCount = 0,
+    bool underMeleePressure = false,
   }) {
     final action = classifyAction(
       playerInput,
@@ -458,8 +482,10 @@ class SkillCheckEngine {
     final roll = rollD20();
     final statMod = getStatModifier(action, player);
     final sitMod = getSituationalModifier(player, action);
+    final repPenalty = getRepetitionPenalty(repeatCount);
+    final pressurePenalty = getMeleePressurePenalty(action, underMeleePressure);
     final dc = getDC(questDifficulty);
-    final total = roll + statMod + sitMod;
+    final total = roll + statMod + sitMod + repPenalty + pressurePenalty;
 
     // Determine outcome.
     late final CheckOutcome outcome;
@@ -483,6 +509,12 @@ class SkillCheckEngine {
     if (sitMod != 0) {
       modParts.add('situational ${sitMod >= 0 ? "+$sitMod" : "$sitMod"}');
     }
+    if (repPenalty != 0) {
+      modParts.add('repetition $repPenalty');
+    }
+    if (pressurePenalty != 0) {
+      modParts.add('melee pressure $pressurePenalty');
+    }
     final modStr = modParts.isEmpty ? '' : ' (${modParts.join(", ")})';
 
     final summary =
@@ -494,7 +526,7 @@ class SkillCheckEngine {
       actionType: action,
       naturalRoll: roll,
       statModifier: statMod,
-      situationalModifier: sitMod,
+      situationalModifier: sitMod + repPenalty + pressurePenalty,
       dc: dc,
       outcome: outcome,
       summary: summary,
