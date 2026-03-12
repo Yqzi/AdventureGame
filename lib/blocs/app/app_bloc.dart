@@ -30,6 +30,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   List<ChatMessage> _chatHistory = [];
   late Player _player;
 
+  /// Tracks the last action label so we can detect repeated actions.
+  String? _lastActionLabel;
+  int _repeatCount = 0;
+
   GameBloc({required AIService aiService})
     : _aiService = aiService,
       super(
@@ -75,6 +79,36 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   @override
   Future<void> close() {
     return super.close();
+  }
+
+  /// Expected total exchanges for a quest, keyed by difficulty.
+  int _expectedTurns(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'routine':
+        return 5;
+      case 'dangerous':
+        return 7;
+      case 'perilous':
+        return 10;
+      case 'suicidal':
+        return 12;
+      default:
+        return 7;
+    }
+  }
+
+  /// Track repeated actions and return the prompt tag if repeating.
+  String _trackRepeat(String actionLabel) {
+    if (actionLabel == _lastActionLabel) {
+      _repeatCount++;
+    } else {
+      _lastActionLabel = actionLabel;
+      _repeatCount = 1;
+    }
+    if (_repeatCount >= 2) {
+      return '\n[REPEATED ACTION: Player has used "$actionLabel" $_repeatCount times in a row. Enemies MUST adapt — dodge, counter, resist, or punish the predictability.]';
+    }
+    return '';
   }
 
   // ─────────────────────────────────────────────────────────
@@ -308,6 +342,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _currentActiveQuest = event.questDetails;
     _chatHistory = [];
     _memoryManager.reset();
+    _lastActionLabel = null;
+    _repeatCount = 0;
 
     // HP persists across quests — no full restore here.
     // Player only heals when completing an entire quest set.
@@ -497,15 +533,26 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     String accumulatedRaw = "";
     try {
-      // Build the prompt. If a skill check was triggered, prepend the
-      // result so the AI knows the outcome and MUST narrate accordingly.
-      String aiPrompt = event.command;
+      // Build the prompt. Include turn counter and optional skill check.
+      final turnNumber = _chatHistory
+          .where((m) => m.sender == MessageSender.player && m.isComplete)
+          .length;
+      final difficulty =
+          _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
+      final expectedTurns = _expectedTurns(difficulty);
+
+      String aiPrompt =
+          '${event.command}\n\n[TURN $turnNumber of ~$expectedTurns]';
       if (skillCheck != null) {
-        aiPrompt =
-            '${event.command}\n\n'
-            '[SKILL CHECK: ${skillCheck.summary}. '
+        aiPrompt +=
+            '\n[SKILL CHECK: ${skillCheck.summary}. '
             'You MUST narrate the outcome matching this result. '
             'Do NOT override the dice.]';
+        aiPrompt += _trackRepeat(skillCheck.actionType.label);
+      } else {
+        // Non-action input — reset repeat tracker.
+        _lastActionLabel = null;
+        _repeatCount = 0;
       }
 
       // Build conversation context based on subscription tier.
@@ -649,14 +696,23 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     String accumulatedRaw = '';
     try {
-      String aiPrompt = command;
+      // Include turn counter so the AI knows quest pacing.
+      final turnNumber = _chatHistory
+          .where((m) => m.sender == MessageSender.player && m.isComplete)
+          .length;
+      final difficulty =
+          _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
+      final expectedTurns = _expectedTurns(difficulty);
+
+      String aiPrompt = '$command\n\n[TURN $turnNumber of ~$expectedTurns]';
       if (skillCheck != null) {
-        aiPrompt =
-            '$command\n\n'
-            '[SKILL CHECK: ${skillCheck.summary}. '
+        aiPrompt +=
+            '\n[SKILL CHECK: ${skillCheck.summary}. '
             'You MUST narrate the outcome matching this result. '
             'Do NOT override the dice.]';
       }
+      // Track spell-specific repetition (by spell name).
+      aiPrompt += _trackRepeat(spell.name);
 
       final tier = SubscriptionService().current.effectiveTier;
       final conversationCtx = _memoryManager.buildContextForAI(

@@ -55,8 +55,8 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 <!-- -clicking topleft goes back fro some reason -->
 <!-- -make anonymous sign ons not allowed to play the ai or just remove anonymous -->
 <!-- -fix subsccirption models with actual numbers -->
+<!-- -user chances should be not based off ai -->
 -credit spend is not limited on free tier
--user chances should be not based off ai
 -items can be spammed
 -use flash lite free tier maybe
 -add turn limit on quests to fail.

@@ -13,9 +13,16 @@ create table if not exists public.user_credits (
 -- RLS: users can only read their own row
 alter table public.user_credits enable row level security;
 
-create policy "Users can read own credits"
-  on public.user_credits for select
-  using (auth.uid() = user_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where policyname = 'Users can read own credits' and tablename = 'user_credits'
+  ) then
+    create policy "Users can read own credits"
+      on public.user_credits for select
+      using (auth.uid() = user_id);
+  end if;
+end $$;
 
 -- No client-side insert/update/delete — only the Edge Function (service_role) can modify credits.
 
