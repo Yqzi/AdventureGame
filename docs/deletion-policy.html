@@ -126,8 +126,14 @@
         // Initialize Supabase with your actual project keys
         const supabaseUrl = 'https://qveyscfsevhfthfgzrgg.supabase.co';
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZXlzY2ZzZXZoZnRoZmd6cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzQ2OTUsImV4cCI6MjA4NzA1MDY5NX0.e1VmQc5u4rljfDSRBy_WTsPByQo9d-y5L9sIx-4I6Qw';
-        
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        } catch (e) {
+            console.error('Failed to initialize Supabase client:', e);
+            document.getElementById('status-message').textContent = 'Error: Could not connect to authentication service. ' + e.message;
+        }
 
         // UI Elements
         const loginSection = document.getElementById('login-section');
