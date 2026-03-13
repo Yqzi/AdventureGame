@@ -80,11 +80,6 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// Expose active quest details.
   Map<String, dynamic> get activeQuest => Map.unmodifiable(_currentActiveQuest);
 
-  @override
-  Future<void> close() {
-    return super.close();
-  }
-
   /// Expected total exchanges for a quest, keyed by difficulty.
   int _expectedTurns(String difficulty) {
     switch (difficulty.toLowerCase()) {
@@ -852,21 +847,21 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           .length;
       final diff = _currentActiveQuest['difficulty'] as String? ?? 'Dangerous';
       if (turnCount >= _maxTurns(diff) &&
-          displayEffects?.questCompleted != true &&
-          displayEffects?.questFailed != true) {
+          displayEffects.questCompleted != true &&
+          displayEffects.questFailed != true) {
         displayEffects = StoryEffects(
-          damage: displayEffects?.damage ?? 0,
-          heal: displayEffects?.heal ?? 0,
-          manaSpent: displayEffects?.manaSpent ?? 0,
-          manaRestored: displayEffects?.manaRestored ?? 0,
-          goldGained: displayEffects?.goldGained ?? 0,
-          goldLost: displayEffects?.goldLost ?? 0,
-          xpGained: displayEffects?.xpGained ?? 0,
-          statusAdded: displayEffects?.statusAdded,
-          statusRemoved: displayEffects?.statusRemoved,
-          itemGainedId: displayEffects?.itemGainedId,
-          itemLostId: displayEffects?.itemLostId,
-          newLocation: displayEffects?.newLocation,
+          damage: displayEffects.damage,
+          heal: displayEffects.heal,
+          manaSpent: displayEffects.manaSpent,
+          manaRestored: displayEffects.manaRestored,
+          goldGained: displayEffects.goldGained,
+          goldLost: displayEffects.goldLost,
+          xpGained: displayEffects.xpGained,
+          statusAdded: displayEffects.statusAdded,
+          statusRemoved: displayEffects.statusRemoved,
+          itemGainedId: displayEffects.itemGainedId,
+          itemLostId: displayEffects.itemLostId,
+          newLocation: displayEffects.newLocation,
           questCompleted: false,
           questFailed: true,
         );

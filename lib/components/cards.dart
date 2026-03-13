@@ -291,8 +291,8 @@ class QuestCardModel extends StatelessWidget {
     required this.reward,
     required this.onActionPressed,
     required this.image,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

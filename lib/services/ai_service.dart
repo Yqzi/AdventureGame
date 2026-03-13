@@ -397,7 +397,7 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
   /// Returns the safety settings list to send to the Edge Function.
   List<Map<String, String>> _buildSafetyPayload() {
     final settings = SettingsService();
-    String _levelStr(int level) {
+    String levelStr(int level) {
       switch (level) {
         case 1:
           return 'low';
@@ -411,16 +411,16 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
     return [
       {
         'category': 'hateSpeech',
-        'threshold': _levelStr(settings.hateSpeechLevel),
+        'threshold': levelStr(settings.hateSpeechLevel),
       },
       {
         'category': 'harassment',
-        'threshold': _levelStr(settings.harassmentLevel),
+        'threshold': levelStr(settings.harassmentLevel),
       },
       {'category': 'sexuallyExplicit', 'threshold': 'high'},
       {
         'category': 'dangerousContent',
-        'threshold': _levelStr(settings.dangerousContentLevel),
+        'threshold': levelStr(settings.dangerousContentLevel),
       },
     ];
   }

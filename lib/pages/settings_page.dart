@@ -315,18 +315,6 @@ class _SettingsPageState extends State<SettingsPage> {
     context.read<GameBloc>().aiService.reloadSafetySettings();
   }
 
-  void _showComingSoonSnack(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _cardColor,
-        content: Text(
-          '$feature is coming soon!',
-          style: GoogleFonts.epilogue(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
   // ── Change name ──────────────────────────────────────────
 
   Future<void> _showChangeNameDialog(String currentName) async {

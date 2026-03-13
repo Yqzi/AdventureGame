@@ -5,6 +5,7 @@
 /// apply penalties/bonuses, and quest difficulty sets the DC. The result is
 /// injected into the AI prompt so the Game Master narrates accordingly — but
 /// the OUTCOME is determined here, not by the AI.
+library;
 
 // ─────────────────────────────────────────────────────────────
 //  ACTION TYPES

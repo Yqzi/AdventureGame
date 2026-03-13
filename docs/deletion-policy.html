@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questborne - Account & Data Deletion</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #8B1A1A; }
+        h2 { color: #444; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+        p { margin-bottom: 1rem; }
+        
+        .auth-container {
+            background-color: #f0f0f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 2rem 0;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-google { background-color: #4285F4; color: white; }
+        .btn-apple { background-color: #000000; color: white; }
+        .btn-delete { background-color: #8B1A1A; color: white; display: none; margin-top: 1rem; }
+        
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        #status-message {
+            margin-top: 1rem;
+            font-weight: bold;
+            color: #555;
+            min-height: 24px;
+        }
+
+        .error { color: #8B1A1A !important; }
+        .success { color: #2e7d32 !important; }
+        
+        #user-info {
+            display: none;
+            margin-bottom: 1rem;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .login-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Questborne Account & Data Deletion</h1>
+        <p>At Questborne, we respect your privacy and give you full control over your data. You can instantly and permanently delete your account using this web portal, or directly inside the mobile app.</p>
+
+        <div class="auth-container">
+            <h2>Delete via Web Portal</h2>
+            <p>Sign in with the account you used to play Questborne to authorise the deletion.</p>
+            
+            <div id="login-section" class="login-buttons">
+                <button class="btn-google" onclick="signInWithGoogle()">Sign in with Google</button>
+                <button class="btn-apple" onclick="signInWithApple()">Sign in with Apple</button>
+            </div>
+
+            <div id="user-info">
+                Logged in as: <strong id="user-email"></strong>
+            </div>
+
+            <button id="delete-btn" class="btn-delete" onclick="confirmDelete()">Permanently Delete My Account</button>
+            
+            <div id="status-message"></div>
+        </div>
+
+        <h2>Alternative: In-App Deletion</h2>
+        <p>You can also delete your account directly inside the app. This process is fully automated.</p>
+        <ol>
+            <li>Open the <strong>Questborne</strong> app.</li>
+            <li>Tap the <strong>Settings</strong> icon (gear) in the bottom navigation bar.</li>
+            <li>Scroll to the bottom of the page and tap <strong>Delete Account & Data</strong>.</li>
+        </ol>
+
+        <h2>What data is deleted?</h2>
+        <p>When you delete your account, the following data is <strong>permanently and irreversibly</strong> destroyed immediately:</p>
+        <ul>
+            <li>Your user authentication profile (Email address and User ID)</li>
+            <li>Your player save file (Stats, Inventory, Gold, Levels)</li>
+            <li>Your active and completed quests</li>
+            <li>Your game session history and AI chat logs</li>
+            <li>Your subscription tier record</li>
+        </ul>
+
+        <p style="margin-top: 2rem; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 1rem;">
+            For more information on how we handle user data, please refer to our <a href="privacy-policy.html">Privacy Policy</a>.
+        </p>
+    </div>
+
+    <script>
+        // Initialize Supabase with your actual project keys
+        const supabaseUrl = 'https://qveyscfsevhfthfgzrgg.supabase.co';
+        const supabaseAnonKey = 'sb_publishable_K5Cj_tdSybm_r7L5O2eE-w_23xh-fys';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // UI Elements
+        const loginSection = document.getElementById('login-section');
+        const userInfo = document.getElementById('user-info');
+        const userEmailSpan = document.getElementById('user-email');
+        const deleteBtn = document.getElementById('delete-btn');
+        const statusMsg = document.getElementById('status-message');
+
+        // Check authentication state on page load
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            updateUI(session);
+            
+            // Set up a listener for auth state changes (e.g. returning from OAuth redirect)
+            supabase.auth.onAuthStateChange((event, session) => {
+                updateUI(session);
+                if (event === 'SIGNED_IN') {
+                    showStatus('Successfully signed in. You may now delete your account.', 'success');
+                }
+            });
+        }
+
+        function updateUI(session) {
+            if (session && session.user) {
+                // User is logged in
+                loginSection.style.display = 'none';
+                userInfo.style.display = 'block';
+                userEmailSpan.textContent = session.user.email;
+                deleteBtn.style.display = 'inline-block';
+            } else {
+                // User is not logged in
+                loginSection.style.display = 'flex';
+                userInfo.style.display = 'none';
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        function showStatus(text, className = '') {
+            statusMsg.textContent = text;
+            statusMsg.className = className;
+        }
+
+        // --- Auth Functions ---
+        
+        async function signInWithGoogle() {
+            showStatus('Redirecting to Google...');
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + window.location.pathname
+                }
+            });
+            if (error) showStatus(`Error: ${error.message}`, 'error');
+        }
+
+        async function signInWithApple() {
+            showStatus('Redirecting to Apple...');
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'apple',
+                options: {
+                    redirectTo: window.location.origin + window.location.pathname
+                }
+            });
+            if (error) showStatus(`Error: ${error.message}`, 'error');
+        }
+
+        // --- Deletion Function ---
+
+        async function confirmDelete() {
+            const confirmed = confirm(
+                "WARNING: This will permanently delete your Questborne account, all saved game data, and chat history. This action CANNOT be undone.\n\nAre you absolutely sure?"
+            );
+            
+            if (!confirmed) return;
+
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = "Deleting Account...";
+            showStatus("Processing deletion...", "");
+
+            try {
+                // Call the edge function you already built
+                const { data, error } = await supabase.functions.invoke('delete-account');
+
+                if (error) {
+                    throw new Error(error.message || 'Failed to delete account.');
+                }
+
+                // If successful, sign them out locally
+                await supabase.auth.signOut();
+                
+                showStatus("✅ Account successfully and permanently deleted.", "success");
+                deleteBtn.style.display = 'none';
+                userInfo.style.display = 'none';
+                
+            } catch (err) {
+                console.error(err);
+                showStatus(`❌ Error deleting account: ${err.message}`, "error");
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = "Permanently Delete My Account";
+            }
+        }
+
+        // Run on load
+        checkSession();
+    </script>
+</body>
+</html>

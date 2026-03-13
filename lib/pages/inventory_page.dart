@@ -14,7 +14,7 @@ import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/item.dart';
 
 class InventoryPage extends StatelessWidget {
-  const InventoryPage({Key? key}) : super(key: key);
+  const InventoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {

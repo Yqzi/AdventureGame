@@ -138,7 +138,6 @@ class _DiceRollNotificationState extends State<DiceRollNotification>
         '${r.situationalModifier >= 0 ? "+" : ""}${r.situationalModifier}',
       );
     }
-    final modText = modParts.isNotEmpty ? ' (${modParts.join(" ")})' : '';
 
     return Positioned(
       top: MediaQuery.of(context).padding.top + 70,

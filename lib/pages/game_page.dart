@@ -890,8 +890,9 @@ class _GamePageState extends State<GamePage> {
                                 final p = _playerFromState(state);
                                 if (p == null) return const SizedBox.shrink();
                                 final spells = p.spellItems;
-                                if (spells.isEmpty)
+                                if (spells.isEmpty) {
                                   return const SizedBox.shrink();
+                                }
                                 final isActive =
                                     state is! GameLoading &&
                                     state is! GameStreamingNarrative;

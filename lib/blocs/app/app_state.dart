@@ -57,6 +57,7 @@ class GameLoading extends GameState {
 class GameLoaded extends GameState {
   final List<ChatMessage> messages;
   final Map<String, dynamic> activeQuest;
+  @override
   final Player player;
   final List<String> options;
   final StoryEffects? effects;
@@ -74,6 +75,7 @@ class GameLoaded extends GameState {
 class GameStreamingNarrative extends GameState {
   final List<ChatMessage> messages;
   final Map<String, dynamic> activeQuest;
+  @override
   final Player player;
   final SkillCheckResult? skillCheck;
   GameStreamingNarrative({

@@ -5,7 +5,6 @@ import 'package:Questborne/colors.dart';
 
 // ── The accent colour used throughout this screen ──
 const _accent = redText;
-const _accentDim = Color(0xFF8B1A1A);
 
 /// A themed full-screen page that asks the player to choose a character name.
 ///
@@ -174,7 +173,7 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                 ),
-                                child: Container(
+                                child: SizedBox(
                                   width: 28,
                                   height: 28,
 

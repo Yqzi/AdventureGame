@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:Questborne/models/item.dart';
-import 'package:Questborne/models/player.dart';
 
 abstract class AppEvent extends Equatable {
   const AppEvent();

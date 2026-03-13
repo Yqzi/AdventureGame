@@ -3,6 +3,7 @@
 /// The tier data lives in Supabase (`user_subscriptions` table) and is
 /// fetched by [SubscriptionService]. Everything here is pure data –
 /// no network calls.
+library;
 
 // ─────────────────────────────────────────────────────────────
 //  TIER ENUM

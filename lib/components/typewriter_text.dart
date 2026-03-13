@@ -84,7 +84,6 @@ class _TypewriterTextState extends State<TypewriterText> {
 
     // Reveal multiple characters per tick for punctuation pauses:
     // After '.', '!', '?' pause one tick; otherwise advance 1 char.
-    final nextChar = widget.text[_visibleLength];
     setState(() {
       _visibleLength++;
     });
