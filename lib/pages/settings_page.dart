@@ -642,6 +642,30 @@ class _SettingsPageState extends State<SettingsPage> {
         Navigator.pushNamedAndRemoveUntil(context, '/start', (_) => false);
       }
     } catch (e) {
+      // If the edge function fails because the account was already deleted
+      // (e.g. deleted via web portal), force a local sign-out so the user
+      // isn't stuck in a zombie session.
+      final msg = e.toString().toLowerCase();
+      final alreadyGone = msg.contains('user not found') ||
+          msg.contains('not authenticated') ||
+          msg.contains('unauthorized') ||
+          msg.contains('jwt') ||
+          msg.contains('401') ||
+          msg.contains('403');
+
+      if (alreadyGone) {
+        GameSessionRepository().clearLocal();
+        SubscriptionService().clear();
+        await Supabase.instance.client.auth.signOut();
+        if (mounted) {
+          context.read<GameBloc>().add(ResetPlayerEvent());
+        }
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/start', (_) => false);
+        }
+        return;
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
