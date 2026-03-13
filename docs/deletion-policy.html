@@ -88,7 +88,6 @@
             
             <div id="login-section" class="login-buttons">
                 <button class="btn-google" onclick="signInWithGoogle()">Sign in with Google</button>
-                <button class="btn-apple" onclick="signInWithApple()">Sign in with Apple</button>
             </div>
 
             <div id="user-info">
@@ -175,21 +174,18 @@
         
         async function signInWithGoogle() {
             showStatus('Redirecting to Google...');
+            // In a static HTML file on GH pages, we must pass the literal URL to the file
+            // as the redirect URI, otherwise it may try to route to the root of the repo.
+            const redirectUrl = window.location.href.split('#')[0]; // Current URL without hash
+            
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + window.location.pathname
-                }
-            });
-            if (error) showStatus(`Error: ${error.message}`, 'error');
-        }
-
-        async function signInWithApple() {
-            showStatus('Redirecting to Apple...');
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'apple',
-                options: {
-                    redirectTo: window.location.origin + window.location.pathname
+                    // Send them exactly back to THIS html page so the script runs again
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        prompt: 'select_account' // Forces the account chooser to show
+                    }
                 }
             });
             if (error) showStatus(`Error: ${error.message}`, 'error');
