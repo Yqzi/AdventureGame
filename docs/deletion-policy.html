@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Questborne - Account & Data Deletion</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -127,12 +127,16 @@
         const supabaseUrl = 'https://qveyscfsevhfthfgzrgg.supabase.co';
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZXlzY2ZzZXZoZnRoZmd6cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzQ2OTUsImV4cCI6MjA4NzA1MDY5NX0.e1VmQc5u4rljfDSRBy_WTsPByQo9d-y5L9sIx-4I6Qw';
 
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-        } catch (e) {
-            console.error('Failed to initialize Supabase client:', e);
-            document.getElementById('status-message').textContent = 'Error: Could not connect to authentication service. ' + e.message;
+        let supabaseClient = null;
+
+        function getSupabase() {
+            if (supabaseClient) return supabaseClient;
+            if (!window.supabase) {
+                alert('Authentication library failed to load. Please refresh the page or check your internet connection.');
+                return null;
+            }
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+            return supabaseClient;
         }
 
         // UI Elements
@@ -144,11 +148,13 @@
 
         // Check authentication state on page load
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const sb = getSupabase();
+            if (!sb) return;
+            const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
             
             // Set up a listener for auth state changes (e.g. returning from OAuth redirect)
-            supabase.auth.onAuthStateChange((event, session) => {
+            sb.auth.onAuthStateChange((event, session) => {
                 updateUI(session);
                 if (event === 'SIGNED_IN') {
                     showStatus('Successfully signed in. You may now delete your account.', 'success');
@@ -179,12 +185,12 @@
         // --- Auth Functions ---
         
         async function signInWithGoogle() {
+            const sb = getSupabase();
+            if (!sb) return;
             showStatus('Redirecting to Google...');
-            // In a static HTML file on GH pages, we must pass the literal URL to the file
-            // as the redirect URI, otherwise it may try to route to the root of the repo.
-            const redirectUrl = window.location.href.split('#')[0]; // Current URL without hash
+            const redirectUrl = window.location.href.split('#')[0];
             
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { error } = await sb.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     // Send them exactly back to THIS html page so the script runs again
@@ -212,14 +218,16 @@
 
             try {
                 // Call the edge function you already built
-                const { data, error } = await supabase.functions.invoke('delete-account');
+                const sb = getSupabase();
+                if (!sb) return;
+                const { data, error } = await sb.functions.invoke('delete-account');
 
                 if (error) {
                     throw new Error(error.message || 'Failed to delete account.');
                 }
 
                 // If successful, sign them out locally
-                await supabase.auth.signOut();
+                await sb.auth.signOut();
                 
                 showStatus("✅ Account successfully and permanently deleted.", "success");
                 deleteBtn.style.display = 'none';
