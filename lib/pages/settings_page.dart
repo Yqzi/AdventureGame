@@ -646,7 +646,8 @@ class _SettingsPageState extends State<SettingsPage> {
       // (e.g. deleted via web portal), force a local sign-out so the user
       // isn't stuck in a zombie session.
       final msg = e.toString().toLowerCase();
-      final alreadyGone = msg.contains('user not found') ||
+      final alreadyGone =
+          msg.contains('user not found') ||
           msg.contains('not authenticated') ||
           msg.contains('unauthorized') ||
           msg.contains('jwt') ||

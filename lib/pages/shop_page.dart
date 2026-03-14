@@ -392,9 +392,7 @@ class ShopPage extends StatelessWidget {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: NetworkImage(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuClCOV1kVgcBq2-51nor8G1KJ9OrPiMBmX2p1dNs7B6deOoAuD4Hv86MmkBWquDJzN7Ej0bxR2Jt6-8EcUwZl2UdGU6IHhOhpyH7VzQ-708aIvzHmlf7APrNgJJ8zUucA6jvPVqC560j9FP67Unt371jTsTcyUrcFXS1GMCy-Qyx91RY56h_6evt8EPVC8_3TksYGwZKowLgqvE39GGpcaTZ_h9Qk59AN-VTwpl5SwVI5y6cZDYer4xFhDJP99jAhN_DPtcJrpCMCY',
-                    ),
+                    image: AssetImage('assets/images/shopkeeper.png'),
                     fit: BoxFit.cover,
                     alignment: Alignment(0, -0.5),
                   ),

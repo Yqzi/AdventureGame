@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:Questborne/pages/game_page.dart';
 import 'package:Questborne/pages/guild_page.dart';
 import 'package:Questborne/pages/inventory_page.dart';
-import 'package:Questborne/pages/map_page.dart';
 import 'package:Questborne/pages/world_explore_page.dart';
 import 'package:Questborne/pages/shop_page.dart';
 import 'package:Questborne/pages/start_page.dart';
@@ -11,7 +10,6 @@ import 'package:Questborne/pages/subscription_page.dart';
 
 class AppRouter {
   static const start = '/start';
-  static const map = '/map';
   static const inventory = '/inventory';
   static const game = '/game';
   static const guild = '/guild';
@@ -35,8 +33,6 @@ class AppRouter {
       case '/':
       case start:
         return _noAnim(const StartPage(), settings);
-      case map:
-        return _noAnim(const MapPage(), settings);
       case inventory:
         return _noAnim(const InventoryPage(), settings);
       case game:

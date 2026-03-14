@@ -60,7 +60,9 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 <!-- -add turn limit on quests to fail. -->
 <!-- -items can be spammed (i think complete) -->
 <!-- -add tpm checks -->
+
 -remove testing long pause quest complete
+-continue with google button looks weird
 -authenticate tier and credits with purchase reciept
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->

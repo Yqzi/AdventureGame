@@ -529,14 +529,14 @@ class _GuildPageState extends State<GuildPage> {
                           ? null
                           : () => _showQuestDetail(context, quest),
                       // DEBUG: long-press to mark complete for testing
-                      onLongPress: isCompleted
-                          ? null
-                          : () {
-                              context.read<GameBloc>().add(
-                                CompleteQuestEvent(quest.id),
-                              );
-                              setState(() {});
-                            },
+                      // onLongPress: isCompleted
+                      //     ? null
+                      //     : () {
+                      //         context.read<GameBloc>().add(
+                      //           CompleteQuestEvent(quest.id),
+                      //         );
+                      //         setState(() {});
+                      //       },
                       child: Opacity(
                         opacity: isCompleted ? 0.5 : 1.0,
                         child: PinnedCard(
