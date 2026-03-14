@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -216,32 +215,7 @@ class _StartPageState extends State<StartPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                  width: 50,
-                  child: MaterialButton(
-                    splashColor: Colors.transparent,
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    child: Container(
-                      height: 42,
-                      width: 42,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: borderGrey),
-                        borderRadius: BorderRadius.all(Radius.circular(16)),
-                      ),
-                      child: Center(
-                        child: FaIcon(
-                          FontAwesomeIcons.solidCircleQuestion,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              Container(),
               Text(
                 "QUESTBORNE",
                 textAlign: TextAlign.center,

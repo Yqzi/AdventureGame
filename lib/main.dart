@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Questborne',
-        initialRoute: AppRouter.start,
+        initialRoute: AppRouter.splash,
         onGenerateRoute: AppRouter.onGenerateRoute,
         builder: (context, child) {
           return ScrollConfiguration(

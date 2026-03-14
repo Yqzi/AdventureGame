@@ -5,10 +5,12 @@ import 'package:Questborne/pages/guild_page.dart';
 import 'package:Questborne/pages/inventory_page.dart';
 import 'package:Questborne/pages/world_explore_page.dart';
 import 'package:Questborne/pages/shop_page.dart';
+import 'package:Questborne/pages/splash_screen.dart';
 import 'package:Questborne/pages/start_page.dart';
 import 'package:Questborne/pages/subscription_page.dart';
 
 class AppRouter {
+  static const splash = '/';
   static const start = '/start';
   static const inventory = '/inventory';
   static const game = '/game';
@@ -30,7 +32,8 @@ class AppRouter {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case '/':
+      case splash:
+        return _noAnim(const SplashScreen(), settings);
       case start:
         return _noAnim(const StartPage(), settings);
       case inventory:

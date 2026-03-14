@@ -1,14 +1,47 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:Questborne/router.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _emberController;
+  late final List<_EmberParticle> _embers;
+
+  @override
+  void initState() {
+    super.initState();
+    final rng = Random();
+    _embers = List.generate(18, (_) => _EmberParticle(rng));
+    _emberController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(AppRouter.start);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _emberController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -17,129 +50,76 @@ class SplashScreen extends StatelessWidget {
           width: size.width,
           height: size.height,
           child: Stack(
-            alignment: Alignment.center,
             children: [
-              Center(
-                child: Container(
-                  width: screenHeight,
-                  height: screenHeight,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.1),
-                        blurRadius: 40,
-                        spreadRadius: screenHeight,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Positioned(
-              //   top: 0,
-              //   left: 0,
-              //   right: 0,
-              //   bottom: 100,
-              //   child: Container(
-              //     width: screenHeight,
-              //     height: screenHeight,
-              //     decoration: BoxDecoration(
-              //       shape: BoxShape.circle,
-              //       gradient: RadialGradient(
-              //         colors: [
-              //           Colors.transparent,
-              //           Colors.white.withValues(alpha: 0.1),
-              //           Colors.transparent,
-              //           Colors.white.withValues(alpha: 0.05),
-              //           Colors.transparent,
-              //         ],
-              //         stops: const [0.0, 0.2, 0.4, 0.6, 1.0],
-              //       ),
-              //     ),
-              //   ),
-              // ),
+              // ── Bottom orange radial glow ──
               Positioned(
-                top: 0,
-                bottom: 0 - screenHeight,
-                left: size.width / 2 - screenHeight / 2,
+                bottom: -size.height * 0.35,
+                left: -size.width * 0.3,
+                right: -size.width * 0.3,
                 child: Container(
-                  width: screenHeight,
-                  height: screenHeight * 2,
+                  width: size.width * 1.6,
+                  height: size.height * 0.7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Color(0xFFec4913).withValues(alpha: 0.2),
-                        Color(0xFFec4913).withValues(alpha: 0.2),
-                        Color(0xFFec4913).withValues(alpha: 0.15),
-                        Color(0xFFec4913).withValues(alpha: 0.1),
-                        Color(0xFFec4913).withValues(alpha: 0.05),
+                        const Color(0xFFec4913).withValues(alpha: 0.30),
+                        const Color(0xFFec4913).withValues(alpha: 0.18),
+                        const Color(0xFFec4913).withValues(alpha: 0.08),
                         Colors.transparent,
                       ],
-                      stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                      stops: const [0.0, 0.3, 0.6, 1.0],
                     ),
                   ),
                 ),
               ),
 
-              // SVG icon
-              Positioned.fill(
-                top: -100,
+              // ── Animated rising embers ──
+              AnimatedBuilder(
+                animation: _emberController,
+                builder: (context, _) {
+                  return CustomPaint(
+                    size: size,
+                    painter: _EmberPainter(
+                      embers: _embers,
+                      progress: _emberController.value,
+                    ),
+                  );
+                },
+              ),
+
+              // ── Icon with soft glow ──
+              Positioned(
+                top: size.height * 0.30,
+                left: 0,
+                right: 0,
                 child: Center(
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Glowing rings
+                      // Glow behind the icon
                       Container(
-                        width: screenHeight,
-                        height: screenHeight,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.white.withValues(alpha: 0.1),
-                              Colors.transparent,
-                              Colors.white.withValues(alpha: 0.05),
-                              Colors.transparent,
-                            ],
-                            stops: const [0.0, 0.2, 0.4, 0.6, 1.0],
-                          ),
-                        ),
-                      ),
-                      // SVG icon
-                      Container(
-                        width: 180,
-                        height: 180,
+                        width: 220,
+                        height: 220,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.white.withOpacity(0.15),
-                              blurRadius: 30,
-                              spreadRadius: 10,
+                              color: Colors.white.withValues(alpha: 0.08),
+                              blurRadius: 60,
+                              spreadRadius: 30,
                             ),
                           ],
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.white.withOpacity(0.1),
-                              Colors.transparent,
-                              Colors.white.withOpacity(0.05),
-                              Colors.transparent,
-                            ],
-                            stops: const [0.0, 0.2, 0.4, 0.6, 1.0],
-                          ),
                         ),
-                        child: SvgPicture.asset(
-                          'assets/icons/flower.svg',
-                          width: 180,
-                          height: 180,
-                          colorFilter: ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
+                      ),
+                      // Flower icon
+                      SvgPicture.asset(
+                        'assets/icons/flower.svg',
+                        width: 150,
+                        height: 150,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
                         ),
                       ),
                     ],
@@ -147,26 +127,23 @@ class SplashScreen extends StatelessWidget {
                 ),
               ),
 
-              Positioned.fill(
-                top: -100 + 180 + 150,
+              // ── Title text ──
+              Positioned(
+                top: size.height * 0.30 + 200,
+                left: 0,
+                right: 0,
                 child: Center(
                   child: Text(
-                    "TITLE",
+                    'QUESTBORNE',
                     style: GoogleFonts.cinzel(
-                      color: Colors.white70,
-                      fontSize: 40,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w900,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 36,
+                      letterSpacing: 6,
+                      fontWeight: FontWeight.w700,
                       shadows: [
                         Shadow(
-                          color: Colors.white.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: Offset(0, 0),
-                        ),
-                        Shadow(
-                          color: Colors.grey[300]!.withOpacity(0.2),
-                          blurRadius: 40,
-                          offset: Offset(0, 0),
+                          color: Colors.white.withValues(alpha: 0.25),
+                          blurRadius: 24,
                         ),
                       ],
                     ),
@@ -174,31 +151,22 @@ class SplashScreen extends StatelessWidget {
                 ),
               ),
 
-              // Embers at the bottom
-              Positioned(
-                bottom: size.height * 0.10,
-                left: size.width * 0.20,
-                child: _Ember(size: 5, opacity: 0.6),
-              ),
-              Positioned(
-                bottom: size.height * 0.15,
-                left: size.width * 0.60,
-                child: _Ember(size: 4, opacity: 0.4),
-              ),
+              // ── Bottom tagline ──
               Positioned(
                 bottom: size.height * 0.05,
-                left: size.width * 0.40,
-                child: _Ember(size: 6, opacity: 0.5),
-              ),
-              Positioned(
-                bottom: size.height * 0.25,
-                left: size.width * 0.80,
-                child: _Ember(size: 3, opacity: 0.3),
-              ),
-              Positioned(
-                bottom: size.height * 0.08,
-                left: size.width * 0.10,
-                child: _Ember(size: 4, opacity: 0.5),
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    'POWERED BY AI STORY ENGINE',
+                    style: GoogleFonts.cinzel(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: 11,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -208,27 +176,63 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-class _Ember extends StatelessWidget {
-  final double size;
+// ───────────────────────────────────────────────────────
+//  Ember particle data
+// ───────────────────────────────────────────────────────
+
+class _EmberParticle {
+  final double x; // 0..1 horizontal position
+  final double startY; // 0..1 start from bottom
+  final double speed; // how fast it rises (0..1 range per cycle)
+  final double radius;
   final double opacity;
-  const _Ember({required this.size, required this.opacity});
+  final double phase; // random phase offset
+
+  _EmberParticle(Random rng)
+    : x = rng.nextDouble(),
+      startY = rng.nextDouble() * 0.35,
+      speed = 0.3 + rng.nextDouble() * 0.5,
+      radius = 1.5 + rng.nextDouble() * 2.5,
+      opacity = 0.3 + rng.nextDouble() * 0.5,
+      phase = rng.nextDouble();
+}
+
+// ───────────────────────────────────────────────────────
+//  Ember painter
+// ───────────────────────────────────────────────────────
+
+class _EmberPainter extends CustomPainter {
+  final List<_EmberParticle> embers;
+  final double progress;
+
+  _EmberPainter({required this.embers, required this.progress});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Color(0xFFec4913).withOpacity(opacity),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFFec4913).withOpacity(opacity),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    for (final e in embers) {
+      // Phase-offset looping position
+      final t = (progress + e.phase) % 1.0;
+      final y =
+          size.height - (e.startY * size.height) - (t * size.height * e.speed);
+      if (y < 0) continue;
+
+      // Fade out as embers rise
+      final fadeFactor = (1.0 - t).clamp(0.0, 1.0);
+      final alpha = (e.opacity * fadeFactor).clamp(0.0, 1.0);
+
+      final paint = Paint()
+        ..color = const Color(0xFFec4913).withValues(alpha: alpha)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, e.radius * 2);
+
+      canvas.drawCircle(Offset(e.x * size.width, y), e.radius, paint);
+
+      // Brighter core
+      final corePaint = Paint()
+        ..color = const Color(0xFFff7733).withValues(alpha: alpha * 0.7);
+      canvas.drawCircle(Offset(e.x * size.width, y), e.radius * 0.5, corePaint);
+    }
   }
+
+  @override
+  bool shouldRepaint(_EmberPainter old) => true;
 }
