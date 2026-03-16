@@ -269,8 +269,7 @@ class _StartPageState extends State<StartPage> {
     return Column(
       children: [
         _buildProviderButton(
-          label: 'Continue with Google',
-          icon: FontAwesomeIcons.google,
+          label: 'Google',
           color: Colors.white,
           textColor: Colors.black87,
           onTap: _handleGoogle,
@@ -278,8 +277,7 @@ class _StartPageState extends State<StartPage> {
         const SizedBox(height: 14),
         if (_auth.isAppleSignInAvailable) ...[
           _buildProviderButton(
-            label: 'Continue with Apple',
-            icon: FontAwesomeIcons.apple,
+            label: 'Apple',
             color: Colors.white,
             textColor: Colors.black87,
             onTap: _handleApple,
@@ -316,7 +314,7 @@ class _StartPageState extends State<StartPage> {
     );
   }
 
-  Widget _buildProviderButton({
+  Widget _buildProviderButton2({
     required String label,
     required IconData icon,
     required Color color,
@@ -357,5 +355,40 @@ class _StartPageState extends State<StartPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildProviderButton({
+    required String label,
+    required Color color,
+    required Color textColor,
+    Color? borderColor,
+    required VoidCallback onTap,
+  }) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: _loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.only(right: 24, left: 16, top: 10, bottom: 10),
+          backgroundColor: Colors.white,
+          side: BorderSide(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/icons/${label.toLowerCase()}.png', height: 32),
+            SizedBox(width: 8),
+            Text(
+              "Continue with $label",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    ;
   }
 }
