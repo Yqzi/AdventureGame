@@ -65,6 +65,7 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 -continue with google button looks weird
 -authenticate tier and credits with purchase reciept
 -add check for subscriptions in settings functionality
+-clicked enter fast then it asked me for my name again
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 

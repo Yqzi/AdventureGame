@@ -5,6 +5,7 @@ import 'package:Questborne/router.dart';
 import 'package:Questborne/services/settings_service.dart';
 import 'package:Questborne/services/purchase_service.dart';
 import 'package:Questborne/services/subscription_service.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/services/ai_service.dart';
@@ -17,6 +18,7 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await SettingsService().init();
   // Pre-load subscription tier so it's available immediately.
   await SubscriptionService().fetch();

@@ -90,7 +90,7 @@ class Item {
     if (agility > 0) parts.add('+$agility AGI');
     if (health > 0) parts.add('+$health HP');
     if (effect.isNotEmpty) parts.add(effect);
-    return parts.join('  Â·  ');
+    return parts.join('  ·  ');
   }
 
   /// Formatted price string.

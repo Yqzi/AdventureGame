@@ -24,6 +24,7 @@ class _StartPageState extends State<StartPage> {
   final _auth = AuthService();
 
   bool _loading = false;
+  bool _sessionReady = false;
   String? _errorMessage;
 
   bool get _isSignedIn => _auth.isLoggedIn;
@@ -32,77 +33,6 @@ class _StartPageState extends State<StartPage> {
   void initState() {
     super.initState();
     _validateSession();
-    _showConsentIfFirstLaunch();
-  }
-
-  Future<void> _showConsentIfFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('data_consent_shown') == true) return;
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E120E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Data & Privacy',
-          style: GoogleFonts.epilogue(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Questborne collects your sign-in info, game progress, and '
-              'sends your in-game actions to Google Gemini AI to generate '
-              'story responses. We never sell your data.',
-              style: GoogleFonts.epilogue(color: Colors.white70, fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => launchUrl(
-                Uri.parse(
-                  'https://yqzi.github.io/AdventureGame/privacy-policy.html',
-                ),
-                mode: LaunchMode.externalApplication,
-              ),
-              child: Text(
-                'Read our Privacy Policy',
-                style: GoogleFonts.epilogue(
-                  color: redText,
-                  fontSize: 14,
-                  decoration: TextDecoration.underline,
-                  decorationColor: redText,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: redText,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                prefs.setBool('data_consent_shown', true);
-                Navigator.pop(ctx);
-              },
-              child: Text('I Understand', style: GoogleFonts.epilogue()),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Try refreshing the session — if the user was deleted on Supabase,
@@ -114,10 +44,12 @@ class _StartPageState extends State<StartPage> {
       // Session is valid — load saved player data from the cloud.
       if (mounted) {
         context.read<GameBloc>().add(LoadPlayerFromCloudEvent());
+        await context.read<GameBloc>().stream.first;
       }
     } catch (_) {
-      if (mounted) setState(() {});
+      // Session refresh failed — handled elsewhere.
     }
+    if (mounted) setState(() => _sessionReady = true);
   }
 
   // ── Auth actions ────────────────────────────────────────────
@@ -141,8 +73,9 @@ class _StartPageState extends State<StartPage> {
       // After successful sign-in, load saved player data from the cloud.
       if (mounted) {
         context.read<GameBloc>().add(LoadPlayerFromCloudEvent());
+        await context.read<GameBloc>().stream.first;
       }
-      if (mounted) setState(() {}); // Refresh to show signed-in UI
+      if (mounted) setState(() => _sessionReady = true);
     } catch (e) {
       setState(
         () => _errorMessage = e.toString().replaceFirst('Exception: ', ''),
@@ -261,7 +194,7 @@ class _StartPageState extends State<StartPage> {
             letterSpacing: 1,
             fontsize: 22,
             icon: Icon(Icons.style, color: Colors.white),
-            onpressed: () => _enterGame(),
+            onpressed: _sessionReady ? () => _enterGame() : null,
           ),
         ),
         Row(
@@ -298,31 +231,6 @@ class _StartPageState extends State<StartPage> {
           ],
         ),
         SizedBox(height: 24),
-        Container(
-          decoration: BoxDecoration(
-            color: redText.withOpacity(0.2),
-            border: Border.all(color: Color(0xFFFF6B00), width: 0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.circle, size: 9, color: redText),
-              SizedBox(width: 6),
-              Text(
-                'STORY ENGINE ACTIVE',
-                style: GoogleFonts.epilogue(
-                  fontSize: 11,
-                  color: const Color.fromARGB(255, 245, 18, 56),
-                  decoration: TextDecoration.none,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
         Text(
           "Version 0.0.1 • Shadow-Crest Protocol",
           style: GoogleFonts.epilogue(
