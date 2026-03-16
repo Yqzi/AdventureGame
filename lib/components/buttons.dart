@@ -3,7 +3,7 @@ import 'package:Questborne/colors.dart';
 
 OutlinedButton customOutlinedButton({
   required String title,
-  required VoidCallback onpressed,
+  required VoidCallback? onpressed,
   Widget? icon,
   bool glow = false,
   double fontsize = 20,
