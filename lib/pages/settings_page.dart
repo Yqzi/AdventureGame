@@ -13,6 +13,8 @@ import 'package:Questborne/router.dart';
 import 'package:Questborne/services/auth_service.dart';
 import 'package:Questborne/services/game_session_repository.dart';
 import 'package:Questborne/services/settings_service.dart';
+import 'package:Questborne/models/subscription.dart';
+import 'package:Questborne/services/purchase_service.dart';
 import 'package:Questborne/services/subscription_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -588,7 +590,6 @@ class _SettingsPageState extends State<SettingsPage> {
   // ── Restore subscription ─────────────────────────────────
 
   Future<void> _restoreSubscription() async {
-    // TODO: Implement actual restore logic with your payment provider
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: _cardColor,
@@ -599,19 +600,44 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
 
-    // Simulate a short check
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final purchaseService = PurchaseService();
+      await purchaseService.init();
+      await purchaseService.restore();
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _cardColor,
-        content: Text(
-          'No active subscription found.',
-          style: GoogleFonts.epilogue(color: Colors.white),
+      // Wait briefly for the purchase stream to deliver restored purchases
+      // and for _verifyAndDeliver to call the edge function.
+      await Future.delayed(const Duration(seconds: 3));
+
+      // Now fetch the latest subscription state from the server.
+      final sub = await SubscriptionService().fetch();
+
+      if (!mounted) return;
+
+      final isActive = sub.effectiveTier != SubscriptionTier.free;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _cardColor,
+          content: Text(
+            isActive
+                ? 'Subscription restored! (${sub.effectiveTier.label})'
+                : 'No active subscription found.',
+            style: GoogleFonts.epilogue(color: Colors.white),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _cardColor,
+          content: Text(
+            'Could not restore subscription. Try again later.',
+            style: GoogleFonts.epilogue(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   // ── Delete account ───────────────────────────────────────
@@ -621,6 +647,7 @@ class _SettingsPageState extends State<SettingsPage> {
       title: 'Delete Account',
       message:
           'This will permanently delete your account and all saved data. '
+          'Any active subscription will also be cancelled. '
           'This action cannot be undone.',
       confirmLabel: 'Delete',
     );

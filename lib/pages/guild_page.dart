@@ -668,22 +668,16 @@ class _GuildPageState extends State<GuildPage> {
                             ? Icons.play_arrow
                             : Icons.visibility,
                         onActionPressed: () {
-                          context.read<GameBloc>().add(
-                            CompleteQuestEvent(quest.id),
-                          );
-                          setState(() {});
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.game,
+                            arguments: {
+                              'details': quest.toQuestDetails(),
+                              'questId': quest.id,
+                              'resume': hasSession,
+                            },
+                          ).then((_) => _loadActiveSessions());
                         },
-                        // onActionPressed: () {
-                        //   Navigator.pushNamed(
-                        //     context,
-                        //     AppRouter.game,
-                        //     arguments: {
-                        //       'details': quest.toQuestDetails(),
-                        //       'questId': quest.id,
-                        //       'resume': hasSession,
-                        //     },
-                        //   ).then((_) => _loadActiveSessions());
-                        // },
                       ),
                     );
                   }

@@ -13,20 +13,19 @@ interface RequestBody {
 
 // ── Product → tier mapping (server-side source of truth) ───
 
-const PRODUCT_TIERS: Record<string, { tier: string; maxCredits: number; durationDays: number }> = {
-  // Adventurer
-  questborne_adventurer_monthly:  { tier: "adventurer", maxCredits: 150, durationDays: 30 },
-  questborne_adventurer_6month:   { tier: "adventurer", maxCredits: 150, durationDays: 180 },
-  questborne_adventurer_yearly:   { tier: "adventurer", maxCredits: 150, durationDays: 365 },
-  // Champion
-  questborne_champion_monthly:    { tier: "champion",   maxCredits: 600, durationDays: 30 },
-  questborne_champion_6month:     { tier: "champion",   maxCredits: 600, durationDays: 180 },
-  questborne_champion_yearly:     { tier: "champion",   maxCredits: 600, durationDays: 365 },
+const SUBSCRIPTION_TIERS: Record<string, { tier: string; maxCredits: number }> = {
+  questborne_adventurer: { tier: "adventurer", maxCredits: 150 },
+  questborne_champion:   { tier: "champion",   maxCredits: 600 },
 };
 
 // ── Main handler ───────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
+  console.log(
+    "verify-purchase invoked",
+    JSON.stringify({ method: req.method, hasAuth: !!req.headers.get("Authorization") }),
+  );
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -84,27 +83,31 @@ Deno.serve(async (req: Request) => {
       return jsonError("Missing required fields", 400);
     }
 
-    // ── Look up tier from product ID ──
-    const productInfo = PRODUCT_TIERS[body.product_id];
+    // ── Look up tier from subscription ID ──
+    const productInfo = SUBSCRIPTION_TIERS[body.product_id];
     if (!productInfo) {
-      return jsonError(`Unknown product: ${body.product_id}`, 400);
+      return jsonError(`Unknown subscription: ${body.product_id}`, 400);
     }
 
     // ── Verify with Google Play ──
+    let expiryTimeMillis: number | undefined;
     if (body.platform === "android") {
-      const verified = await verifyGooglePurchase(
+      const result = await verifyGooglePurchase(
         body.product_id,
         body.purchase_token,
       );
-      if (!verified) {
+      if (!result.verified) {
         return jsonError("Purchase verification failed", 403);
       }
+      expiryTimeMillis = result.expiryTimeMillis;
     }
     // TODO: Add Apple receipt verification for iOS when needed.
 
     // ── Upsert subscription ──
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + productInfo.durationDays * 24 * 60 * 60 * 1000);
+    const expiresAt = expiryTimeMillis
+      ? new Date(expiryTimeMillis)
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const resetAt = getNextMonthStart();
 
     const { error: upsertError } = await supabaseAdmin
@@ -146,16 +149,15 @@ Deno.serve(async (req: Request) => {
 // ── Google Play verification ──────────────────────────────
 
 async function verifyGooglePurchase(
-  productId: string,
+  subscriptionId: string,
   purchaseToken: string,
-): Promise<boolean> {
+): Promise<{ verified: boolean; expiryTimeMillis?: number }> {
   // Use the Google Play Developer API via a service account.
   // The GOOGLE_SERVICE_ACCOUNT_KEY env var should contain the JSON key.
   const saKeyJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
   if (!saKeyJson) {
-    console.error("GOOGLE_SERVICE_ACCOUNT_KEY not configured — skipping verification in dev");
-    // In production this should return false. During setup, allow pass-through.
-    return true;
+    console.error("GOOGLE_SERVICE_ACCOUNT_KEY not configured — rejecting purchase");
+    return { verified: false };
   }
 
   try {
@@ -164,7 +166,7 @@ async function verifyGooglePurchase(
     const packageName = "com.yusuf.questborne";
 
     const url =
-      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptionsv2/tokens/${purchaseToken}`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -172,25 +174,52 @@ async function verifyGooglePurchase(
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error("Google verification failed:", res.status, errText);
-      return false;
+      console.error(
+        "Google verification failed:",
+        res.status,
+        errText,
+        `package=${packageName} subscriptionId=${subscriptionId} serviceAccount=${saKey.client_email}`,
+      );
+      return { verified: false };
     }
 
     const data = await res.json();
-    // Payment state 1 = received, 2 = free trial. Both are valid.
-    return data.paymentState === 1 || data.paymentState === 2;
+    const state = data.subscriptionState;
+    const isActive =
+      state === "SUBSCRIPTION_STATE_ACTIVE" ||
+      state === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD";
+
+    const expiryTimeMillis = getLatestExpiryTimeMillisFromV2(data);
+    return { verified: isActive, expiryTimeMillis };
   } catch (e) {
     console.error("Google verification error:", e);
-    return false;
+    return { verified: false };
   }
+}
+
+function getLatestExpiryTimeMillisFromV2(data: any): number | undefined {
+  if (!data?.lineItems || !Array.isArray(data.lineItems)) {
+    return undefined;
+  }
+
+  let latest = 0;
+  for (const item of data.lineItems) {
+    if (!item?.expiryTime) continue;
+    const ms = Date.parse(item.expiryTime);
+    if (!Number.isNaN(ms) && ms > latest) {
+      latest = ms;
+    }
+  }
+
+  return latest > 0 ? latest : undefined;
 }
 
 async function getGoogleAccessToken(
   saKey: { client_email: string; private_key: string },
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = btoa(
+  const header = toBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = toBase64Url(
     JSON.stringify({
       iss: saKey.client_email,
       scope: "https://www.googleapis.com/auth/androidpublisher",
@@ -254,4 +283,8 @@ function jsonError(message: string, status: number): Response {
 function getNextMonthStart(): Date {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+}
+
+function toBase64Url(str: string): string {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }

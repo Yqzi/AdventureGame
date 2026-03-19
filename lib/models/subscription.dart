@@ -61,29 +61,30 @@ extension SubscriptionTierX on SubscriptionTier {
       ? 'Free'
       : '\$${priceUsd.toStringAsFixed(2)}';
 
-  /// Google Play product IDs for this tier, keyed by duration in months.
-  /// Must match the IDs configured in the Google Play Console.
-  Map<int, String> get playStoreProductIds {
+  /// Google Play subscription ID for this tier (null for free).
+  /// Must match the subscription product ID in Google Play Console.
+  String? get playStoreSubscriptionId {
+    switch (this) {
+      case SubscriptionTier.free:
+        return null;
+      case SubscriptionTier.adventurer:
+        return 'questborne_adventurer';
+      case SubscriptionTier.champion:
+        return 'questborne_champion';
+    }
+  }
+
+  /// Base plan IDs keyed by duration in months.
+  /// Must match the base plan IDs configured in Google Play Console.
+  Map<int, String> get basePlanIds {
     switch (this) {
       case SubscriptionTier.free:
         return {};
       case SubscriptionTier.adventurer:
-        return {
-          1: 'questborne_adventurer_monthly',
-          6: 'questborne_adventurer_6month',
-          12: 'questborne_adventurer_yearly',
-        };
       case SubscriptionTier.champion:
-        return {
-          1: 'questborne_champion_monthly',
-          6: 'questborne_champion_6month',
-          12: 'questborne_champion_yearly',
-        };
+        return {1: 'monthly', 6: '6month', 12: 'yearly'};
     }
   }
-
-  /// Convenience — returns the monthly product ID (or null for free).
-  String? get playStoreProductId => playStoreProductIds[1];
 
   /// AI model identifier sent to the Edge Function.
   String get aiModel {

@@ -59,6 +59,25 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ── Cancel any active Google Play subscription ──
+    try {
+      const { data: sub } = await supabaseAdmin
+        .from("user_subscriptions")
+        .select("store_product_id, store_transaction_id, tier")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (sub?.store_product_id && sub?.store_transaction_id && sub.tier !== "free") {
+        await cancelGoogleSubscription(
+          sub.store_product_id,
+          sub.store_transaction_id,
+        );
+      }
+    } catch (e) {
+      // Log but don't block deletion — the sub will expire naturally
+      console.error("Failed to cancel Google subscription:", e);
+    }
+
     // ── Delete all user data from every table ──
     // Each delete is wrapped individually so a missing table doesn't abort.
     const tables = ["game_sessions", "player_saves", "user_subscriptions"];
@@ -96,4 +115,96 @@ function jsonError(message: string, status: number) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status,
   });
+}
+
+// ── Google Play subscription cancellation ──────────────────
+
+async function cancelGoogleSubscription(
+  subscriptionId: string,
+  purchaseToken: string,
+): Promise<void> {
+  const saKeyJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+  if (!saKeyJson) {
+    console.error("GOOGLE_SERVICE_ACCOUNT_KEY not set — cannot cancel sub");
+    return;
+  }
+
+  const saKey = JSON.parse(saKeyJson);
+  const accessToken = await getGoogleAccessToken(saKey);
+  const packageName = "com.yusuf.questborne";
+
+  const url =
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${subscriptionId}/tokens/${purchaseToken}:cancel`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Google cancel failed:", res.status, errText);
+  } else {
+    console.log(`Cancelled Google subscription ${subscriptionId} for deleted user`);
+  }
+}
+
+async function getGoogleAccessToken(
+  saKey: { client_email: string; private_key: string },
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = toBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = toBase64Url(
+    JSON.stringify({
+      iss: saKey.client_email,
+      scope: "https://www.googleapis.com/auth/androidpublisher",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    }),
+  );
+
+  const signInput = `${header}.${payload}`;
+
+  const pemContents = saKey.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\n/g, "");
+  const keyBuffer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyBuffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const signatureBuffer = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(signInput),
+  );
+
+  const signature = btoa(
+    String.fromCharCode(...new Uint8Array(signatureBuffer)),
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+  const jwt = `${signInput}.${signature}`;
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
+}
+
+function toBase64Url(str: string): string {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }

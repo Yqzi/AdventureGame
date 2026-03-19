@@ -40,14 +40,25 @@ class _StartPageState extends State<StartPage> {
   Future<void> _validateSession() async {
     if (!_isSignedIn) return;
     try {
-      await Supabase.instance.client.auth.refreshSession();
+      // Only refresh if the token looks expired
+      final session = Supabase.instance.client.auth.currentSession;
+      final expiresAt = session?.expiresAt;
+      final needsRefresh =
+          expiresAt == null ||
+          DateTime.fromMillisecondsSinceEpoch(
+            expiresAt * 1000,
+          ).isBefore(DateTime.now().add(const Duration(seconds: 60)));
+      if (needsRefresh) {
+        await Supabase.instance.client.auth.refreshSession();
+      }
       // Session is valid — load saved player data from the cloud.
       if (mounted) {
         context.read<GameBloc>().add(LoadPlayerFromCloudEvent());
         await context.read<GameBloc>().stream.first;
       }
     } catch (_) {
-      // Session refresh failed — handled elsewhere.
+      // Refresh failed — user will need to sign in again.
+      await Supabase.instance.client.auth.signOut();
     }
     if (mounted) setState(() => _sessionReady = true);
   }

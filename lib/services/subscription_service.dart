@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:Questborne/models/subscription.dart';
 
@@ -50,11 +51,51 @@ class SubscriptionService {
         _cached = UserSubscription.fromJson(res);
       }
     } catch (e) {
-      print('SubscriptionService.fetch failed: $e');
+      debugPrint('SubscriptionService.fetch failed: $e');
       // Keep whatever we had before; don't crash the app.
     }
     _loaded = true;
     return _cached;
+  }
+
+  /// Verify the subscription with the server-side Edge Function.
+  ///
+  /// This calls `check-subscription` which validates expiry and
+  /// optionally re-verifies the purchase receipt with Google Play.
+  /// Use on app start and after restore purchases.
+  Future<UserSubscription> verify({
+    String? purchaseToken,
+    String? productId,
+  }) async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) {
+        _cached = UserSubscription.free();
+        _loaded = true;
+        return _cached;
+      }
+
+      final body = <String, dynamic>{};
+      if (purchaseToken != null && productId != null) {
+        body['purchase_token'] = purchaseToken;
+        body['product_id'] = productId;
+      }
+
+      final response = await _client.functions.invoke(
+        'check-subscription',
+        body: body.isEmpty ? null : body,
+      );
+
+      final data = response.data as Map<String, dynamic>?;
+      if (data != null && data['tier'] != null) {
+        // Refresh from DB to get the full row after server-side sync.
+        return fetch();
+      }
+    } catch (e) {
+      debugPrint('SubscriptionService.verify failed: $e');
+    }
+    // Fall back to a normal fetch if the Edge Function fails.
+    return fetch();
   }
 
   /// Force-refresh from Supabase (e.g. after a purchase completes).

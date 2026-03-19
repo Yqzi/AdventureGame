@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/components/top_bar.dart';
@@ -42,6 +43,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<void> _init() async {
     await _purchaseService.init();
     _purchaseService.onPurchaseResult = _onPurchaseResult;
+    // Verify subscription with server (checks expiry, syncs state)
+    await _subService.verify();
     await _loadSubscription();
   }
 
@@ -138,6 +141,22 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
                 // ── Tier cards ──────────────────────────────
                 ..._buildTierCards(),
+
+                // ── Manage subscription (always visible) ───
+                Center(
+                  child: TextButton(
+                    onPressed: () => _openManageSubscription(),
+                    child: Text(
+                      'Manage Subscriptions on Google Play',
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        color: Colors.white38,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white38,
+                      ),
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 40),
               ],
@@ -317,7 +336,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     ),
                   if (!isCurrentTier)
                     Text(
-                      tier.priceLabel,
+                      _purchaseService.storePriceFor(tier) ?? tier.priceLabel,
                       style: GoogleFonts.epilogue(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -383,9 +402,33 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     child: Text(
                       tier == SubscriptionTier.free
                           ? 'Manage in Play Store'
-                          : isChampion
-                          ? 'Upgrade to Champion'
-                          : 'Upgrade to Adventurer',
+                          : tier.index > _subscription.effectiveTier.index
+                          ? 'Upgrade to ${tier.label}'
+                          : 'Switch to ${tier.label}',
+                      style: GoogleFonts.epilogue(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (isCurrentTier && tier != SubscriptionTier.free) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: TextButton(
+                    onPressed: () => _handleSubscribe(tier),
+                    style: TextButton.styleFrom(
+                      backgroundColor: accent.withOpacity(0.12),
+                      foregroundColor: accent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Change Billing Period',
                       style: GoogleFonts.epilogue(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -497,6 +540,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   //  HELPERS
   // ─────────────────────────────────────────────────────────
 
+  void _openManageSubscription() {
+    launchUrl(
+      Uri.parse('https://play.google.com/store/account/subscriptions'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
   Color _accentFor(SubscriptionTier tier) {
     switch (tier) {
       case SubscriptionTier.free:
@@ -551,7 +601,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   void _showPurchaseSheet(SubscriptionTier tier, String? storePrice) {
     final accent = _accentFor(tier);
-    final productIds = tier.playStoreProductIds;
+    final basePlans = tier.basePlanIds;
 
     showModalBottomSheet(
       context: context,
@@ -604,7 +654,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   accent: accent,
                   label: '1 Month',
                   months: 1,
-                  productId: productIds[1]!,
+                  basePlanId: basePlans[1]!,
                 ),
                 const SizedBox(height: 10),
                 _planOption(
@@ -613,7 +663,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   accent: accent,
                   label: '6 Months',
                   months: 6,
-                  productId: productIds[6]!,
+                  basePlanId: basePlans[6]!,
                   badge: 'Save 15%',
                 ),
                 const SizedBox(height: 10),
@@ -623,7 +673,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   accent: accent,
                   label: '12 Months',
                   months: 12,
-                  productId: productIds[12]!,
+                  basePlanId: basePlans[12]!,
                   badge: 'Best deal',
                   highlighted: true,
                 ),
@@ -660,11 +710,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     required Color accent,
     required String label,
     required int months,
-    required String productId,
+    required String basePlanId,
     String? badge,
     bool highlighted = false,
   }) {
-    final storePrice = _purchaseService.storePriceForProduct(productId);
+    final storePrice = _purchaseService.priceForBasePlan(tier, basePlanId);
     final perMonth = tier.priceForMonths(months);
     final total = perMonth * months;
 
@@ -672,7 +722,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       onTap: () {
         Navigator.pop(ctx);
         setState(() => _purchasing = true);
-        final started = _purchaseService.buyProduct(productId);
+        final started = _purchaseService.buyBasePlan(tier, basePlanId);
         if (!started) {
           setState(() => _purchasing = false);
           ScaffoldMessenger.of(context).showSnackBar(

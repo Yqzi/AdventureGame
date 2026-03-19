@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:Questborne/models/subscription.dart';
@@ -27,8 +29,12 @@ class PurchaseService {
   StreamSubscription<List<PurchaseDetails>>? _purchaseSub;
   bool _initialized = false;
 
-  /// Product details fetched from Play Store, keyed by product ID.
-  final Map<String, ProductDetails> products = {};
+  /// Product details fetched from Play Store.
+  /// Keyed by "{subscriptionId}:{basePlanId}" for easy lookup.
+  final Map<String, GooglePlayProductDetails> products = {};
+
+  /// The most recent active purchase, used for upgrade/downgrade flows.
+  GooglePlayPurchaseDetails? _activePurchase;
 
   /// Callback invoked when a purchase succeeds or fails.
   /// The page sets this before triggering [buy].
@@ -55,17 +61,35 @@ class PurchaseService {
     );
 
     // Fetch product details from the store.
-    final productIds = <String>{};
+    final subscriptionIds = <String>{};
     for (final tier in SubscriptionTier.values) {
-      productIds.addAll(tier.playStoreProductIds.values);
+      final subId = tier.playStoreSubscriptionId;
+      if (subId != null) subscriptionIds.add(subId);
     }
 
-    final response = await _iap.queryProductDetails(productIds);
+    final response = await _iap.queryProductDetails(subscriptionIds);
     if (response.error != null) {
       debugPrint('PurchaseService query error: ${response.error}');
     }
     for (final p in response.productDetails) {
-      products[p.id] = p;
+      if (p is GooglePlayProductDetails) {
+        final idx = p.subscriptionIndex;
+        final offerDetails = p.productDetails.subscriptionOfferDetails;
+        if (idx != null && offerDetails != null && idx < offerDetails.length) {
+          final basePlanId = offerDetails[idx].basePlanId;
+          products['${p.id}:$basePlanId'] = p;
+        } else {
+          products[p.id] = p;
+        }
+      }
+    }
+
+    // Restore previous purchases to capture the active purchase token.
+    // This lets us do upgrade/downgrade flows via ChangeSubscriptionParam.
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      debugPrint('PurchaseService: restore on init failed: $e');
     }
   }
 
@@ -75,28 +99,43 @@ class PurchaseService {
 
   // ── Buy ──────────────────────────────────────────────────
 
-  /// Starts the Play Store purchase flow for a specific [productId].
+  /// Starts the Play Store purchase flow for a specific base plan.
   ///
-  /// Returns `false` if the product is unavailable.
-  bool buyProduct(String productId) {
-    final product = products[productId];
+  /// If the user already has an active subscription (different product),
+  /// this uses [ChangeSubscriptionParam] to upgrade/downgrade instead
+  /// of starting a fresh purchase (which would fail with "already owned").
+  ///
+  /// Returns `false` if the product or base plan is unavailable.
+  bool buyBasePlan(SubscriptionTier tier, String basePlanId) {
+    final subId = tier.playStoreSubscriptionId;
+    if (subId == null) return false;
+
+    final product = products['$subId:$basePlanId'];
     if (product == null) {
-      debugPrint('PurchaseService: product $productId not found');
+      debugPrint('PurchaseService: $subId:$basePlanId not found');
       return false;
     }
 
-    final param = PurchaseParam(productDetails: product);
+    // If user has an active subscription to a *different* product,
+    // treat this as an upgrade/downgrade.
+    ChangeSubscriptionParam? changeParam;
+    if (_activePurchase != null && _activePurchase!.productID != subId) {
+      changeParam = ChangeSubscriptionParam(
+        oldPurchaseDetails: _activePurchase!,
+        replacementMode: ReplacementMode.withTimeProration,
+      );
+      debugPrint(
+        'PurchaseService: upgrading from ${_activePurchase!.productID} → $subId',
+      );
+    }
+
+    final param = GooglePlayPurchaseParam(
+      productDetails: product,
+      offerToken: product.offerToken,
+      changeSubscriptionParam: changeParam,
+    );
     _iap.buyNonConsumable(purchaseParam: param);
     return true;
-  }
-
-  /// Starts the Play Store purchase flow for the given [tier] (monthly).
-  ///
-  /// Returns `false` if the product is unavailable.
-  bool buy(SubscriptionTier tier) {
-    final productId = tier.playStoreProductId;
-    if (productId == null) return false;
-    return buyProduct(productId);
   }
 
   /// Restore previous purchases (e.g. after reinstall).
@@ -106,13 +145,28 @@ class PurchaseService {
 
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
+      debugPrint(
+        'PurchaseService: status=${purchase.status} product=${purchase.productID}',
+      );
+
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          // Track the active purchase for future upgrade/downgrade flows.
+          if (purchase is GooglePlayPurchaseDetails) {
+            _activePurchase = purchase;
+          }
+          // Verify with server for both new and restored purchases.
+          // Restored purchases need verification too — they may not have
+          // been synced to the server yet (e.g. after reinstall, or if
+          // the original verification failed).
           await _verifyAndDeliver(purchase);
           break;
         case PurchaseStatus.error:
-          debugPrint('Purchase error: ${purchase.error}');
+          debugPrint(
+            'Purchase error: code=${purchase.error?.code} '
+            'message=${purchase.error?.message}',
+          );
           final tier = _tierFromProductId(purchase.productID);
           onPurchaseResult?.call(
             tier ?? SubscriptionTier.free,
@@ -175,22 +229,22 @@ class PurchaseService {
 
   SubscriptionTier? _tierFromProductId(String productId) {
     for (final tier in SubscriptionTier.values) {
-      if (tier.playStoreProductId == productId) return tier;
+      if (tier.playStoreSubscriptionId == productId) return tier;
     }
     return null;
   }
 
-  /// Returns the store price string for a specific product ID,
+  /// Returns the store price string for a specific base plan,
   /// or `null` if the product hasn't loaded.
-  String? storePriceForProduct(String productId) {
-    return products[productId]?.price;
+  String? priceForBasePlan(SubscriptionTier tier, String basePlanId) {
+    final subId = tier.playStoreSubscriptionId;
+    if (subId == null) return null;
+    return products['$subId:$basePlanId']?.price;
   }
 
-  /// Returns the store price string for a tier's monthly product,
+  /// Returns the store price string for a tier's monthly plan,
   /// or `null` if the product hasn't loaded.
   String? storePriceFor(SubscriptionTier tier) {
-    final id = tier.playStoreProductId;
-    if (id == null) return null;
-    return products[id]?.price;
+    return priceForBasePlan(tier, 'monthly');
   }
 }

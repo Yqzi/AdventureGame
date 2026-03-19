@@ -446,20 +446,34 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
     String? conversationContext,
   }) async* {
     try {
-      // Refresh the session to ensure a valid access token
+      // Ensure we have a valid, fresh access token
       final authClient = Supabase.instance.client.auth;
-      try {
-        await authClient.refreshSession();
-      } catch (_) {
-        // Refresh failed — sign out so the user is prompted to re-authenticate.
-        await authClient.signOut();
-        yield 'Your session has expired. Please sign in again.';
-        return;
-      }
-      final session = authClient.currentSession;
+      var session = authClient.currentSession;
+
       if (session == null) {
         yield 'You must be signed in to play.';
         return;
+      }
+
+      // Check if token is expired or about to expire (within 60s buffer)
+      final expiresAt = session.expiresAt;
+      final needsRefresh =
+          expiresAt == null ||
+          DateTime.fromMillisecondsSinceEpoch(
+            expiresAt * 1000,
+          ).isBefore(DateTime.now().add(const Duration(seconds: 60)));
+      if (needsRefresh) {
+        try {
+          final response = await authClient.refreshSession();
+          session = response.session ?? authClient.currentSession;
+        } catch (_) {
+          // If refresh fails but we still have a session, try with it anyway
+          session = authClient.currentSession;
+        }
+        if (session == null) {
+          yield 'You must be signed in to play.';
+          return;
+        }
       }
 
       String questDescription = _formatQuestDetails(activeQuestDetails);
@@ -522,6 +536,9 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
         print('=== AI ERROR RESPONSE (${streamed.statusCode}) ===');
         print(errorBody);
         print('=== END AI ERROR RESPONSE ===');
+        if (streamed.statusCode == 401) {
+          await authClient.signOut();
+        }
         yield _friendlyError(streamed.statusCode, errorBody);
         return;
       }
@@ -555,6 +572,7 @@ ENEMY INTELLIGENCE BY DIFFICULTY:
 
     switch (statusCode) {
       case 401:
+        // Caller should handle sign-out for 401
         return 'Your session has expired. Please sign in again.';
       case 403:
         return 'Sign in with Google or Apple to play quests.';

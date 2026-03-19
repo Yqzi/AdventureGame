@@ -64,8 +64,11 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 <!-- -remove testing long pause quest complete -->
 <!-- -clicked enter fast then it asked me for my name again -->
 <!-- -continue with google button looks weird -->
--authenticate tier and credits with purchase reciept
--add check for subscriptions in settings functionality
+<!-- -authenticate tier and credits with purchase reciept -->
+<!-- -add check for subscriptions in settings functionality -->
+
+<!-- -Check if rls policies are good, because created new. -->
+<!-- -change the price display depending on currency -->
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 
