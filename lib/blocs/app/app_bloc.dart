@@ -344,6 +344,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     // Clean narrative — aggressively strip all metadata patterns
     String narrative = raw.replaceAll(_leakedMetadata, '').trim();
 
+    // If the response was truncated (MAX_TOKENS), both metadata tags will be
+    // missing.  Provide fallback options so the player isn't left without
+    // action buttons.
+    if (options.isEmpty && effects == null && narrative.isNotEmpty) {
+      print('⚠️ Truncated AI response detected — no OPTIONS or EFFECTS found');
+      options = const ['Continue', 'Try again'];
+    }
+
     return (narrative: narrative, effects: effects, options: options);
   }
 

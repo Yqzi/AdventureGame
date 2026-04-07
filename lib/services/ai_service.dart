@@ -310,6 +310,7 @@ CRITICAL:
 - Always include both, even if all effect values are 0/null.
 - Effects must MATCH what happened in the narrative. If the player was hit, there must be damage. If they found gold, goldGained must be > 0.
 - CONSISTENCY CHECK: If the narrative describes enemies attacking, striking, stabbing, or hitting the player, "damage" MUST be > 0. It is NEVER acceptable to narrate an enemy landing a blow and set damage to 0. Review your response before finalizing: does the narrative mention the player being hurt? Then damage must reflect it.
+- TOKEN BUDGET: The OPTIONS and EFFECTS tags are MORE IMPORTANT than a longer narrative. If your response is getting long, shorten the narrative to guarantee that both tags are always included. Never sacrifice the tags for extra prose.
 
 === FINAL OUTPUT FORMAT ===
 
