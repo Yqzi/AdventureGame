@@ -72,6 +72,11 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 
+-Wehn internal server error or out of tokens
+    preserve text field
+    show backl the two options
+    show a popup/dialog of the error insted of inline
+
 V2
 -image gen
 -maybe skill check should be handled by the ai to see what function should run

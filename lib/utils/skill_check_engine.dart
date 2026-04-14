@@ -471,12 +471,15 @@ class SkillCheckEngine {
     String? lastPlayerInput,
     int repeatCount = 0,
     bool underMeleePressure = false,
+    ActionType? actionOverride,
   }) {
-    final action = classifyAction(
-      playerInput,
-      player: player,
-      lastPlayerInput: lastPlayerInput,
-    );
+    final action =
+        actionOverride ??
+        classifyAction(
+          playerInput,
+          player: player,
+          lastPlayerInput: lastPlayerInput,
+        );
     if (action == ActionType.none) return null;
 
     final roll = rollD20();

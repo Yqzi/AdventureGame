@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
 import 'package:Questborne/blocs/app/app_state.dart';
 import 'package:Questborne/models/game_session.dart';
+import 'package:Questborne/services/action_classifier_service.dart';
 import 'package:Questborne/services/ai_service.dart';
 import 'package:Questborne/services/conversation_memory_manager.dart';
 import 'package:Questborne/services/game_session_repository.dart';
@@ -21,6 +22,7 @@ import 'package:Questborne/services/supabase_save_service.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final AIService _aiService;
+  final ActionClassifierService _actionClassifier = ActionClassifierService();
   final Uuid _uuid = const Uuid();
   final GameSessionRepository _sessionRepo = GameSessionRepository();
   final SupabaseSaveService _saveService = SupabaseSaveService();
@@ -551,6 +553,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         )
         .lastOrNull
         ?.text;
+
+    // Classify the action via AI (falls back to keywords on error).
+    final classifiedAction = await _actionClassifier.classify(
+      event.command,
+      player: _player,
+      lastPlayerInput: previousPlayerMsg,
+    );
+
     final skillCheck = SkillCheckEngine.performCheck(
       playerInput: event.command,
       player: _player,
@@ -558,6 +568,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       lastPlayerInput: previousPlayerMsg,
       repeatCount: _repeatCount,
       underMeleePressure: _underMeleePressure,
+      actionOverride: classifiedAction,
     );
 
     emit(
