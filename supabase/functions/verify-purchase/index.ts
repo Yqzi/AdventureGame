@@ -121,6 +121,7 @@ Deno.serve(async (req: Request) => {
         expires_at: expiresAt.toISOString(),
         store_product_id: body.product_id,
         store_transaction_id: body.purchase_token,
+        daily_credits: 0,
         updated_at: now.toISOString(),
       });
 

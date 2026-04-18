@@ -81,7 +81,13 @@ class StoryEffects {
     );
   }
 
-  StoryEffects copyWith({int? damage, int? manaSpent, int? levelsGained}) {
+  StoryEffects copyWith({
+    int? damage,
+    int? manaSpent,
+    int? levelsGained,
+    bool? questFailed,
+    bool? questCompleted,
+  }) {
     return StoryEffects(
       damage: damage ?? this.damage,
       heal: heal,
@@ -95,8 +101,8 @@ class StoryEffects {
       itemGainedId: itemGainedId,
       itemLostId: itemLostId,
       newLocation: newLocation,
-      questCompleted: questCompleted,
-      questFailed: questFailed,
+      questCompleted: questCompleted ?? this.questCompleted,
+      questFailed: questFailed ?? this.questFailed,
       levelsGained: levelsGained ?? this.levelsGained,
     );
   }

@@ -92,3 +92,24 @@ class GameError extends GameState {
   final Player player;
   GameError(this.message, {required this.player});
 }
+
+/// Recoverable error — the failed turn is rolled back so the player can retry.
+/// The UI shows a dialog with the error message, restores the text field input,
+/// and re-displays the previous turn's option buttons.
+class GameErrorRecoverable extends GameState {
+  final String errorMessage;
+  final List<ChatMessage> messages;
+  final Map<String, dynamic> activeQuest;
+  @override
+  final Player player;
+  final List<String> previousOptions;
+  final String? pendingInput;
+  GameErrorRecoverable({
+    required this.errorMessage,
+    required this.messages,
+    required this.activeQuest,
+    required this.player,
+    this.previousOptions = const [],
+    this.pendingInput,
+  });
+}

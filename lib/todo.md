@@ -72,10 +72,49 @@ Leveling up shouldn't just be a number going up; it should unlock choices.
 
 <!-- -use flash lite free tier maybe (flash lite breaks structure) -->
 
--Wehn internal server error or out of tokens
+
+NEXT RELEASE
+<!-- - Remove old skill check logic -->
+<!-- - quest failure reset all of my health and mana that should only happen when i die not just quest failure -->
+<!-- - i shouldnt be able to get items in game -->
+<!-- - the classify actions isnt always working properly, -->
+<!-- - game isnt ending on health 0 -->
+<!-- - is rate limit working? i sent 17 reqs at once -->
+<!-- - stop spam on the 2 options in game with droppable -->
+- Localization + RUSSIAN
+<!-- - Credit system update
+    - FREE -> Base gpt oss 120B (free) => 25 + 10d (20 RPD)
+        fall back to 20B -->
+
+<!-- - Wehn internal server error or out of tokens
     preserve text field
     show backl the two options
-    show a popup/dialog of the error insted of inline
+    show a popup/dialog of the error insted of inline -->
+
+FUTURE RELEASE 1
+- Credit system update
+    - MEDIUM -> DEEPSEEK 3.2 => 100 + 25d
+    - LARGE -> DEEPSEEK 3.2 => 600 + 100d
+
+FUTURE RELEASE 2
+- difficulty mods for rolls
+    context
+    stats
+    user input
+
+- add stats
+    luck
+    charisma
+    dexterity
+    MP
+    MD
+
+FUTURE RELEASE 3
+- multi skill check
+- look for image gen
+
+-BUGS
+    if i say use offensive magic to conjure excalibur, if roll succeeds i win the game
 
 V2
 -image gen

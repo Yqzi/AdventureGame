@@ -170,7 +170,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _creditsSection() {
     final tier = _subscription.effectiveTier;
-    final pct = _subscription.maxCredits > 0
+    final isDailyTier = _subscription.dailyCredits > 0;
+    final pct = (!isDailyTier && _subscription.maxCredits > 0)
         ? (_subscription.maxCredits - _subscription.creditsRemaining) /
               _subscription.maxCredits
         : 0.0;
@@ -209,26 +210,30 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         ),
         const SizedBox(height: 2),
         Text(
-          'credits remaining of ${_subscription.maxCredits}',
+          isDailyTier
+              ? 'credits (+${_subscription.dailyCredits} daily)'
+              : 'credits remaining of ${_subscription.maxCredits}',
           style: GoogleFonts.epilogue(fontSize: 13, color: Colors.white38),
         ),
-        const SizedBox(height: 14),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: pct.clamp(0.0, 1.0),
-            minHeight: 4,
-            backgroundColor: Colors.white.withOpacity(0.06),
-            valueColor: AlwaysStoppedAnimation(
-              pct > 0.85 ? redText : _accentFor(tier).withOpacity(0.6),
+        if (!isDailyTier) ...[
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct.clamp(0.0, 1.0),
+              minHeight: 4,
+              backgroundColor: Colors.white.withOpacity(0.06),
+              valueColor: AlwaysStoppedAnimation(
+                pct > 0.85 ? redText : _accentFor(tier).withOpacity(0.6),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Resets ${_formatResetDate(_subscription.creditsResetAt)}',
-          style: GoogleFonts.epilogue(fontSize: 11, color: Colors.white24),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            'Resets ${_formatResetDate(_subscription.creditsResetAt)}',
+            style: GoogleFonts.epilogue(fontSize: 11, color: Colors.white24),
+          ),
+        ],
       ],
     );
   }
@@ -351,7 +356,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               // Features — compact rows
               _featureRow(
                 Icons.bolt_outlined,
-                '${tier.maxCredits} credits',
+                tier.dailyCredits > 0
+                    ? '${tier.maxCredits} + ${tier.dailyCredits}/day credits'
+                    : '${tier.maxCredits} credits',
                 accent,
               ),
               const SizedBox(height: 8),

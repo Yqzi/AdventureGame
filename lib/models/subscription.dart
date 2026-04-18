@@ -145,6 +145,17 @@ extension SubscriptionTierX on SubscriptionTier {
     }
   }
 
+  /// Daily credits granted (free tier only).
+  int get dailyCredits {
+    switch (this) {
+      case SubscriptionTier.free:
+        return 10;
+      case SubscriptionTier.adventurer:
+      case SubscriptionTier.champion:
+        return 0;
+    }
+  }
+
   /// Number of full (unsummarised) AI exchanges kept in context.
   /// `null` means unlimited (full memory).
   int? get memoryWindow {
@@ -249,7 +260,7 @@ extension SubscriptionTierX on SubscriptionTier {
       case SubscriptionTier.champion:
         return ['$maxCredits credits', aiModelLabel];
       case SubscriptionTier.free:
-        return ['$maxCredits credits', aiModelLabel];
+        return ['$maxCredits + ${dailyCredits}/day credits', aiModelLabel];
     }
   }
 
@@ -286,6 +297,7 @@ class UserSubscription {
   final SubscriptionTier tier;
   final int creditsRemaining;
   final int maxCredits;
+  final int dailyCredits;
   final DateTime? expiresAt;
   final DateTime creditsResetAt;
 
@@ -293,6 +305,7 @@ class UserSubscription {
     required this.tier,
     required this.creditsRemaining,
     required this.maxCredits,
+    this.dailyCredits = 0,
     this.expiresAt,
     required this.creditsResetAt,
   });
@@ -310,6 +323,7 @@ class UserSubscription {
     tier: SubscriptionTier.free,
     creditsRemaining: SubscriptionTier.free.maxCredits,
     maxCredits: SubscriptionTier.free.maxCredits,
+    dailyCredits: SubscriptionTier.free.dailyCredits,
     creditsResetAt: _nextMonthStart(),
   );
 
@@ -319,6 +333,7 @@ class UserSubscription {
       tier: tier,
       creditsRemaining: json['credits_remaining'] as int? ?? tier.maxCredits,
       maxCredits: json['max_credits'] as int? ?? tier.maxCredits,
+      dailyCredits: json['daily_credits'] as int? ?? tier.dailyCredits,
       expiresAt: json['expires_at'] != null
           ? DateTime.parse(json['expires_at'] as String)
           : null,

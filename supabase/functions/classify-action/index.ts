@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { checkRateLimit } from "../_shared/rate_limit.ts";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -41,13 +40,36 @@ Deno.serve(async (req: Request) => {
       return jsonError("Invalid or expired token", 401);
     }
 
-    // ── Rate limit (generous — classification is cheap) ──
-    const rl = await checkRateLimit(admin, user.id, "classify-action", {
-      maxRequests: 30,
-      windowSeconds: 60,
+    // ── Block anonymous users ──
+    const provider = user.app_metadata?.provider;
+    if (!provider || provider === "anonymous") {
+      return jsonError("Sign in with Google or Apple to play quests.", 403);
+    }
+
+    // ── Rate limit (atomic — prevents race conditions on spam) ──
+    const { data: rl, error: rlError } = await admin.rpc("check_rate_limit", {
+      p_user_id: user.id,
+      p_function_name: "classify-action",
+      p_max_requests: 30,
+      p_window_seconds: 60,
     });
+    if (rlError) {
+      console.error("Rate limit check failed:", rlError);
+      return jsonError("Rate limit check failed", 500);
+    }
     if (!rl.allowed) {
       return jsonError(`Rate limited. Retry in ${rl.retryAfterSeconds}s`, 429);
+    }
+
+    // ── Credit read-check (defense in depth — don't waste AI calls) ──
+    const { data: subRow } = await admin
+      .from("user_subscriptions")
+      .select("credits_remaining")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!subRow || subRow.credits_remaining <= 0) {
+      return jsonError("No credits remaining", 429);
     }
 
     // ── Parse body ──
@@ -58,6 +80,11 @@ Deno.serve(async (req: Request) => {
       return jsonError("Missing prompt or actionTypes", 400);
     }
 
+    // ── Input length validation ──
+    if (prompt.length > 2000) {
+      return jsonError("Prompt is too long (max 2000 characters).", 400);
+    }
+
     // ── Build classification prompt ──
     const actionList = Object.entries(actionTypes)
       .map(([num, desc]) => `${num}: ${desc}`)
@@ -65,28 +92,68 @@ Deno.serve(async (req: Request) => {
 
     const systemPrompt = `You are an action classifier for a dark fantasy RPG. Given a player's input, classify it into exactly ONE action type from the numbered list below. Respond with ONLY the number — nothing else. No explanation, no punctuation, no quotes, no words.
 
+RULES:
+- If the player is trying to INFLUENCE someone (persuade, deceive, intimidate, beg, plead, taunt, bluff, lie, frame, manipulate, bargain, threaten verbally, or any social manipulation) → that is social (8), even if violence is mentioned as part of the deception.
+- Assassination (5) is ONLY for actual stealth kills — backstabbing, poisoning, silent killing. It is NOT for framing, lying, or deceiving.
+- Only respond with 13 (none) for truly passive actions: looking around, walking, resting with no social/combat component, asking simple questions, or exploring.
+
 Action types:
 ${actionList}`;
 
     // ── Call OpenRouter ──
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openrouterApiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://questborne.app",
-        "X-Title": "Questborne",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b:free",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 20,
-        temperature: 0,
-      }),
+    const openrouterUrl = "https://openrouter.ai/api/v1/chat/completions";
+    const openrouterPayload = JSON.stringify({
+      model: "meta-llama/llama-3.1-8b-instruct",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "I swing my sword at the goblin" },
+        { role: "assistant", content: "0" },
+        { role: "user", content: "I cast a fireball at the enemy" },
+        { role: "assistant", content: "2" },
+        { role: "user", content: "I try to sneak past the guards" },
+        { role: "assistant", content: "4" },
+        { role: "user", content: "I try to persuade the merchant" },
+        { role: "assistant", content: "8" },
+        { role: "user", content: "I beg the elder for mercy" },
+        { role: "assistant", content: "8" },
+        { role: "user", content: "I lie and say the guard attacked me first" },
+        { role: "assistant", content: "8" },
+        { role: "user", content: "I cut my hand and blame it on the stranger" },
+        { role: "assistant", content: "8" },
+        { role: "user", content: "I threaten the shopkeeper to give me a discount" },
+        { role: "assistant", content: "8" },
+        { role: "user", content: "I walk down the hallway" },
+        { role: "assistant", content: "13" },
+        { role: "user", content: "I look around the room" },
+        { role: "assistant", content: "13" },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 5,
+      temperature: 0,
     });
+    const openrouterHeaders = {
+      "Authorization": `Bearer ${openrouterApiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://questborne.app",
+      "X-Title": "Questborne",
+    };
+
+    let response = await fetch(openrouterUrl, {
+      method: "POST",
+      headers: openrouterHeaders,
+      body: openrouterPayload,
+    });
+
+    // Retry once on transient errors (429, 500, 503)
+    if (response.status === 429 || response.status === 500 || response.status === 503) {
+      console.warn(`OpenRouter classify returned ${response.status}, retrying in 2s...`);
+      await new Promise((r) => setTimeout(r, 2000));
+      response = await fetch(openrouterUrl, {
+        method: "POST",
+        headers: openrouterHeaders,
+        body: openrouterPayload,
+      });
+    }
 
     if (!response.ok) {
       const errText = await response.text();
@@ -95,10 +162,33 @@ ${actionList}`;
     }
 
     const result = await response.json();
-    const raw = result.choices?.[0]?.message?.content?.trim() ?? "";
+    console.log("REEEES:", result)
+    const choice = result.choices?.[0]?.message;
+    let raw = (choice?.content ?? "").trim();
+    const validKeys = Object.keys(actionTypes);
+
+    // Fallback: if content is empty (reasoning model used all tokens thinking),
+    // try to extract a valid action number from the reasoning text.
+    if (!raw && choice?.reasoning) {
+      const reasoningText = choice.reasoning;
+      // Look for an action type name in the reasoning (e.g. "throwAttack")
+      for (const key of validKeys) {
+        const actionName = actionTypes[key].split(":")[0].trim();
+        if (reasoningText.includes(actionName)) {
+          raw = key;
+          break;
+        }
+      }
+      // If no name match, try to find a bare number at the end of reasoning
+      if (!raw) {
+        const numMatch = reasoningText.match(/(\d{1,2})\s*$/);
+        if (numMatch && validKeys.includes(numMatch[1])) {
+          raw = numMatch[1];
+        }
+      }
+    }
 
     // Validate: response should be a number key from the map
-    const validKeys = Object.keys(actionTypes);
     const actionType = validKeys.includes(raw) ? raw : "0";
 
     return new Response(

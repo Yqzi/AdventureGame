@@ -12,321 +12,23 @@ class SkillCheckEngine {
   static final Random _rng = Random();
 
   // ─────────────────────────────────────────────────────────
-  //  ACTION CLASSIFICATION
-  // ─────────────────────────────────────────────────────────
-
-  /// Keyword → ActionType mapping. Order matters — more specific patterns
-  /// are checked first (e.g. "backstab" before "stab").
-  static final List<_KeywordRule> _rules = [
-    // Assassination (must precede generic melee)
-    _KeywordRule(ActionType.assassination, [
-      'assassinate',
-      'backstab',
-      'slit throat',
-      'kill silently',
-      'silent kill',
-      'sneak attack',
-      'throat',
-    ]),
-    // Stealth
-    _KeywordRule(ActionType.stealth, [
-      'sneak',
-      'hide',
-      'stealth',
-      'creep',
-      'slip past',
-      'skulk',
-      'crouch',
-      'stay hidden',
-      'move quietly',
-      'quietly',
-      'unseen',
-      'undetected',
-      'silently',
-      'tiptoe',
-    ]),
-    // Flee
-    _KeywordRule(ActionType.flee, [
-      'flee',
-      'escape',
-      'retreat',
-      'run away',
-      'get away',
-      'bolt for',
-    ]),
-    // Parry / Block
-    _KeywordRule(ActionType.parry, [
-      'parry',
-      'block',
-      'deflect',
-      'guard',
-      'brace',
-      'shield bash',
-    ]),
-    // Dodge
-    _KeywordRule(ActionType.dodge, [
-      'dodge',
-      'evade',
-      'sidestep',
-      'roll away',
-      'duck',
-      'dive',
-      'leap aside',
-      'jump back',
-    ]),
-    // Ranged attack
-    _KeywordRule(ActionType.rangedAttack, [
-      'shoot',
-      'fire arrow',
-      'fire bolt',
-      'loose arrow',
-      'aim',
-      'bow',
-      'crossbow',
-      'sling',
-      'throw knife',
-      'throw dagger',
-      'hurl',
-      'snipe',
-    ]),
-    // Throw (generic)
-    _KeywordRule(ActionType.throwAttack, ['throw', 'toss', 'lob', 'fling']),
-    // Offensive magic (cast without "heal"/"shield"/"protect")
-    _KeywordRule(ActionType.offensiveMagic, [
-      'cast',
-      'spell',
-      'channel',
-      'conjure',
-      'summon',
-      'hex',
-      'curse',
-      'blast',
-      'fireball',
-      'lightning',
-      'arcane',
-      'unleash',
-      'invoke',
-    ]),
-    // Defensive magic
-    _KeywordRule(ActionType.defensiveMagic, [
-      'heal',
-      'mend',
-      'restore',
-      'shield spell',
-      'ward',
-      'barrier',
-      'protect',
-      'cleanse',
-      'purify',
-    ]),
-    // Dexterity / Acrobatics
-    _KeywordRule(ActionType.dexterity, [
-      'pick lock',
-      'lockpick',
-      'disarm trap',
-      'disarm',
-      'climb',
-      'jump',
-      'leap',
-      'vault',
-      'balance',
-      'swing across',
-      'acrobat',
-    ]),
-    // Social
-    _KeywordRule(ActionType.social, [
-      'persuade',
-      'convince',
-      'intimidate',
-      'bluff',
-      'deceive',
-      'lie',
-      'negotiate',
-      'charm',
-      'bribe',
-      'threaten',
-      'talk',
-      'reason with',
-      'plead',
-      'beg',
-    ]),
-    // Endurance
-    _KeywordRule(ActionType.endurance, [
-      'resist',
-      'endure',
-      'push through',
-      'withstand',
-      'survive',
-      'hold on',
-      'grit',
-      'bear the pain',
-      'tough it out',
-    ]),
-    // Melee attack (broadest — checked last)
-    _KeywordRule(ActionType.meleeAttack, [
-      'attack',
-      'strike',
-      'hit',
-      'slash',
-      'stab',
-      'swing',
-      'punch',
-      'kick',
-      'cleave',
-      'smash',
-      'smite',
-      'hack',
-      'charge',
-      'lunge',
-      'cut',
-      'fight',
-      'bash',
-      'bludgeon',
-    ]),
-  ];
-
-  // Ambiguous combat verbs that need equipment context to resolve.
-  static const _ambiguousVerbs = [
-    'target',
-    'attack again',
-    'strike again',
-    'hit again',
-    'attack it',
-    'hit it',
-    'strike it',
-    'attack them',
-    'hit them',
-    'strike them',
-    'use my weapon',
-    'use weapon',
-    'shoot again',
-    'fire again',
-    'cast again',
-  ];
-
-  static const _rangedWeaponKeywords = [
-    'bow',
-    'crossbow',
-    'sling',
-    'longbow',
-    'shortbow',
-  ];
-
-  static const _magicWeaponKeywords = [
-    'staff',
-    'wand',
-    'scepter',
-    'orb',
-    'tome',
-    'grimoire',
-  ];
-
-  /// Infer action type from the player's equipped weapon name.
-  static ActionType _inferFromEquipment(Player player) {
-    final weaponName = player.equipment.weapon?.name.toLowerCase() ?? '';
-    if (_rangedWeaponKeywords.any((kw) => weaponName.contains(kw))) {
-      return ActionType.rangedAttack;
-    }
-    if (_magicWeaponKeywords.any((kw) => weaponName.contains(kw))) {
-      return ActionType.offensiveMagic;
-    }
-    // If no weapon but has a spell equipped, default to magic.
-    if (player.equipment.weapon == null && player.equipment.spell != null) {
-      return ActionType.offensiveMagic;
-    }
-    return ActionType.meleeAttack;
-  }
-
-  /// Classify a player's text input into an [ActionType].
-  ///
-  /// Pass the [player] to resolve ambiguous verbs ("target the enemy",
-  /// "attack again") based on equipped weapon type.
-  ///
-  // Short phrases meaning "repeat my last action".
-  static const _repeatPhrases = [
-    'again',
-    'do it again',
-    'do that again',
-    'repeat',
-    'same thing',
-    'one more time',
-    'same move',
-    'same attack',
-    'keep going',
-    'continue attacking',
-  ];
-
-  /// Returns [ActionType.none] for non-action inputs (dialogue, looking
-  /// around, simple exploration).
-  ///
-  /// Pass [lastPlayerInput] so bare repeat words ("again") can re-classify
-  /// the previous command.
-  static ActionType classifyAction(
-    String input, {
-    Player? player,
-    String? lastPlayerInput,
-  }) {
-    final lower = input.toLowerCase().trim();
-
-    // "Again" / "repeat" — re-classify the last player command.
-    if (lastPlayerInput != null) {
-      final isRepeat = _repeatPhrases.any((p) => lower == p || lower == 'i $p');
-      if (isRepeat) {
-        // Recursively classify the previous input (without lastPlayerInput
-        // to avoid infinite loops).
-        return classifyAction(lastPlayerInput, player: player);
-      }
-    }
-
-    // Check for ambiguous combat verbs that need equipment context.
-    if (player != null) {
-      for (final verb in _ambiguousVerbs) {
-        if (lower.contains(verb)) {
-          return _inferFromEquipment(player);
-        }
-      }
-    }
-
-    // Defensive magic keywords override offensive if present.
-    final hasDefensiveKeyword = [
-      'heal',
-      'mend',
-      'restore',
-      'protect',
-      'cleanse',
-      'purify',
-      'shield spell',
-      'ward',
-      'barrier',
-    ].any((kw) => lower.contains(kw));
-    if (hasDefensiveKeyword) return ActionType.defensiveMagic;
-
-    // Spell commands always start with "I cast" — short-circuit to magic
-    // so spell names / effect text never trigger non-magic rules.
-    if (lower.startsWith('i cast')) return ActionType.offensiveMagic;
-
-    for (final rule in _rules) {
-      if (rule.keywords.any((kw) => lower.contains(kw))) {
-        return rule.action;
-      }
-    }
-
-    return ActionType.none;
-  }
-
-  // ─────────────────────────────────────────────────────────
   //  STAT MODIFIERS
   // ─────────────────────────────────────────────────────────
 
-  /// Returns the stat modifier for a roll. Every 5 points of the relevant
-  /// stat adds +1 to the roll. Two stats may be blended (primary weight 70%,
-  /// secondary 30%).
+  /// Returns the stat modifier for a roll using **logarithmic scaling**.
+  ///
+  /// `log(stat) / log(1.3)` compresses exponential stat growth into a
+  /// manageable modifier range:
+  ///   stat 10 → ~8,  stat 42 → ~14,  stat 100 → ~18,
+  ///   stat 434 → ~23,  stat 21k → ~38.
+  ///
+  /// Two stats may be blended (primary weight 70%, secondary 30%).
   static int _statModifier(int primary, [int? secondary]) {
-    if (secondary != null) {
-      final blended = (primary * 0.7 + secondary * 0.3).round();
-      return blended ~/ 5;
-    }
-    return primary ~/ 5;
+    final stat = secondary != null
+        ? (primary * 0.7 + secondary * 0.3).round()
+        : primary;
+    if (stat <= 0) return 0;
+    return (log(stat.clamp(1, 99999)) / log(1.3)).round();
   }
 
   /// Pick the modifier based on action type and player stats.
@@ -361,6 +63,59 @@ class SkillCheckEngine {
         return _statModifier(player.agility);
       case ActionType.none:
         return 0;
+    }
+  }
+
+  /// Returns the primary stat value used for the given action (for display
+  /// in the skill check summary so the AI can see the player's power level).
+  static int _primaryStatValue(ActionType action, Player player) {
+    switch (action) {
+      case ActionType.meleeAttack:
+      case ActionType.throwAttack:
+        return player.attack;
+      case ActionType.rangedAttack:
+      case ActionType.stealth:
+      case ActionType.assassination:
+      case ActionType.dodge:
+      case ActionType.dexterity:
+      case ActionType.flee:
+        return player.agility;
+      case ActionType.offensiveMagic:
+      case ActionType.defensiveMagic:
+        return player.magic;
+      case ActionType.parry:
+      case ActionType.endurance:
+        return player.defense;
+      case ActionType.social:
+        return player.level * 2;
+      case ActionType.none:
+        return 0;
+    }
+  }
+
+  /// Label for the primary stat of the given action.
+  static String _primaryStatLabel(ActionType action) {
+    switch (action) {
+      case ActionType.meleeAttack:
+      case ActionType.throwAttack:
+        return 'ATK';
+      case ActionType.rangedAttack:
+      case ActionType.stealth:
+      case ActionType.assassination:
+      case ActionType.dodge:
+      case ActionType.dexterity:
+      case ActionType.flee:
+        return 'AGI';
+      case ActionType.offensiveMagic:
+      case ActionType.defensiveMagic:
+        return 'MAG';
+      case ActionType.parry:
+      case ActionType.endurance:
+        return 'DEF';
+      case ActionType.social:
+        return 'SOC';
+      case ActionType.none:
+        return '';
     }
   }
 
@@ -438,20 +193,19 @@ class SkillCheckEngine {
   //  DIFFICULTY CLASS
   // ─────────────────────────────────────────────────────────
 
-  /// Base DC by quest difficulty string.
-  static int getDC(String? questDifficulty) {
-    switch (questDifficulty?.toLowerCase()) {
-      case 'routine':
-        return 6;
-      case 'dangerous':
-        return 10;
-      case 'perilous':
-        return 14;
-      case 'suicidal':
-        return 18;
-      default:
-        return 10; // Default to dangerous.
-    }
+  /// DC scales with player level: `baseDC + playerLevel ~/ 3`.
+  ///
+  /// This keeps checks meaningful at all levels rather than becoming
+  /// trivial once stat modifiers outgrow fixed DCs.
+  static int getDC(String? questDifficulty, {int playerLevel = 1}) {
+    final base = switch (questDifficulty?.toLowerCase()) {
+      'routine' => 6,
+      'dangerous' => 10,
+      'perilous' => 14,
+      'suicidal' => 18,
+      _ => 10,
+    };
+    return base + (playerLevel ~/ 3);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -468,18 +222,11 @@ class SkillCheckEngine {
     required String playerInput,
     required Player player,
     required String? questDifficulty,
-    String? lastPlayerInput,
+    required ActionType action,
     int repeatCount = 0,
     bool underMeleePressure = false,
-    ActionType? actionOverride,
+    String? lastPlayerInput,
   }) {
-    final action =
-        actionOverride ??
-        classifyAction(
-          playerInput,
-          player: player,
-          lastPlayerInput: lastPlayerInput,
-        );
     if (action == ActionType.none) return null;
 
     final roll = rollD20();
@@ -487,7 +234,7 @@ class SkillCheckEngine {
     final sitMod = getSituationalModifier(player, action);
     final repPenalty = getRepetitionPenalty(repeatCount);
     final pressurePenalty = getMeleePressurePenalty(action, underMeleePressure);
-    final dc = getDC(questDifficulty);
+    final dc = getDC(questDifficulty, playerLevel: player.level);
     final total = roll + statMod + sitMod + repPenalty + pressurePenalty;
 
     // Determine outcome.
@@ -505,6 +252,9 @@ class SkillCheckEngine {
     }
 
     // Build human-readable summary for the AI prompt.
+    // Includes the player's primary stat value so the AI can gauge power.
+    final statLabel = _primaryStatLabel(action);
+    final statValue = _primaryStatValue(action, player);
     final modParts = <String>[];
     if (statMod != 0) {
       modParts.add('stat ${statMod >= 0 ? "+$statMod" : "$statMod"}');
@@ -521,7 +271,7 @@ class SkillCheckEngine {
     final modStr = modParts.isEmpty ? '' : ' (${modParts.join(", ")})';
 
     final summary =
-        '${action.label} check — '
+        '${action.label} check ($statLabel $statValue) — '
         'D20 rolled $roll$modStr = $total vs DC $dc → '
         '${outcome.label.toUpperCase()}';
 
@@ -535,14 +285,4 @@ class SkillCheckEngine {
       summary: summary,
     );
   }
-}
-
-// ─────────────────────────────────────────────────────────────
-//  INTERNAL HELPERS
-// ─────────────────────────────────────────────────────────────
-
-class _KeywordRule {
-  final ActionType action;
-  final List<String> keywords;
-  const _KeywordRule(this.action, this.keywords);
 }

@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
       return jsonError("Credit check failed", 500);
     }
     if (!creditResult.allowed) {
-      return jsonError("No credits remaining. Resets monthly.", 429);
+      return jsonError("No credits remaining. Credits replenish daily.", 429);
     }
     creditConsumed = true;
     const credits = creditResult.credits_remaining;
@@ -170,8 +170,11 @@ Deno.serve(async (req: Request) => {
       : 2000;
 
     // ── OpenRouter request (OpenAI-compatible chat completions) ──
-    const openrouterBody = {
-      model: "openai/gpt-oss-120b:free",
+    const PRIMARY_MODEL = "openai/gpt-oss-120b:free";
+    const FALLBACK_MODEL = "openai/gpt-oss-20b";
+
+    const makeBody = (model: string) => JSON.stringify({
+      model,
       stream: true,
       temperature,
       max_tokens: maxOutputTokens,
@@ -179,32 +182,54 @@ Deno.serve(async (req: Request) => {
         { role: "system", content: systemPrompt },
         { role: "user", content: userParts.join("\n\n") },
       ],
-    };
-
-    const openrouterUrl = "https://openrouter.ai/api/v1/chat/completions";
-    const openrouterPayload = JSON.stringify(openrouterBody);
-
-    let aiRes = await fetch(openrouterUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openrouterApiKey}`,
-      },
-      body: openrouterPayload,
     });
 
-    // Retry once on rate-limit (429) or temporary unavailability (503)
-    if (aiRes.status === 429 || aiRes.status === 503) {
-      console.warn(`OpenRouter returned ${aiRes.status}, retrying in 2s...`);
-      await new Promise((r) => setTimeout(r, 2000));
-      aiRes = await fetch(openrouterUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${openrouterApiKey}`,
-        },
-        body: openrouterPayload,
-      });
+    const openrouterUrl = "https://openrouter.ai/api/v1/chat/completions";
+    const openrouterHeaders = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${openrouterApiKey}`,
+    };
+
+    // 1) Try 120b
+    let aiRes = await fetch(openrouterUrl, {
+      method: "POST",
+      headers: openrouterHeaders,
+      body: makeBody(PRIMARY_MODEL),
+    });
+
+    // 2) If 120b fails: rate limit (429) → skip straight to fallback.
+    //    Other error → retry 120b once, then fallback.
+    const retryable = [429, 500, 502, 503];
+    if (!aiRes.ok && retryable.includes(aiRes.status)) {
+      if (aiRes.status !== 429) {
+        console.warn(`Primary model (${PRIMARY_MODEL}) returned ${aiRes.status}, retrying 120b once...`);
+        aiRes = await fetch(openrouterUrl, {
+          method: "POST",
+          headers: openrouterHeaders,
+          body: makeBody(PRIMARY_MODEL),
+        });
+      }
+
+      // 3) If still failing, fall back to 20b
+      if (!aiRes.ok && retryable.includes(aiRes.status)) {
+        console.warn(`Primary model failed (${aiRes.status}), falling back to ${FALLBACK_MODEL}`);
+        aiRes = await fetch(openrouterUrl, {
+          method: "POST",
+          headers: openrouterHeaders,
+          body: makeBody(FALLBACK_MODEL),
+        });
+
+        // 4) If 20b also fails, retry 20b once after 2s
+        if (!aiRes.ok && retryable.includes(aiRes.status)) {
+          console.warn(`Fallback model (${FALLBACK_MODEL}) returned ${aiRes.status}, retrying in 2s...`);
+          await new Promise((r) => setTimeout(r, 2000));
+          aiRes = await fetch(openrouterUrl, {
+            method: "POST",
+            headers: openrouterHeaders,
+            body: makeBody(FALLBACK_MODEL),
+          });
+        }
+      }
     }
 
     if (!aiRes.ok) {
@@ -231,6 +256,7 @@ Deno.serve(async (req: Request) => {
     // ── Stream the response back to the client ──
     // OpenRouter uses OpenAI SSE format: data: {"choices":[{"delta":{"content":"..."}}]}
     const encoder = new TextEncoder();
+    let sentAnyContent = false;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -258,6 +284,7 @@ Deno.serve(async (req: Request) => {
                   const text = parsed?.choices?.[0]?.delta?.content;
                   if (text) {
                     controller.enqueue(encoder.encode(text));
+                    sentAnyContent = true;
                   }
                   // Log if the response was cut short
                   const finishReason = parsed?.choices?.[0]?.finish_reason;
@@ -273,6 +300,13 @@ Deno.serve(async (req: Request) => {
         } catch (err) {
           console.error("Stream error:", err);
         } finally {
+          // Refund credit if no content was ever sent to the client
+          if (!sentAnyContent && creditConsumed) {
+            await supabaseAdmin.rpc("refund_credit", { p_user_id: user.id }).catch(
+              (e: unknown) => console.error("Credit refund (empty stream) failed:", e)
+            );
+            console.log("Refunded credit — stream produced no content for user", user.id);
+          }
           controller.close();
         }
       },

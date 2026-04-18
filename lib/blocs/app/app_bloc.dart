@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/models/chat_message.dart';
 import 'package:Questborne/models/player.dart';
@@ -40,6 +41,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// Makes ranged/magic rolls harder (concentration/aim disrupted).
   bool _underMeleePressure = false;
 
+  /// Last successfully emitted options â€” used to restore on recoverable errors.
+  List<String> _lastOptions = [];
+
+  /// Guard against rapid-fire taps while an AI action is in-flight.
+  bool _isProcessingAction = false;
+
   GameBloc({required AIService aiService})
     : _aiService = aiService,
       super(
@@ -47,12 +54,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           player: Player.create(id: const Uuid().v4(), name: 'Adventurer'),
         ),
       ) {
-    // Create the player with defaults — name can come from quest details
+    // Create the player with defaults â€” name can come from quest details
     _player = Player.create(id: _uuid.v4(), name: 'Adventurer');
 
-    on<StartNewQuestEvent>(_onStartNewQuest);
-    on<PlayerCommandEvent>(_onPlayerCommand);
-    on<CastSpellEvent>(_onCastSpell);
+    on<StartNewQuestEvent>(_onStartNewQuest, transformer: droppable());
+    on<PlayerCommandEvent>(_onPlayerCommand, transformer: droppable());
+    on<CastSpellEvent>(_onCastSpell, transformer: droppable());
     on<EquipItemEvent>(_onEquipItem);
     on<UnequipSlotEvent>(_onUnequipSlot);
     on<BuyItemEvent>(_onBuyItem);
@@ -70,7 +77,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<QuestFailedPenaltyEvent>(_onQuestFailedPenalty);
   }
 
-  /// The current player — exposed for reading outside the bloc if needed.
+  /// The current player â€” exposed for reading outside the bloc if needed.
   Player get player => _player;
 
   /// Expose the AI service so settings can reload safety thresholds.
@@ -98,7 +105,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     }
   }
 
-  /// Hard turn cap — quest auto-fails if this is reached.
+  /// Hard turn cap â€” quest auto-fails if this is reached.
   /// Very generous leeway for exploration, side conversations, and bad rolls.
   int _maxTurns(String difficulty) {
     switch (difficulty.toLowerCase()) {
@@ -124,14 +131,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _repeatCount = 1;
     }
     if (_repeatCount >= 2) {
-      return '\n[REPEATED ACTION: Player has used "$actionLabel" $_repeatCount times in a row. Enemies MUST adapt — dodge, counter, resist, or punish the predictability.]';
+      return '\n[REPEATED ACTION: Player has used "$actionLabel" $_repeatCount times in a row. Enemies MUST adapt â€” dodge, counter, resist, or punish the predictability.]';
     }
     return '';
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  CLOUD SAVE / LOAD
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _onLoadPlayer(
     LoadPlayerFromCloudEvent event,
@@ -147,7 +154,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       // Refresh subscription tier so credit limits and model are up-to-date.
       await SubscriptionService().refresh();
     } catch (e) {
-      // If loading fails, keep the default player—don't crash.
+      // If loading fails, keep the default playerâ€”don't crash.
       print('Failed to load player from cloud: $e');
     }
     emit(GameInitial(player: _player));
@@ -173,6 +180,25 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// Fire-and-forget helper to persist the player after every meaningful change.
   void _autoSavePlayer() {
     _saveService.savePlayer(_player).catchError((_) {});
+  }
+
+  /// Remove the last [messageCount] messages from chat history (rollback a
+  /// failed turn). Safely handles cases where history has fewer messages.
+  void _rollbackFailedTurn({required int messageCount}) {
+    final removeCount = messageCount.clamp(0, _chatHistory.length);
+    if (removeCount > 0) {
+      _chatHistory.removeRange(
+        _chatHistory.length - removeCount,
+        _chatHistory.length,
+      );
+    }
+  }
+
+  /// Quick credit pre-check â€” refreshes from Supabase and returns true
+  /// only when the user has at least 1 credit remaining.
+  Future<bool> _hasCredits() async {
+    final sub = await SubscriptionService().fetch();
+    return sub.creditsRemaining > 0;
   }
 
   /// Fire-and-forget helper to persist the current quest session
@@ -245,12 +271,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         _player = _player.levelUp();
       }
 
-      // If the set that was in progress is now fully complete, full-restore.
-      final completedIds = _player.completedQuestIds.toSet();
-      if (setBeforeComplete != null &&
-          setBeforeComplete.every((id) => completedIds.contains(id))) {
-        _player = _player.fullRestore();
-      }
+      // No full-restore on set completion; only death or level-up restores.
     }
     _autoSavePlayer();
     emit(GameInitial(player: _player));
@@ -277,15 +298,17 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         ),
       );
     }
-    // Full-restore HP after death so player can try again.
-    _player = _player.fullRestore();
+    // Only full-restore if the player actually died (HP reached 0).
+    if (!_player.isAlive) {
+      _player = _player.fullRestore();
+    }
     _autoSavePlayer();
     emit(GameInitial(player: _player));
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  EFFECTS PARSING
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// The AI appends <!--OPTIONS:[...]-->  and <!--EFFECTS:{...}--> at the end.
   static final RegExp _effectsPattern = RegExp(
@@ -317,7 +340,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// Splits the raw AI response into (cleanNarrative, StoryEffects?, options).
   ({String narrative, StoryEffects? effects, List<String> options})
   _parseResponse(String raw) {
-    // Extract effects — try primary pattern, then fallback
+    // Extract effects â€” try primary pattern, then fallback
     StoryEffects? effects;
     final effectsMatch =
         _effectsPattern.firstMatch(raw) ?? _effectsFallback.firstMatch(raw);
@@ -330,7 +353,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     }
 
-    // Extract options — try primary pattern, then fallback
+    // Extract options â€” try primary pattern, then fallback
     List<String> options = [];
     final optionsMatch =
         _optionsPattern.firstMatch(raw) ?? _optionsFallback.firstMatch(raw);
@@ -343,28 +366,46 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     }
 
-    // Clean narrative — aggressively strip all metadata patterns
+    // Clean narrative â€” aggressively strip all metadata patterns
     String narrative = raw.replaceAll(_leakedMetadata, '').trim();
 
-    // If the response was truncated (MAX_TOKENS), both metadata tags will be
-    // missing.  Provide fallback options so the player isn't left without
-    // action buttons.
+    // If the response was truncated (MAX_TOKENS) or is an error message,
+    // both metadata tags will be missing. Leave options empty so callers
+    // can detect this and emit a recoverable error.
     if (options.isEmpty && effects == null && narrative.isNotEmpty) {
-      print('⚠️ Truncated AI response detected — no OPTIONS or EFFECTS found');
-      options = const ['Continue', 'Try again'];
+      print(
+        'âš ï¸ Truncated AI response detected â€” no OPTIONS or EFFECTS found',
+      );
     }
 
     return (narrative: narrative, effects: effects, options: options);
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  START NEW QUEST
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _onStartNewQuest(
     StartNewQuestEvent event,
     Emitter<GameState> emit,
   ) async {
+    if (_isProcessingAction) return;
+    _isProcessingAction = true;
+    try {
+    // â”€â”€ Credit pre-check â€” bail before any AI work â”€â”€
+    if (!await _hasCredits()) {
+      emit(
+        GameErrorRecoverable(
+          errorMessage: 'No credits remaining. Credits replenish daily.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+        ),
+      );
+      return;
+    }
+
     _currentActiveQuest = event.questDetails;
     _chatHistory = [];
     _memoryManager.reset();
@@ -372,7 +413,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _repeatCount = 0;
     _underMeleePressure = false;
 
-    // HP persists across quests — no full restore here.
+    // HP persists across quests â€” no full restore here.
     // Player only heals when completing an entire quest set.
 
     emit(GameLoading(message: 'Starting your quest...', player: _player));
@@ -421,7 +462,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         );
       }
 
-      // ── Stream complete — parse effects and apply ──
+      // â”€â”€ Stream complete â€” parse effects and apply â”€â”€
       print('=== RAW AI RESPONSE (StartNewQuest) ===');
       print(accumulatedRaw);
       print('=== END RAW AI RESPONSE ===');
@@ -430,6 +471,23 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _chatHistory.last.text = parsed.narrative;
       _chatHistory.last.isComplete = true;
 
+      // Truncated or error response â€” rollback and show recoverable error.
+      if (parsed.options.isEmpty && parsed.effects == null) {
+        _chatHistory.removeLast(); // remove AI placeholder
+        emit(
+          GameErrorRecoverable(
+            errorMessage: parsed.narrative.isNotEmpty
+                ? parsed.narrative
+                : 'Something went wrong. Please try again.',
+            messages: List.from(_chatHistory),
+            activeQuest: _currentActiveQuest,
+            player: _player,
+            previousOptions: _lastOptions,
+          ),
+        );
+        return;
+      }
+
       StoryEffects? displayEffects = parsed.effects;
       if (parsed.effects != null) {
         final result = applyStoryEffects(_player, parsed.effects!);
@@ -437,6 +495,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         displayEffects = result.effects;
       }
 
+      _lastOptions = parsed.options;
       _autoSavePlayer();
 
       emit(
@@ -452,17 +511,30 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _autoSaveSession(lastOptions: parsed.options);
     } catch (error, stackTrace) {
       print('Error during AI stream for StartNewQuest: $error\n$stackTrace');
-      if (_chatHistory.isNotEmpty) {
-        _chatHistory.last.text = 'Error: $error';
-        _chatHistory.last.isComplete = true;
+      // Rollback the AI placeholder so the failed turn disappears.
+      if (_chatHistory.isNotEmpty &&
+          _chatHistory.last.sender == MessageSender.ai) {
+        _chatHistory.removeLast();
       }
-      emit(GameError('Failed to start quest: $error', player: _player));
+      emit(
+        GameErrorRecoverable(
+          errorMessage:
+              'Something went wrong starting the quest. Please try again.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+        ),
+      );
+    }
+    } finally {
+      _isProcessingAction = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  RESUME QUEST (from a saved session)
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _onResumeQuest(
     ResumeQuestEvent event,
@@ -471,7 +543,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     _currentActiveQuest = event.questDetails;
 
     // Use the current global player (HP persists across quests).
-    // Don't restore from the session snapshot — it has stale HP.
+    // Don't restore from the session snapshot â€” it has stale HP.
 
     // Reset conversation memory so the rolling summary index doesn't
     // reference the previous session's message count.
@@ -493,6 +565,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     // Simply restore the previous state without re-generating from the AI.
     // The player will see exactly where they left off with the same options.
+    _lastOptions = event.lastOptions;
     emit(
       GameLoaded(
         messages: List.from(_chatHistory),
@@ -503,19 +576,37 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  PLAYER COMMAND
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _onPlayerCommand(
     PlayerCommandEvent event,
     Emitter<GameState> emit,
   ) async {
+    if (_isProcessingAction) return;
+    _isProcessingAction = true;
+    try {
     if (_currentActiveQuest.isEmpty) {
       emit(
         GameError(
           'No active quest. Please start a quest first.',
           player: _player,
+        ),
+      );
+      return;
+    }
+
+    // â”€â”€ Credit pre-check â€” bail before classify / dice roll â”€â”€
+    if (!await _hasCredits()) {
+      emit(
+        GameErrorRecoverable(
+          errorMessage: 'No credits remaining. Credits replenish daily.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+          pendingInput: event.command,
         ),
       );
       return;
@@ -541,34 +632,19 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       ),
     );
 
-    // ── Skill check: roll dice BEFORE streaming starts ──
+    // â”€â”€ Skill check: roll dice BEFORE streaming starts â”€â”€
     final questDifficulty = _currentActiveQuest['difficulty'] as String?;
-    // Find the previous player command for "again" / "repeat" detection.
-    final previousPlayerMsg = _chatHistory
-        .where(
-          (m) =>
-              m.sender == MessageSender.player &&
-              m.isComplete &&
-              m.text != event.command,
-        )
-        .lastOrNull
-        ?.text;
 
-    // Classify the action via AI (falls back to keywords on error).
-    final classifiedAction = await _actionClassifier.classify(
-      event.command,
-      player: _player,
-      lastPlayerInput: previousPlayerMsg,
-    );
+    // Classify the action via AI.
+    final classifiedAction = await _actionClassifier.classify(event.command);
 
     final skillCheck = SkillCheckEngine.performCheck(
       playerInput: event.command,
       player: _player,
       questDifficulty: questDifficulty,
-      lastPlayerInput: previousPlayerMsg,
+      action: classifiedAction,
       repeatCount: _repeatCount,
       underMeleePressure: _underMeleePressure,
-      actionOverride: classifiedAction,
     );
 
     emit(
@@ -600,7 +676,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
             'Do NOT override the dice.]';
         aiPrompt += _trackRepeat(skillCheck.actionType.label);
       } else {
-        // Non-action input — reset repeat tracker.
+        // Non-action input â€” reset repeat tracker.
         _lastActionLabel = null;
         _repeatCount = 0;
       }
@@ -638,7 +714,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         );
       }
 
-      // ── Stream complete — parse effects and apply ──
+      // â”€â”€ Stream complete â€” parse effects and apply â”€â”€
       print('=== RAW AI RESPONSE (PlayerCommand) ===');
       print(accumulatedRaw);
       print('=== END RAW AI RESPONSE ===');
@@ -648,6 +724,30 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _chatHistory.last.text = parsed.narrative;
       _chatHistory.last.isComplete = true;
 
+      // Truncated or error response â€” rollback the failed turn.
+      if (parsed.options.isEmpty && parsed.effects == null) {
+        // Remove AI placeholder + player message for this turn.
+        if (_chatHistory.length >= 2) {
+          _chatHistory.removeRange(
+            _chatHistory.length - 2,
+            _chatHistory.length,
+          );
+        }
+        emit(
+          GameErrorRecoverable(
+            errorMessage: parsed.narrative.isNotEmpty
+                ? parsed.narrative
+                : 'Something went wrong. Please try again.',
+            messages: List.from(_chatHistory),
+            activeQuest: _currentActiveQuest,
+            player: _player,
+            previousOptions: _lastOptions,
+            pendingInput: event.command,
+          ),
+        );
+        return;
+      }
+
       StoryEffects? displayEffects = parsed.effects;
       if (parsed.effects != null) {
         final result = applyStoryEffects(_player, parsed.effects!);
@@ -655,10 +755,17 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         displayEffects = result.effects;
       }
 
-      // Track whether enemies dealt damage — means they're in melee range.
+      // Track whether enemies dealt damage â€” means they're in melee range.
       _underMeleePressure = (displayEffects?.damage ?? 0) > 0;
 
-      // ── Hard turn limit: auto-fail if max turns reached ──
+      // â”€â”€ Player death: auto-fail quest if HP reached 0 â”€â”€
+      if (!_player.isAlive && displayEffects?.questFailed != true) {
+        displayEffects = (displayEffects ?? StoryEffects.none).copyWith(
+          questFailed: true,
+        );
+      }
+
+      // â”€â”€ Hard turn limit: auto-fail if max turns reached â”€â”€
       final turnCount = _chatHistory
           .where((m) => m.sender == MessageSender.player && m.isComplete)
           .length;
@@ -666,24 +773,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       if (turnCount >= _maxTurns(diff) &&
           displayEffects?.questCompleted != true &&
           displayEffects?.questFailed != true) {
-        displayEffects = StoryEffects(
-          damage: displayEffects?.damage ?? 0,
-          heal: displayEffects?.heal ?? 0,
-          manaSpent: displayEffects?.manaSpent ?? 0,
-          manaRestored: displayEffects?.manaRestored ?? 0,
-          goldGained: displayEffects?.goldGained ?? 0,
-          goldLost: displayEffects?.goldLost ?? 0,
-          xpGained: displayEffects?.xpGained ?? 0,
-          statusAdded: displayEffects?.statusAdded,
-          statusRemoved: displayEffects?.statusRemoved,
-          itemGainedId: displayEffects?.itemGainedId,
-          itemLostId: displayEffects?.itemLostId,
-          newLocation: displayEffects?.newLocation,
-          questCompleted: false,
+        displayEffects = (displayEffects ?? StoryEffects.none).copyWith(
           questFailed: true,
         );
       }
 
+      _lastOptions = parsed.options;
       _autoSavePlayer();
 
       emit(
@@ -700,22 +795,35 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _autoSaveSession(lastOptions: parsed.options);
     } catch (error, stackTrace) {
       print('Error during AI stream for PlayerCommand: $error\n$stackTrace');
-      if (_chatHistory.isNotEmpty) {
-        _chatHistory.last.text = 'Error: $error';
-        _chatHistory.last.isComplete = true;
-      }
-      emit(GameError('Failed to process command: $error', player: _player));
+      // Rollback the failed turn â€” remove AI placeholder + player message.
+      _rollbackFailedTurn(messageCount: 2);
+      emit(
+        GameErrorRecoverable(
+          errorMessage: 'Something went wrong. Please try again.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+          pendingInput: event.command,
+        ),
+      );
+    }
+    } finally {
+      _isProcessingAction = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  CAST SPELL
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _onCastSpell(
     CastSpellEvent event,
     Emitter<GameState> emit,
   ) async {
+    if (_isProcessingAction) return;
+    _isProcessingAction = true;
+    try {
     final spell = event.spell;
 
     // Guard: must have an active quest and enough mana.
@@ -726,6 +834,20 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     if (_player.currentMana < spell.manaCost) {
       emit(
         GameError('Not enough mana to cast ${spell.name}.', player: _player),
+      );
+      return;
+    }
+
+    // â”€â”€ Credit pre-check â€” bail before classify / dice roll â”€â”€
+    if (!await _hasCredits()) {
+      emit(
+        GameErrorRecoverable(
+          errorMessage: 'No credits remaining. Credits replenish daily.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+        ),
       );
       return;
     }
@@ -756,22 +878,17 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       ),
     );
 
-    // ── Skill check for spell casting — roll BEFORE streaming starts ──
+    // â”€â”€ Skill check for spell casting â€” roll BEFORE streaming starts â”€â”€
     final questDifficulty = _currentActiveQuest['difficulty'] as String?;
-    final previousPlayerMsg = _chatHistory
-        .where(
-          (m) =>
-              m.sender == MessageSender.player &&
-              m.isComplete &&
-              m.text != command,
-        )
-        .lastOrNull
-        ?.text;
+
+    // Classify the action via AI.
+    final classifiedAction = await _actionClassifier.classify(command);
+
     final skillCheck = SkillCheckEngine.performCheck(
       playerInput: command,
       player: _player,
       questDifficulty: questDifficulty,
-      lastPlayerInput: previousPlayerMsg,
+      action: classifiedAction,
       repeatCount: _repeatCount,
       underMeleePressure: _underMeleePressure,
     );
@@ -843,7 +960,25 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _chatHistory.last.text = parsed.narrative;
       _chatHistory.last.isComplete = true;
 
-      // Apply effects — note: mana was already deducted, so zero-out
+      // Truncated or error response â€” rollback the failed turn and refund mana.
+      if (parsed.options.isEmpty && parsed.effects == null) {
+        _rollbackFailedTurn(messageCount: 2);
+        _player = _player.restoreMana(spell.manaCost);
+        emit(
+          GameErrorRecoverable(
+            errorMessage: parsed.narrative.isNotEmpty
+                ? parsed.narrative
+                : 'Something went wrong. Please try again.',
+            messages: List.from(_chatHistory),
+            activeQuest: _currentActiveQuest,
+            player: _player,
+            previousOptions: _lastOptions,
+          ),
+        );
+        return;
+      }
+
+      // Apply effects â€” note: mana was already deducted, so zero-out
       // any AI-reported manaSpent to avoid double-spending.
       StoryEffects? displayEffects = parsed.effects;
       if (parsed.effects != null) {
@@ -857,10 +992,15 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         displayEffects = StoryEffects(manaSpent: spell.manaCost);
       }
 
-      // Track whether enemies dealt damage — means they're in melee range.
+      // Track whether enemies dealt damage â€” means they're in melee range.
       _underMeleePressure = (parsed.effects?.damage ?? 0) > 0;
 
-      // ── Hard turn limit: auto-fail if max turns reached ──
+      // â”€â”€ Player death: auto-fail quest if HP reached 0 â”€â”€
+      if (!_player.isAlive && displayEffects.questFailed != true) {
+        displayEffects = displayEffects.copyWith(questFailed: true);
+      }
+
+      // â”€â”€ Hard turn limit: auto-fail if max turns reached â”€â”€
       final turnCount = _chatHistory
           .where((m) => m.sender == MessageSender.player && m.isComplete)
           .length;
@@ -868,24 +1008,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       if (turnCount >= _maxTurns(diff) &&
           displayEffects.questCompleted != true &&
           displayEffects.questFailed != true) {
-        displayEffects = StoryEffects(
-          damage: displayEffects.damage,
-          heal: displayEffects.heal,
-          manaSpent: displayEffects.manaSpent,
-          manaRestored: displayEffects.manaRestored,
-          goldGained: displayEffects.goldGained,
-          goldLost: displayEffects.goldLost,
-          xpGained: displayEffects.xpGained,
-          statusAdded: displayEffects.statusAdded,
-          statusRemoved: displayEffects.statusRemoved,
-          itemGainedId: displayEffects.itemGainedId,
-          itemLostId: displayEffects.itemLostId,
-          newLocation: displayEffects.newLocation,
-          questCompleted: false,
-          questFailed: true,
-        );
+        displayEffects = displayEffects.copyWith(questFailed: true);
       }
 
+      _lastOptions = parsed.options;
       _autoSavePlayer();
 
       emit(
@@ -902,17 +1028,27 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       _autoSaveSession(lastOptions: parsed.options);
     } catch (error, stackTrace) {
       print('Error during AI stream for CastSpell: $error\n$stackTrace');
-      if (_chatHistory.isNotEmpty) {
-        _chatHistory.last.text = 'Error: $error';
-        _chatHistory.last.isComplete = true;
-      }
-      emit(GameError('Failed to cast spell: $error', player: _player));
+      // Rollback the failed turn and refund the mana that was deducted upfront.
+      _rollbackFailedTurn(messageCount: 2);
+      _player = _player.restoreMana(spell.manaCost);
+      emit(
+        GameErrorRecoverable(
+          errorMessage: 'Something went wrong. Please try again.',
+          messages: List.from(_chatHistory),
+          activeQuest: _currentActiveQuest,
+          player: _player,
+          previousOptions: _lastOptions,
+        ),
+      );
+    }
+    } finally {
+      _isProcessingAction = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //  EQUIP / UNEQUIP
-  // ─────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _onEquipItem(EquipItemEvent event, Emitter<GameState> emit) {
     _player = _player.equipItem(event.item);
@@ -953,7 +1089,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         ),
       );
     } else {
-      // No active quest — still emit so the inventory page rebuilds
+      // No active quest â€” still emit so the inventory page rebuilds
       emit(GameInitial(player: _player));
     }
   }

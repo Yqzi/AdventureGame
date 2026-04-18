@@ -660,7 +660,7 @@ class _GuildPageState extends State<GuildPage> {
                         risk: quest.difficulty.label,
                         description: quest.description,
                         reward: quest.rewardLabel,
-                        transformationAngle: repIdx % 2 != 0 ? -0.02 : 0.02,
+                        transformationAngle: 0,
                         image:
                             'assets/images/${quest.location.toLowerCase()}.png',
                         actionLabel: hasSession ? 'Resume' : 'Investigate',

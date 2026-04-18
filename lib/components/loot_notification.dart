@@ -181,17 +181,6 @@ class _LootNotificationState extends State<LootNotification>
       );
     }
 
-    if (effects.itemGainedId != null) {
-      items.add(
-        _lootRow(
-          icon: FontAwesomeIcons.boxOpen,
-          iconColor: const Color(0xFFA78BFA),
-          label: 'New Item Acquired!',
-          labelColor: const Color(0xFFA78BFA),
-        ),
-      );
-    }
-
     if (effects.heal > 0) {
       items.add(
         _lootRow(

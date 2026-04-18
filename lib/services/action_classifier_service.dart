@@ -5,12 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/models/skill_check.dart';
-import 'package:Questborne/utils/skill_check_engine.dart';
-import 'package:Questborne/models/player.dart';
 
 /// Classifies player input into an [ActionType] using an AI edge function.
-///
-/// Falls back to keyword-based [SkillCheckEngine.classifyAction] on any error.
 class ActionClassifierService {
   static final Uri _functionUrl = Uri.parse(
     '${SupabaseConfig.url}/functions/v1/classify-action',
@@ -59,16 +55,12 @@ class ActionClassifierService {
   }
 
   /// Asks the AI to classify [playerInput] and returns the matching
-  /// [ActionType]. On failure, falls back to keyword matching.
-  Future<ActionType> classify(
-    String playerInput, {
-    required Player player,
-    String? lastPlayerInput,
-  }) async {
+  /// [ActionType]. On failure, returns [ActionType.none].
+  Future<ActionType> classify(String playerInput) async {
     try {
       final session = Supabase.instance.client.auth.currentSession;
       if (session == null) {
-        return _fallback(playerInput, player, lastPlayerInput);
+        return ActionType.none;
       }
 
       final numberedMap = _buildNumberedMap();
@@ -89,9 +81,10 @@ class ActionClassifierService {
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode != 200) {
-        return _fallback(playerInput, player, lastPlayerInput);
+        return ActionType.none;
       }
 
+      // print(response.body);
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       final raw = decoded['actionType'] as String? ?? '0';
 
@@ -104,22 +97,10 @@ class ActionClassifierService {
       // If it returned a key name instead of a number, try matching.
       return ActionType.values.firstWhere(
         (t) => t.name == raw,
-        orElse: () => _fallback(playerInput, player, lastPlayerInput),
+        orElse: () => ActionType.none,
       );
     } catch (_) {
-      return _fallback(playerInput, player, lastPlayerInput);
+      return ActionType.none;
     }
-  }
-
-  ActionType _fallback(
-    String playerInput,
-    Player player,
-    String? lastPlayerInput,
-  ) {
-    return SkillCheckEngine.classifyAction(
-      playerInput,
-      player: player,
-      lastPlayerInput: lastPlayerInput,
-    );
   }
 }

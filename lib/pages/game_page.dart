@@ -214,6 +214,49 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  // Show an error dialog (used for recoverable AI errors).
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1411),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: const Color(0xFFD4A843).withAlpha(60)),
+        ),
+        title: Text(
+          'Something Went Wrong',
+          style: GoogleFonts.crimsonPro(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFFE3D5B8),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.crimsonPro(
+            fontSize: 16,
+            color: const Color(0xFFE3D5B8).withAlpha(200),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'OK',
+              style: GoogleFonts.crimsonPro(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFD4A843),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Show quest details in a bottom sheet
   void _showQuestDetails(BuildContext context) {
     final d = widget.details;
@@ -385,13 +428,6 @@ class _GamePageState extends State<GamePage> {
             if (fx != null) {
               _totalGold += fx.goldGained;
               _totalXp += fx.xpGained;
-              if (fx.itemGainedId != null) {
-                final item = allItems.cast<Item?>().firstWhere(
-                  (i) => i?.id == fx.itemGainedId,
-                  orElse: () => null,
-                );
-                _itemsGained.add(item?.name ?? fx.itemGainedId!);
-              }
             }
             if (hasVisibleEffects(state.effects)) {
               setState(() {
@@ -621,6 +657,26 @@ class _GamePageState extends State<GamePage> {
                                 } else if (state is GameLoaded) {
                                   // Final scroll when response finishes.
                                   _lastScrolledMsgId = null;
+                                } else if (state is GameErrorRecoverable) {
+                                  // Restore the text field input if the user had typed something.
+                                  if (state.pendingInput != null &&
+                                      state.pendingInput!.isNotEmpty) {
+                                    _controller.text = state.pendingInput!;
+                                    _controller.selection =
+                                        TextSelection.collapsed(
+                                          offset: state.pendingInput!.length,
+                                        );
+                                  }
+                                  // Show error as a dialog instead of inline.
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (!mounted) return;
+                                    _showErrorDialog(
+                                      context,
+                                      state.errorMessage,
+                                    );
+                                  });
                                 }
                               },
                               builder: (context, state) {
@@ -632,6 +688,8 @@ class _GamePageState extends State<GamePage> {
                                 } else if (state is GameLoaded) {
                                   messages = state.messages;
                                 } else if (state is GameStreamingNarrative) {
+                                  messages = state.messages;
+                                } else if (state is GameErrorRecoverable) {
                                   messages = state.messages;
                                 } else if (state is GameError) {
                                   messages.add(
@@ -841,9 +899,13 @@ class _GamePageState extends State<GamePage> {
 
                               final options = state is GameLoaded
                                   ? state.options
+                                  : state is GameErrorRecoverable
+                                  ? state.previousOptions
                                   : <String>[];
                               final isActive =
-                                  state is GameLoaded && options.length >= 2;
+                                  (state is GameLoaded ||
+                                      state is GameErrorRecoverable) &&
+                                  options.length >= 2;
 
                               if (!isActive) return const SizedBox.shrink();
 
@@ -1230,6 +1292,7 @@ class _GamePageState extends State<GamePage> {
   Player? _playerFromState(GameState state) {
     if (state is GameLoaded) return state.player;
     if (state is GameStreamingNarrative) return state.player;
+    if (state is GameErrorRecoverable) return state.player;
     return null;
   }
 

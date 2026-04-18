@@ -394,16 +394,37 @@ class Player extends Equatable {
   //  COMBAT HELPERS
   // ─────────────────────────────────────────────────────────
 
+  /// Reduces incoming [amount] by a percentage derived from defense.
+  ///
+  /// Uses diminishing returns: `defense / (defense + 50 + level * 5)`.
+  /// Shielded adds +15% reduction, weakened halves the total reduction.
+  /// The reduction is capped at 85% — you always take at least 15%.
   Player takeDamage(int amount) {
-    final reduced = (amount - (defense * 0.3)).round().clamp(1, amount);
+    if (amount <= 0) return this;
+    final k = 50.0 + level * 5.0;
+    var reductionPct = defense / (defense + k);
+
+    if (hasStatus(StatusEffect.shielded)) reductionPct += 0.15;
+    if (hasStatus(StatusEffect.weakened)) reductionPct *= 0.5;
+
+    reductionPct = reductionPct.clamp(0.0, 0.85);
+    final reduced = (amount * (1.0 - reductionPct)).round().clamp(1, amount);
     return copyWith(
       currentHealth: (currentHealth - reduced).clamp(0, maxHealth),
     );
   }
 
+  /// Heals the player, scaled by magic stat.
+  ///
+  /// Multiplier: `1.0 + magic / (magic + 80)` (ranges 1.0 → ~2.0).
+  /// Blessed status adds an extra 25%.
   Player heal(int amount) {
+    if (amount <= 0) return this;
+    var multiplier = 1.0 + magic / (magic + 80.0);
+    if (hasStatus(StatusEffect.blessed)) multiplier *= 1.25;
+    final scaled = (amount * multiplier).round();
     return copyWith(
-      currentHealth: (currentHealth + amount).clamp(0, maxHealth),
+      currentHealth: (currentHealth + scaled).clamp(0, maxHealth),
     );
   }
 

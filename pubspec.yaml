@@ -52,6 +52,7 @@ dependencies:
   device_info_plus: ^11.3.3
   in_app_purchase: ^3.2.3
   url_launcher: ^6.3.2
+  bloc_concurrency: ^0.3.0
 
 dev_dependencies:
   flutter_test:
