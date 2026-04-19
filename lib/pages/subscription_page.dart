@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -114,7 +115,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Scaffold(
       backgroundColor: _bgColor,
       appBar: TopBar(
-        title: 'PLANS',
+        title: AppLocalizations.of(context).subscriptionPlans,
         textStyle: GoogleFonts.epilogue(
           color: _creamText,
           fontSize: 20,
@@ -147,7 +148,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   child: TextButton(
                     onPressed: () => _openManageSubscription(),
                     child: Text(
-                      'Manage Subscriptions on Google Play',
+                      AppLocalizations.of(context).subscriptionManageGooglePlay,
                       style: GoogleFonts.epilogue(
                         fontSize: 13,
                         color: Colors.white38,
@@ -211,8 +212,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         const SizedBox(height: 2),
         Text(
           isDailyTier
-              ? 'credits (+${_subscription.dailyCredits} daily)'
-              : 'credits remaining of ${_subscription.maxCredits}',
+              ? AppLocalizations.of(
+                  context,
+                ).subscriptionCreditsDaily(_subscription.dailyCredits)
+              : AppLocalizations.of(
+                  context,
+                ).subscriptionCreditsRemaining(_subscription.maxCredits),
           style: GoogleFonts.epilogue(fontSize: 13, color: Colors.white38),
         ),
         if (!isDailyTier) ...[
@@ -230,7 +235,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Resets ${_formatResetDate(_subscription.creditsResetAt)}',
+            AppLocalizations.of(context).subscriptionResets(
+              _formatResetDate(_subscription.creditsResetAt),
+            ),
             style: GoogleFonts.epilogue(fontSize: 11, color: Colors.white24),
           ),
         ],
@@ -263,8 +270,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   List<Widget> _buildTierCards() {
     const order = [
-      SubscriptionTier.adventurer,
       SubscriptionTier.champion,
+      SubscriptionTier.adventurer,
       SubscriptionTier.free,
     ];
     return order.map((tier) {
@@ -331,7 +338,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Current',
+                        AppLocalizations.of(context).subscriptionCurrent,
                         style: GoogleFonts.epilogue(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -357,8 +364,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               _featureRow(
                 Icons.bolt_outlined,
                 tier.dailyCredits > 0
-                    ? '${tier.maxCredits} + ${tier.dailyCredits}/day credits'
-                    : '${tier.maxCredits} credits',
+                    ? '${tier.dailyCredits} credits / day'
+                    : '${tier.maxCredits} credits / month',
                 accent,
               ),
               const SizedBox(height: 8),

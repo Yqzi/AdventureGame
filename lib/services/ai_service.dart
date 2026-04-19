@@ -284,11 +284,17 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
         loreKeys: loreKeys,
       );
 
+      final locale = SettingsService().locale;
+      final languageCode = locale?.languageCode ?? 'en';
+      final languageInstruction = languageCode != 'en'
+          ? '\n\n=== LANGUAGE ===\nYou MUST write ALL narrative text, dialogue, and OPTIONS in language code "$languageCode". EFFECTS JSON keys remain in English. Never mix languages.'
+          : '';
+
       final body = jsonEncode({
         'prompt': playerPrompt,
         'questDetails': questDescription,
         'playerContext': playerContext,
-        'systemPersona': _systemPersona,
+        'systemPersona': '$_systemPersona$languageInstruction',
         'safetySettings': _buildSafetyPayload(),
         'deviceId': deviceId,
         'model': tier.aiModel,

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persists user-configurable settings via SharedPreferences.
@@ -5,6 +7,7 @@ class SettingsService {
   static const _keyHateSpeech = 'safety_hateSpeech';
   static const _keyHarassment = 'safety_harassment';
   static const _keyDangerousContent = 'safety_dangerousContent';
+  static const _keyLocale = 'app_locale';
 
   // ── Singleton ────────────────────────────────────────────────
 
@@ -35,6 +38,25 @@ class SettingsService {
   int get dangerousContentLevel =>
       _clampLevel(_prefs.getInt(_keyDangerousContent));
   set dangerousContentLevel(int v) => _prefs.setInt(_keyDangerousContent, v);
+
+  // ── Locale ───────────────────────────────────────────────────
+  // null = follow system locale
+
+  /// Returns the user's chosen locale, or null for system default.
+  Locale? get locale {
+    final code = _prefs.getString(_keyLocale);
+    if (code == null || code.isEmpty) return null;
+    return Locale(code);
+  }
+
+  /// Set the locale (pass null to revert to system default).
+  set locale(Locale? v) {
+    if (v == null) {
+      _prefs.remove(_keyLocale);
+    } else {
+      _prefs.setString(_keyLocale, v.languageCode);
+    }
+  }
 
   /// Human-readable label for a given safety level int.
   static String levelLabel(int level) {

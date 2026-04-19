@@ -81,7 +81,7 @@ NEXT RELEASE
 <!-- - game isnt ending on health 0 -->
 <!-- - is rate limit working? i sent 17 reqs at once -->
 <!-- - stop spam on the 2 options in game with droppable -->
-- Localization + RUSSIAN
+<!-- - Localization -->
 <!-- - Credit system update
     - FREE -> Base gpt oss 120B (free) => 25 + 10d (20 RPD)
         fall back to 20B -->

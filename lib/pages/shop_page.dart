@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
@@ -12,6 +13,8 @@ import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/quest.dart';
+import 'package:Questborne/utils/localized_items.dart';
+import 'package:Questborne/utils/localized_enums.dart';
 
 class ShopPage extends StatelessWidget {
   const ShopPage({super.key});
@@ -87,7 +90,10 @@ class ShopPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item.name,
+                            localizedItemName(
+                              AppLocalizations.of(context),
+                              item.id,
+                            ),
                             style: GoogleFonts.epilogue(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -107,7 +113,10 @@ class ShopPage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  item.rarity.label.toUpperCase(),
+                                  localizedRarity(
+                                    AppLocalizations.of(context),
+                                    item.rarity,
+                                  ).toUpperCase(),
                                   style: GoogleFonts.epilogue(
                                     color: item.rarity.color,
                                     fontWeight: FontWeight.bold,
@@ -118,7 +127,10 @@ class ShopPage extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                item.type.label,
+                                localizedItemType(
+                                  AppLocalizations.of(context),
+                                  item.type,
+                                ),
                                 style: GoogleFonts.epilogue(
                                   color: greyText,
                                   fontSize: 12,
@@ -126,7 +138,9 @@ class ShopPage extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'LV ${item.level}',
+                                AppLocalizations.of(
+                                  context,
+                                ).labelLevel(item.level),
                                 style: GoogleFonts.epilogue(
                                   color: Colors.white54,
                                   fontSize: 12,
@@ -143,7 +157,7 @@ class ShopPage extends StatelessWidget {
 
                 // ── Description ──
                 Text(
-                  item.description,
+                  localizedItemDesc(AppLocalizations.of(context), item.id),
                   style: GoogleFonts.epilogue(
                     color: const Color(0xFFE3D5B8),
                     fontSize: 14,
@@ -166,21 +180,41 @@ class ShopPage extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       if (item.manaCost > 0)
-                        _statChip('MP', '${item.manaCost}', Colors.cyanAccent),
+                        _statChip(
+                          AppLocalizations.of(context).statMp,
+                          '${item.manaCost}',
+                          Colors.cyanAccent,
+                        ),
                       if (item.attack > 0)
-                        _statChip('ATK', '+${item.attack}', Colors.redAccent),
+                        _statChip(
+                          AppLocalizations.of(context).statAtk,
+                          '+${item.attack}',
+                          Colors.redAccent,
+                        ),
                       if (item.defense > 0)
-                        _statChip('DEF', '+${item.defense}', Colors.blueAccent),
+                        _statChip(
+                          AppLocalizations.of(context).statDef,
+                          '+${item.defense}',
+                          Colors.blueAccent,
+                        ),
                       if (item.magic > 0)
-                        _statChip('MAG', '+${item.magic}', Colors.purpleAccent),
+                        _statChip(
+                          AppLocalizations.of(context).statMag,
+                          '+${item.magic}',
+                          Colors.purpleAccent,
+                        ),
                       if (item.agility > 0)
                         _statChip(
-                          'AGI',
+                          AppLocalizations.of(context).statAgi,
                           '+${item.agility}',
                           Colors.greenAccent,
                         ),
                       if (item.health > 0)
-                        _statChip('HP', '+${item.health}', Colors.amber),
+                        _statChip(
+                          AppLocalizations.of(context).statHp,
+                          '+${item.health}',
+                          Colors.amber,
+                        ),
                     ],
                   ),
                 ),
@@ -209,7 +243,10 @@ class ShopPage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            item.effect,
+                            localizedItemEffect(
+                              AppLocalizations.of(context),
+                              item.id,
+                            ),
                             style: GoogleFonts.epilogue(
                               color: const Color(0xFFE3D5B8),
                               fontSize: 13,
@@ -235,7 +272,7 @@ class ShopPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          item.priceLabel,
+                          AppLocalizations.of(context).priceFormat(item.price),
                           style: GoogleFonts.epilogue(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,
@@ -250,7 +287,7 @@ class ShopPage extends StatelessWidget {
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(),
                         child: Text(
-                          'Close',
+                          AppLocalizations.of(context).shopClose,
                           style: GoogleFonts.epilogue(color: greyText),
                         ),
                       ),
@@ -271,7 +308,12 @@ class ShopPage extends StatelessWidget {
                                     18,
                                   ),
                                   content: Text(
-                                    'Purchased ${item.name}!',
+                                    AppLocalizations.of(context).shopPurchased(
+                                      localizedItemName(
+                                        AppLocalizations.of(context),
+                                        item.id,
+                                      ),
+                                    ),
                                     style: GoogleFonts.epilogue(
                                       color: const Color(0xFFE3D5B8),
                                     ),
@@ -299,10 +341,10 @@ class ShopPage extends StatelessWidget {
                       ),
                       label: Text(
                         isSold
-                            ? 'Sold'
+                            ? AppLocalizations.of(context).shopSold
                             : canAfford
-                            ? 'Buy'
-                            : 'Not enough gold',
+                            ? AppLocalizations.of(context).shopBuy
+                            : AppLocalizations.of(context).shopNotEnoughGold,
                         style: GoogleFonts.epilogue(
                           color: canAfford ? Colors.white : Colors.white38,
                           fontWeight: FontWeight.bold,
@@ -363,7 +405,7 @@ class ShopPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: const Color.fromARGB(255, 41, 26, 20),
           appBar: TopBar(
-            title: 'THE MARKET',
+            title: AppLocalizations.of(context).shopTitle,
             textStyle: GoogleFonts.epilogue(
               color: const Color(0xFFE3D5B8),
               fontSize: 20,
@@ -432,7 +474,7 @@ class ShopPage extends StatelessWidget {
                             vertical: 12,
                           ),
                           child: Text(
-                            '"Choose wisely, traveler. My wares cost more than just gold..."',
+                            AppLocalizations.of(context).shopMerchantQuote,
                             style: GoogleFonts.epilogue(
                               color: Colors.white60,
                               fontSize: 16,
@@ -507,7 +549,7 @@ class ShopPage extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '${player.gold} Gold',
+                            AppLocalizations.of(context).shopGold(player.gold),
                             style: GoogleFonts.epilogue(
                               color: Colors.amber,
                               fontWeight: FontWeight.bold,
@@ -529,7 +571,7 @@ class ShopPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Merchant's Wares",
+                      AppLocalizations.of(context).shopMerchantWares,
                       style: GoogleFonts.epilogue(
                         color: const Color(0xFFE3D5B8),
                         fontSize: 20,
@@ -588,7 +630,9 @@ class ShopPage extends StatelessWidget {
                                         18,
                                       ),
                                       content: Text(
-                                        'Not enough gold!',
+                                        AppLocalizations.of(
+                                          context,
+                                        ).shopNotEnoughGold,
                                         style: GoogleFonts.epilogue(
                                           color: redText,
                                         ),

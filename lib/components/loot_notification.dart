@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/models/story_event.dart';
@@ -134,7 +135,7 @@ class _LootNotificationState extends State<LootNotification>
                 children: [
                   // Title
                   Text(
-                    'OBTAINED',
+                    AppLocalizations.of(context).lootObtained,
                     style: GoogleFonts.epilogue(
                       color: const Color(0xFFD4883A),
                       fontSize: 11,
@@ -164,7 +165,9 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.coins,
           iconColor: Colors.amber,
-          label: '+${effects.goldGained} Gold',
+          label: AppLocalizations.of(
+            context,
+          ).lootGoldGained(effects.goldGained),
           labelColor: Colors.amber,
         ),
       );
@@ -175,7 +178,7 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.starHalfStroke,
           iconColor: const Color(0xFF7FC8F8),
-          label: '+${effects.xpGained} XP',
+          label: AppLocalizations.of(context).lootXpGained(effects.xpGained),
           labelColor: const Color(0xFF7FC8F8),
         ),
       );
@@ -186,7 +189,7 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.heartPulse,
           iconColor: const Color(0xFF6FCF97),
-          label: '+${effects.heal} HP Restored',
+          label: AppLocalizations.of(context).lootHpRestored(effects.heal),
           labelColor: const Color(0xFF6FCF97),
         ),
       );
@@ -197,7 +200,9 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.droplet,
           iconColor: const Color(0xFF56CCF2),
-          label: '+${effects.manaRestored} Mana Restored',
+          label: AppLocalizations.of(
+            context,
+          ).lootManaRestored(effects.manaRestored),
           labelColor: const Color(0xFF56CCF2),
         ),
       );
@@ -208,7 +213,7 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.coins,
           iconColor: Colors.red.shade300,
-          label: '-${effects.goldLost} Gold',
+          label: AppLocalizations.of(context).lootGoldLost(effects.goldLost),
           labelColor: Colors.red.shade300,
         ),
       );
@@ -219,7 +224,7 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.heartCrack,
           iconColor: Colors.red.shade400,
-          label: '-${effects.damage} HP',
+          label: AppLocalizations.of(context).lootDamage(effects.damage),
           labelColor: Colors.red.shade400,
         ),
       );
@@ -230,8 +235,11 @@ class _LootNotificationState extends State<LootNotification>
         _lootRow(
           icon: FontAwesomeIcons.arrowUp,
           iconColor: const Color(0xFFFFD700),
-          label:
-              'Level Up!${effects.levelsGained > 1 ? ' (+${effects.levelsGained} levels)' : ''}',
+          label: effects.levelsGained > 1
+              ? AppLocalizations.of(
+                  context,
+                ).lootLevelUpMultiple(effects.levelsGained)
+              : AppLocalizations.of(context).lootLevelUp,
           labelColor: const Color(0xFFFFD700),
         ),
       );

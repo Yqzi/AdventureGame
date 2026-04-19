@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/models/skill_check.dart';
 
@@ -175,7 +176,7 @@ class _DiceRollNotificationState extends State<DiceRollNotification>
                 children: [
                   // Action type label.
                   Text(
-                    '${r.actionType.icon}  ${r.actionType.label.toUpperCase()}  CHECK',
+                    '${r.actionType.icon}  ${AppLocalizations.of(context).diceCheck(r.actionType.label.toUpperCase())}',
                     style: GoogleFonts.epilogue(
                       color: const Color(0xFFE3D5B8).withOpacity(0.7),
                       fontSize: 11,

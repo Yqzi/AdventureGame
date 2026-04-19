@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
 
@@ -56,19 +57,25 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'The Questborne must have a name.');
+      setState(
+        () => _error = AppLocalizations.of(context).nameDialogErrorEmpty,
+      );
       return;
     }
     if (name.length < 2) {
-      setState(() => _error = 'Too short. Even a wanderer has two letters.');
+      setState(
+        () => _error = AppLocalizations.of(context).nameDialogErrorShort,
+      );
       return;
     }
     if (name.length > 20) {
-      setState(() => _error = 'Keep it under 20 characters.');
+      setState(() => _error = AppLocalizations.of(context).nameDialogErrorLong);
       return;
     }
     if (name.toLowerCase() == 'adventurer') {
-      setState(() => _error = 'That name is not allowed');
+      setState(
+        () => _error = AppLocalizations.of(context).nameDialogErrorReserved,
+      );
       return;
     }
     Navigator.of(context).pop(name);
@@ -98,7 +105,7 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                   ),
                   const Spacer(),
                   Text(
-                    'Questborne',
+                    AppLocalizations.of(context).nameDialogAppTitle,
                     style: GoogleFonts.epilogue(
                       color: _accent,
                       fontSize: 14,
@@ -201,7 +208,7 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      'WHO ARE YOU?',
+                      AppLocalizations.of(context).nameDialogTitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.epilogue(
                         color: Colors.white,
@@ -221,7 +228,7 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      'Speak your name, and let it begin.',
+                      AppLocalizations.of(context).nameDialogSubtitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.epilogue(
                         color: _accent.withOpacity(0.75),
@@ -260,7 +267,9 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                             ),
                           ],
                           decoration: InputDecoration(
-                            hintText: 'Speak your name...',
+                            hintText: AppLocalizations.of(
+                              context,
+                            ).nameDialogHint,
                             hintStyle: GoogleFonts.epilogue(
                               color: Colors.white.withOpacity(0.15),
                               fontSize: 20,
@@ -341,7 +350,7 @@ class _CharacterNameDialogState extends State<CharacterNameDialog> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'CONTINUE',
+                      AppLocalizations.of(context).nameDialogContinue,
                       style: GoogleFonts.epilogue(
                         color: _accent,
                         fontSize: 17,

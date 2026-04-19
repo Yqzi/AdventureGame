@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/router.dart';
 
@@ -134,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen>
                 right: 0,
                 child: Center(
                   child: Text(
-                    'QUESTBORNE',
+                    AppLocalizations.of(context).appTitle,
                     style: GoogleFonts.cinzel(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 36,
@@ -158,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
                 right: 0,
                 child: Center(
                   child: Text(
-                    'POWERED BY AI STORY ENGINE',
+                    AppLocalizations.of(context).appTagline,
                     style: GoogleFonts.cinzel(
                       color: Colors.white.withValues(alpha: 0.35),
                       fontSize: 11,

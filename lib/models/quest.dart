@@ -76,13 +76,17 @@ class Quest {
 
   /// Convert to the Map<String, dynamic> that GameBloc expects.
   Map<String, dynamic> toQuestDetails() => {
+    'id': id,
     'title': title,
     'objective': objective,
     'aiObjective': aiObjective,
     'location': location,
     'description': description,
     'difficulty': difficulty.label,
+    'difficultyEnum': difficulty,
     'reward': rewardLabel,
+    'goldReward': goldReward,
+    'xpReward': xpReward,
     'keyNPCs': keyNPCs,
     'failureCondition': failureCondition,
     if (loreKeys.isNotEmpty) 'loreKeys': loreKeys,

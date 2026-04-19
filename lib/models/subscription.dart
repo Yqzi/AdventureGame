@@ -256,11 +256,11 @@ extension SubscriptionTierX on SubscriptionTier {
   List<String> get features {
     switch (this) {
       case SubscriptionTier.adventurer:
-        return ['$maxCredits credits', aiModelLabel];
+        return ['$maxCredits credits / month', aiModelLabel];
       case SubscriptionTier.champion:
-        return ['$maxCredits credits', aiModelLabel];
+        return ['$maxCredits credits / month', aiModelLabel];
       case SubscriptionTier.free:
-        return ['$maxCredits + ${dailyCredits}/day credits', aiModelLabel];
+        return ['$dailyCredits credits / day', aiModelLabel];
     }
   }
 

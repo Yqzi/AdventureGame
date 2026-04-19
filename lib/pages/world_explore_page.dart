@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
@@ -11,32 +12,23 @@ import 'package:Questborne/router.dart';
 class WorldExplorationPage extends StatelessWidget {
   const WorldExplorationPage({super.key});
 
-  static const List<Map<String, String>> _maps = [
+  static List<Map<String, String>> _maps(AppLocalizations l10n) => [
     {
-      'title': 'The Darkwood Forest',
+      'title': l10n.mapDarkwoodForest,
       'location': 'Forest',
-      'description':
-          'An ancient woodland shrouded in perpetual twilight. Twisted oaks '
-          'and gnarled roots hide forgotten paths, strange creatures, and '
-          'whispers of old magic between the moss-covered stones.',
+      'description': l10n.mapDarkwoodForestDesc,
       'image': 'assets/images/forest.png',
     },
     {
-      'title': 'The Sunken Caverns',
+      'title': l10n.mapSunkenCaverns,
       'location': 'Cave',
-      'description':
-          'A vast subterranean network of dripping tunnels and '
-          'glowing crystal chambers. The air is thick with the scent of damp '
-          'earth, and unknown things skitter just beyond the torchlight.',
+      'description': l10n.mapSunkenCavernsDesc,
       'image': 'assets/images/cave.png',
     },
     {
-      'title': 'The Ashen Ruins',
+      'title': l10n.mapAshenRuins,
       'location': 'Ruins',
-      'description':
-          'Crumbling remnants of a once-great civilization, half-swallowed '
-          'by sand and creeping vines. Collapsed archways lead to forgotten '
-          'vaults, and the ghosts of the old world linger in every shadow.',
+      'description': l10n.mapAshenRuinsDesc,
       'image': 'assets/images/ruins.png',
     },
   ];
@@ -175,8 +167,9 @@ class WorldExplorationPage extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'No set objective — explore freely and '
-                                      'see what awaits.',
+                                      AppLocalizations.of(
+                                        context,
+                                      ).expeditionFreeRoamDesc,
                                       style: GoogleFonts.epilogue(
                                         color: const Color(0xFF7A9F6A),
                                         fontSize: 13,
@@ -213,7 +206,9 @@ class WorldExplorationPage extends StatelessWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    'Enter Expedition',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).expeditionEnter,
                                     style: GoogleFonts.epilogue(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -241,7 +236,7 @@ class WorldExplorationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
-        title: 'Expedition',
+        title: AppLocalizations.of(context).expeditionTitle,
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,
@@ -275,7 +270,7 @@ class WorldExplorationPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  "Open Worlds",
+                  AppLocalizations.of(context).expeditionOpenWorlds,
                   style: GoogleFonts.epilogue(
                     color: const Color(0xFFE3D5B8),
                     fontSize: 22,
@@ -298,10 +293,10 @@ class WorldExplorationPage extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: _maps.length,
+                  itemCount: _maps(AppLocalizations.of(context)).length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final map = _maps[index];
+                    final map = _maps(AppLocalizations.of(context))[index];
                     return GestureDetector(
                       onTap: () => _showMapDetail(context, map),
                       child: _ExpeditionMapCard(map: map),
@@ -397,7 +392,7 @@ class _ExpeditionMapCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Free Roam',
+                          AppLocalizations.of(context).expeditionFreeRoam,
                           style: GoogleFonts.epilogue(
                             color: const Color(0xFF7A9F6A),
                             fontSize: 14,
@@ -416,7 +411,7 @@ class _ExpeditionMapCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Enter',
+                        AppLocalizations.of(context).expeditionEnterShort,
                         style: GoogleFonts.epilogue(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

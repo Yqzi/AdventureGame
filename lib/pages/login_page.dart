@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/router.dart';
@@ -85,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     // ── Sign-in buttons ──
                     _buildProviderButton(
-                      label: 'Continue with Google',
+                      label: AppLocalizations.of(context).loginGoogle,
                       icon: FontAwesomeIcons.google,
                       color: Colors.white,
                       textColor: Colors.black87,
@@ -96,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                     // Apple button — only shown on iOS / macOS
                     if (_auth.isAppleSignInAvailable) ...[
                       _buildProviderButton(
-                        label: 'Continue with Apple',
+                        label: AppLocalizations.of(context).loginApple,
                         icon: FontAwesomeIcons.apple,
                         color: Colors.white,
                         textColor: Colors.black87,
@@ -174,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildTitle() {
     return Text(
-      'ENTER THE\nREALM',
+      AppLocalizations.of(context).loginTitle,
       textAlign: TextAlign.center,
       style: GoogleFonts.epilogue(
         fontSize: 40,
@@ -192,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildSubtitle() {
     return Text(
-      'Choose how you wish to proceed',
+      AppLocalizations.of(context).loginSubtitle,
       textAlign: TextAlign.center,
       style: GoogleFonts.epilogue(
         fontSize: 14,

@@ -1,9 +1,12 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
 import 'package:Questborne/models/item.dart';
+import 'package:Questborne/utils/localized_enums.dart';
+import 'package:Questborne/utils/localized_items.dart';
 
 enum Rarity { common, rare, epic, mythic }
 
@@ -100,7 +103,10 @@ class ShopCardModel extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  item.rarity.label.toUpperCase(),
+                                  localizedRarity(
+                                    AppLocalizations.of(context),
+                                    item.rarity,
+                                  ).toUpperCase(),
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.epilogue(
                                     color: item.rarity.color,
@@ -121,7 +127,10 @@ class ShopCardModel extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  item.type.label,
+                                  localizedItemType(
+                                    AppLocalizations.of(context),
+                                    item.type,
+                                  ),
                                   style: GoogleFonts.epilogue(
                                     color: greyText,
                                     fontWeight: FontWeight.bold,
@@ -135,7 +144,10 @@ class ShopCardModel extends StatelessWidget {
                           const SizedBox(height: 4),
                           // Title
                           Text(
-                            item.name,
+                            localizedItemName(
+                              AppLocalizations.of(context),
+                              item.id,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.epilogue(
@@ -148,7 +160,19 @@ class ShopCardModel extends StatelessWidget {
                           // Stats – takes remaining space
                           Expanded(
                             child: Text(
-                              item.statSummary,
+                              localizedStatSummary(
+                                AppLocalizations.of(context),
+                                manaCost: item.manaCost,
+                                attack: item.attack,
+                                defense: item.defense,
+                                magic: item.magic,
+                                agility: item.agility,
+                                health: item.health,
+                                effect: localizedItemEffect(
+                                  AppLocalizations.of(context),
+                                  item.id,
+                                ),
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.epilogue(
@@ -174,7 +198,9 @@ class ShopCardModel extends StatelessWidget {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          'SOLD',
+                                          AppLocalizations.of(
+                                            context,
+                                          ).shopSoldLabel,
                                           style: GoogleFonts.epilogue(
                                             color: Colors.white38,
                                             fontWeight: FontWeight.bold,
@@ -207,7 +233,9 @@ class ShopCardModel extends StatelessWidget {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          item.priceLabel,
+                                          AppLocalizations.of(
+                                            context,
+                                          ).priceFormat(item.price),
                                           style: GoogleFonts.epilogue(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -259,7 +287,7 @@ class ShopCardModel extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'SOLD',
+                    AppLocalizations.of(context).shopSoldLabel,
                     style: GoogleFonts.epilogue(
                       color: Colors.white54,
                       fontWeight: FontWeight.bold,
@@ -518,7 +546,7 @@ class QuestCardModel extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                'ACCEPT QUEST',
+                                AppLocalizations.of(context).cardAcceptQuest,
                                 style: GoogleFonts.epilogue(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -624,7 +652,9 @@ class PinnedCard extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                'Difficulty: ',
+                                AppLocalizations.of(
+                                  context,
+                                ).cardDifficultyPrefix,
                                 style: GoogleFonts.epilogue(
                                   color: const Color(0xFF5D4037),
                                   fontSize: 14,
@@ -679,7 +709,9 @@ class PinnedCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'REWARD',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).cardRewardLabel,
                                     style: GoogleFonts.epilogue(
                                       color: const Color(0xFF8D6E63),
                                       fontSize: 12,
@@ -856,7 +888,7 @@ class SimpleQuestCard extends StatelessWidget {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Enter',
+                        AppLocalizations.of(context).cardEnter,
                         style: GoogleFonts.epilogue(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,

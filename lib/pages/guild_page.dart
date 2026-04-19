@@ -2,6 +2,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
@@ -14,6 +15,8 @@ import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/quest.dart';
 import 'package:Questborne/router.dart';
 import 'package:Questborne/services/game_session_repository.dart';
+import 'package:Questborne/utils/localized_enums.dart';
+import 'package:Questborne/utils/localized_quests.dart';
 
 class GuildPage extends StatefulWidget {
   const GuildPage({super.key});
@@ -89,7 +92,10 @@ class _GuildPageState extends State<GuildPage> {
                         children: [
                           // ── Title ──
                           Text(
-                            quest.title,
+                            localizedQuestTitle(
+                              AppLocalizations.of(context),
+                              quest.id,
+                            ),
                             style: GoogleFonts.epilogue(
                               color: const Color(0xFF3E2723),
                               fontSize: 24,
@@ -153,7 +159,9 @@ class _GuildPageState extends State<GuildPage> {
                               ),
                               const Spacer(),
                               Text(
-                                'LV ${quest.recommendedLevel}',
+                                AppLocalizations.of(
+                                  context,
+                                ).labelLevel(quest.recommendedLevel),
                                 style: GoogleFonts.epilogue(
                                   color: const Color(0xFF8D6E63),
                                   fontSize: 13,
@@ -166,7 +174,7 @@ class _GuildPageState extends State<GuildPage> {
 
                           // ── Description ──
                           Text(
-                            '"${quest.description}"',
+                            '"${localizedQuestDesc(AppLocalizations.of(context), quest.id)}"',
                             style: GoogleFonts.epilogue(
                               color: const Color(0xFF5D4037),
                               fontSize: 14,
@@ -177,12 +185,21 @@ class _GuildPageState extends State<GuildPage> {
                           const SizedBox(height: 14),
 
                           // ── Objective ──
-                          _detailRow('OBJECTIVE', quest.objective),
+                          _detailRow(
+                            AppLocalizations.of(context).guildObjective,
+                            localizedQuestObj(
+                              AppLocalizations.of(context),
+                              quest.id,
+                            ),
+                          ),
                           const SizedBox(height: 10),
 
                           // ── Key NPCs ──
                           if (quest.keyNPCs.isNotEmpty) ...[
-                            _detailRow('KEY FIGURES', quest.keyNPCs.join(', ')),
+                            _detailRow(
+                              AppLocalizations.of(context).guildKeyFigures,
+                              quest.keyNPCs.join(', '),
+                            ),
                             const SizedBox(height: 10),
                           ],
 
@@ -205,7 +222,7 @@ class _GuildPageState extends State<GuildPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'REWARD',
+                                    AppLocalizations.of(context).guildReward,
                                     style: GoogleFonts.epilogue(
                                       color: const Color(0xFF8D6E63),
                                       fontSize: 12,
@@ -213,7 +230,10 @@ class _GuildPageState extends State<GuildPage> {
                                     ),
                                   ),
                                   Text(
-                                    quest.rewardLabel,
+                                    AppLocalizations.of(context).rewardFormat(
+                                      quest.goldReward,
+                                      quest.xpReward,
+                                    ),
                                     style: GoogleFonts.epilogue(
                                       color: const Color(0xFFBD0F2C),
                                       fontSize: 16,
@@ -253,7 +273,11 @@ class _GuildPageState extends State<GuildPage> {
                                   color: Color(0xFFE3D5B8),
                                 ),
                                 label: Text(
-                                  hasSession ? "Resume" : "Accept Quest",
+                                  hasSession
+                                      ? AppLocalizations.of(context).guildResume
+                                      : AppLocalizations.of(
+                                          context,
+                                        ).guildAcceptQuest,
                                   style: GoogleFonts.epilogue(
                                     color: const Color(0xFFE3D5B8),
                                     fontWeight: FontWeight.bold,
@@ -348,8 +372,8 @@ class _GuildPageState extends State<GuildPage> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 41, 26, 20),
       appBar: TopBar(
-        title: 'The Notice Board',
-        desc: 'Quest Progression',
+        title: AppLocalizations.of(context).guildTitle,
+        desc: AppLocalizations.of(context).guildSubtitle,
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,
@@ -414,7 +438,7 @@ class _GuildPageState extends State<GuildPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'LV ${player.level}',
+                          AppLocalizations.of(context).labelLevel(player.level),
                           style: GoogleFonts.epilogue(
                             color: const Color(0xFFE3D5B8),
                             fontWeight: FontWeight.bold,
@@ -446,7 +470,7 @@ class _GuildPageState extends State<GuildPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '${player.gold} Gold',
+                          '${player.gold} ${AppLocalizations.of(context).labelGold}',
                           style: GoogleFonts.epilogue(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,
@@ -491,7 +515,7 @@ class _GuildPageState extends State<GuildPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                "Main Quests",
+                AppLocalizations.of(context).guildMainQuests,
                 style: GoogleFonts.epilogue(
                   color: const Color(0xFFE3D5B8),
                   fontSize: 22,
@@ -540,20 +564,31 @@ class _GuildPageState extends State<GuildPage> {
                       child: Opacity(
                         opacity: isCompleted ? 0.5 : 1.0,
                         child: PinnedCard(
-                          title: quest.title,
+                          title: localizedQuestTitle(
+                            AppLocalizations.of(context),
+                            quest.id,
+                          ),
                           risk: isCompleted
-                              ? 'COMPLETED'
-                              : quest.difficulty.label,
-                          description: quest.description,
-                          reward: quest.rewardLabel,
-                          transformationAngle: index % 2 != 0 ? -0.02 : 0.02,
+                              ? AppLocalizations.of(context).guildCompleted
+                              : localizedDifficulty(
+                                  AppLocalizations.of(context),
+                                  quest.difficulty,
+                                ),
+                          description: localizedQuestDesc(
+                            AppLocalizations.of(context),
+                            quest.id,
+                          ),
+                          reward: AppLocalizations.of(
+                            context,
+                          ).rewardFormat(quest.goldReward, quest.xpReward),
+                          transformationAngle: 0,
                           image:
                               'assets/images/${quest.location.toLowerCase()}.png',
                           actionLabel: isCompleted
-                              ? 'Done'
+                              ? AppLocalizations.of(context).guildDone
                               : hasSession
-                              ? 'Resume'
-                              : 'Investigate',
+                              ? AppLocalizations.of(context).guildResume
+                              : AppLocalizations.of(context).cardInvestigate,
                           actionIcon: isCompleted
                               ? Icons.check_circle
                               : hasSession
@@ -620,7 +655,9 @@ class _GuildPageState extends State<GuildPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "SIDE BOUNTIES",
+                                  AppLocalizations.of(
+                                    context,
+                                  ).guildSideBounties,
                                   style: GoogleFonts.epilogue(
                                     color: const Color(0xFF8D6E63),
                                     fontSize: 12,
@@ -656,14 +693,27 @@ class _GuildPageState extends State<GuildPage> {
                     return GestureDetector(
                       onTap: () => _showQuestDetail(context, quest),
                       child: PinnedCard(
-                        title: quest.title,
-                        risk: quest.difficulty.label,
-                        description: quest.description,
-                        reward: quest.rewardLabel,
+                        title: localizedQuestTitle(
+                          AppLocalizations.of(context),
+                          quest.id,
+                        ),
+                        risk: localizedDifficulty(
+                          AppLocalizations.of(context),
+                          quest.difficulty,
+                        ),
+                        description: localizedQuestDesc(
+                          AppLocalizations.of(context),
+                          quest.id,
+                        ),
+                        reward: AppLocalizations.of(
+                          context,
+                        ).rewardFormat(quest.goldReward, quest.xpReward),
                         transformationAngle: 0,
                         image:
                             'assets/images/${quest.location.toLowerCase()}.png',
-                        actionLabel: hasSession ? 'Resume' : 'Investigate',
+                        actionLabel: hasSession
+                            ? AppLocalizations.of(context).guildResume
+                            : AppLocalizations.of(context).cardInvestigate,
                         actionIcon: hasSession
                             ? Icons.play_arrow
                             : Icons.visibility,

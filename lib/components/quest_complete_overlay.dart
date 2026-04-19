@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
@@ -112,7 +113,7 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
                           Transform.translate(
                             offset: Offset(0, _titleSlide.value),
                             child: Text(
-                              'QUEST COMPLETE',
+                              AppLocalizations.of(context).questCompleteTitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.cinzelDecorative(
                                 fontSize: 28,
@@ -147,7 +148,7 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
 
                           // Subtitle
                           Text(
-                            'Your tale has been written.',
+                            AppLocalizations.of(context).questCompleteSubtitle,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.crimsonPro(
                               fontSize: 14,
@@ -161,7 +162,7 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
                           // ── Reward summary ──
                           if (_hasAnyReward) ...[
                             Text(
-                              'REWARDS',
+                              AppLocalizations.of(context).questCompleteRewards,
                               style: GoogleFonts.cinzel(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -190,7 +191,9 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
                                     _rewardRow(
                                       FontAwesomeIcons.coins,
                                       Colors.amber,
-                                      '${widget.totalGold} Gold',
+                                      AppLocalizations.of(
+                                        context,
+                                      ).questCompleteGold(widget.totalGold),
                                     ),
                                   if (widget.totalXp > 0) ...[
                                     if (widget.totalGold > 0)
@@ -198,7 +201,9 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
                                     _rewardRow(
                                       FontAwesomeIcons.star,
                                       const Color(0xFF7EB5F5),
-                                      '${widget.totalXp} XP',
+                                      AppLocalizations.of(
+                                        context,
+                                      ).questCompleteXp(widget.totalXp),
                                     ),
                                   ],
                                   for (final item in widget.itemsGained) ...[
@@ -297,7 +302,7 @@ class _QuestCompleteOverlayState extends State<QuestCompleteOverlay>
           color: const Color(0xFFD4A843).withAlpha(20),
         ),
         child: Text(
-          'RETURN TO GUILD',
+          AppLocalizations.of(context).questCompleteReturn,
           style: GoogleFonts.cinzel(
             fontSize: 14,
             fontWeight: FontWeight.w700,

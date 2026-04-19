@@ -1,6 +1,7 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
@@ -12,6 +13,8 @@ import 'package:Questborne/components/experience_bar.dart';
 import 'package:Questborne/components/containers.dart';
 import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/item.dart';
+import 'package:Questborne/utils/localized_enums.dart';
+import 'package:Questborne/utils/localized_items.dart';
 
 class InventoryPage extends StatelessWidget {
   const InventoryPage({super.key});
@@ -21,7 +24,7 @@ class InventoryPage extends StatelessWidget {
     return Scaffold(
       appBar: TopBar(
         title: context.read<GameBloc>().player.name.toUpperCase(),
-        desc: 'INVENTORY',
+        desc: AppLocalizations.of(context).inventoryTitle,
         textStyle: GoogleFonts.epilogue(
           color: const Color(0xFFE3D5B8),
           fontSize: 20,
@@ -79,35 +82,45 @@ class InventoryPage extends StatelessWidget {
                           children: [
                             _EquippedSlotTile(
                               icon: FontAwesomeIcons.bolt,
-                              slotLabel: 'WEAPON',
+                              slotLabel: AppLocalizations.of(
+                                context,
+                              ).itemTypeWeapon,
                               item: equipment.weapon,
                               slotType: ItemType.weapon,
                             ),
                             const SizedBox(height: 14),
                             _EquippedSlotTile(
                               icon: FontAwesomeIcons.shield,
-                              slotLabel: 'ARMOR',
+                              slotLabel: AppLocalizations.of(
+                                context,
+                              ).itemTypeArmor,
                               item: equipment.armor,
                               slotType: ItemType.armor,
                             ),
                             const SizedBox(height: 14),
                             _EquippedSlotTile(
                               icon: FontAwesomeIcons.ring,
-                              slotLabel: 'ACCESSORY',
+                              slotLabel: AppLocalizations.of(
+                                context,
+                              ).itemTypeAccessory,
                               item: equipment.accessory,
                               slotType: ItemType.accessory,
                             ),
                             const SizedBox(height: 14),
                             _EquippedSlotTile(
                               icon: FontAwesomeIcons.ankh,
-                              slotLabel: 'RELIC',
+                              slotLabel: AppLocalizations.of(
+                                context,
+                              ).itemTypeRelic,
                               item: equipment.relic,
                               slotType: ItemType.relic,
                             ),
                             const SizedBox(height: 14),
                             _EquippedSlotTile(
                               icon: FontAwesomeIcons.wandMagicSparkles,
-                              slotLabel: 'SPELL',
+                              slotLabel: AppLocalizations.of(
+                                context,
+                              ).itemTypeSpell,
                               item: equipment.spell,
                               slotType: ItemType.spell,
                             ),
@@ -139,7 +152,9 @@ class InventoryPage extends StatelessWidget {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    'UNEQUIPPED',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).inventoryUnequipped,
                                     style: GoogleFonts.epilogue(
                                       color: const Color.fromARGB(
                                         230,
@@ -378,7 +393,7 @@ class _InventoryItemCell extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    item.name,
+                    localizedItemName(AppLocalizations.of(context), item.id),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -390,7 +405,7 @@ class _InventoryItemCell extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    item.rarity.label,
+                    localizedRarity(AppLocalizations.of(context), item.rarity),
                     style: GoogleFonts.epilogue(
                       color: item.rarity.color.withAlpha(160),
                       fontSize: 8,
@@ -477,7 +492,7 @@ class _ItemDetailSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.name,
+                      localizedItemName(AppLocalizations.of(context), item.id),
                       style: GoogleFonts.epilogue(
                         color: item.rarity.color,
                         fontWeight: FontWeight.bold,
@@ -485,7 +500,7 @@ class _ItemDetailSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${item.rarity.label}  ·  ${item.type.label}  ·  Lv ${item.level}',
+                      '${localizedRarity(AppLocalizations.of(context), item.rarity)}  ·  ${localizedItemType(AppLocalizations.of(context), item.type)}  ·  ${AppLocalizations.of(context).labelLevel(item.level)}',
                       style: GoogleFonts.epilogue(
                         color: Colors.white54,
                         fontSize: 11,
@@ -501,7 +516,7 @@ class _ItemDetailSheet extends StatelessWidget {
 
           // ── Description ──
           Text(
-            item.description,
+            localizedItemDesc(AppLocalizations.of(context), item.id),
             style: GoogleFonts.epilogue(
               color: Colors.white70,
               fontSize: 12,
@@ -513,7 +528,19 @@ class _ItemDetailSheet extends StatelessWidget {
 
           // ── Stat summary ──
           Text(
-            item.statSummary,
+            localizedStatSummary(
+              AppLocalizations.of(context),
+              manaCost: item.manaCost,
+              attack: item.attack,
+              defense: item.defense,
+              magic: item.magic,
+              agility: item.agility,
+              health: item.health,
+              effect: localizedItemEffect(
+                AppLocalizations.of(context),
+                item.id,
+              ),
+            ),
             style: GoogleFonts.epilogue(
               color: const Color(0xFFE3D5B8),
               fontSize: 12,
@@ -538,7 +565,9 @@ class _ItemDetailSheet extends StatelessWidget {
                 ),
               ),
               child: Text(
-                isEquipped ? 'UNEQUIP' : 'EQUIP',
+                isEquipped
+                    ? AppLocalizations.of(context).unequip
+                    : AppLocalizations.of(context).equip,
                 style: GoogleFonts.epilogue(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,

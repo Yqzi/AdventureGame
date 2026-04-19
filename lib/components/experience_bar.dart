@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/models/player.dart';
 
@@ -22,7 +23,7 @@ class ExperienceBar extends StatelessWidget {
           Row(
             children: [
               Text(
-                'lvl ${player.level}',
+                AppLocalizations.of(context).levelPrefix(player.level),
                 style: GoogleFonts.epilogue(
                   color: const Color(0xFF8D6E63),
                   fontSize: 11,

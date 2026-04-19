@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
@@ -29,10 +30,22 @@ class CustomBottomBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(4, (index) {
           final List<BottomBarItem> items = [
-            BottomBarItem(icon: Icons.public, label: 'World'),
-            BottomBarItem(icon: Icons.bookmark_add_rounded, label: 'Quest'),
-            BottomBarItem(icon: Icons.store, label: 'Market'),
-            BottomBarItem(icon: FontAwesomeIcons.shieldHeart, label: 'Hero'),
+            BottomBarItem(
+              icon: Icons.public,
+              label: AppLocalizations.of(context).navWorld,
+            ),
+            BottomBarItem(
+              icon: Icons.bookmark_add_rounded,
+              label: AppLocalizations.of(context).navQuest,
+            ),
+            BottomBarItem(
+              icon: Icons.store,
+              label: AppLocalizations.of(context).navMarket,
+            ),
+            BottomBarItem(
+              icon: FontAwesomeIcons.shieldHeart,
+              label: AppLocalizations.of(context).navHero,
+            ),
           ];
           final selected = index == currentIndex;
           final item = items[index];

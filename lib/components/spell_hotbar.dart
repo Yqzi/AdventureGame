@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/components/cards.dart';
 import 'package:Questborne/models/item.dart';
@@ -78,7 +79,9 @@ class SpellHotbar extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${spell.manaCost} MP',
+                        AppLocalizations.of(
+                          context,
+                        ).spellManaCost(spell.manaCost),
                         style: GoogleFonts.epilogue(
                           color: color.withOpacity(0.6),
                           fontSize: 10,

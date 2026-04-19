@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -199,7 +200,7 @@ class _StartPageState extends State<StartPage> {
         SizedBox(
           width: double.infinity,
           child: customOutlinedButton(
-            title: 'ENTER',
+            title: AppLocalizations.of(context).startEnter,
             color: redText,
             glow: true,
             letterSpacing: 1,
@@ -214,7 +215,7 @@ class _StartPageState extends State<StartPage> {
           children: [
             Expanded(
               child: customOutlinedButton(
-                title: 'Premium',
+                title: AppLocalizations.of(context).startPremium,
                 icon: Icon(Icons.diamond_outlined, color: Colors.white),
                 glow: true,
                 letterSpacing: 1,
@@ -229,7 +230,7 @@ class _StartPageState extends State<StartPage> {
             ),
             Expanded(
               child: customOutlinedButton(
-                title: 'SETTINGS',
+                title: AppLocalizations.of(context).startSettings,
                 icon: Icon(Icons.settings, color: Colors.white),
                 glow: true,
                 letterSpacing: 1,
@@ -243,7 +244,7 @@ class _StartPageState extends State<StartPage> {
         ),
         SizedBox(height: 24),
         Text(
-          "Version 0.0.1 • Shadow-Crest Protocol",
+          AppLocalizations.of(context).startVersion,
           style: GoogleFonts.epilogue(
             color: Colors.white60,
             fontSize: 11,

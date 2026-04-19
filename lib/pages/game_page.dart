@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/blocs/app/app_bloc.dart';
 import 'package:Questborne/blocs/app/app_event.dart';
@@ -23,6 +24,9 @@ import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/skill_check.dart';
 import 'package:Questborne/models/story_event.dart';
 import 'package:Questborne/models/game_session.dart';
+import 'package:Questborne/models/quest.dart';
+import 'package:Questborne/utils/localized_enums.dart';
+import 'package:Questborne/utils/localized_quests.dart';
 import 'package:Questborne/services/game_session_repository.dart';
 import 'package:uuid/uuid.dart';
 
@@ -294,7 +298,12 @@ class _GamePageState extends State<GamePage> {
 
               // Title
               Text(
-                d['title'] ?? '',
+                d['id'] != null
+                    ? localizedQuestTitle(
+                        AppLocalizations.of(context),
+                        d['id'] as String,
+                      )
+                    : (d['title'] ?? ''),
                 style: GoogleFonts.cinzelDecorative(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -303,7 +312,12 @@ class _GamePageState extends State<GamePage> {
               ),
               const SizedBox(height: 4),
               Text(
-                d['difficulty'] ?? '',
+                d['difficultyEnum'] != null
+                    ? localizedDifficulty(
+                        AppLocalizations.of(context),
+                        d['difficultyEnum'] as QuestDifficulty,
+                      )
+                    : (d['difficulty'] ?? ''),
                 style: GoogleFonts.crimsonPro(
                   fontSize: 13,
                   color: Colors.redAccent.withAlpha(180),
@@ -316,7 +330,12 @@ class _GamePageState extends State<GamePage> {
               // Description
               if ((d['description'] as String?)?.isNotEmpty == true) ...[
                 Text(
-                  d['description'],
+                  d['id'] != null
+                      ? localizedQuestDesc(
+                          AppLocalizations.of(context),
+                          d['id'] as String,
+                        )
+                      : d['description'],
                   style: GoogleFonts.crimsonPro(
                     fontSize: 15,
                     color: const Color(0xFFE3D5B8).withAlpha(200),
@@ -329,28 +348,42 @@ class _GamePageState extends State<GamePage> {
               // Objective
               _detailRow(
                 FontAwesomeIcons.bullseye,
-                'Objective',
-                d['objective'] ?? '',
+                AppLocalizations.of(context).labelObjective,
+                d['id'] != null
+                    ? localizedQuestObj(
+                        AppLocalizations.of(context),
+                        d['id'] as String,
+                      )
+                    : (d['objective'] ?? ''),
               ),
               const SizedBox(height: 10),
 
               // Location
               _detailRow(
                 FontAwesomeIcons.locationDot,
-                'Location',
+                AppLocalizations.of(context).labelLocation,
                 d['location'] ?? '',
               ),
               const SizedBox(height: 10),
 
               // Reward
-              _detailRow(FontAwesomeIcons.coins, 'Reward', d['reward'] ?? ''),
+              _detailRow(
+                FontAwesomeIcons.coins,
+                AppLocalizations.of(context).labelReward,
+                d['goldReward'] != null && d['xpReward'] != null
+                    ? AppLocalizations.of(context).rewardFormat(
+                        d['goldReward'] as int,
+                        d['xpReward'] as int,
+                      )
+                    : (d['reward'] ?? ''),
+              ),
 
               // Key NPCs
               if (npcs.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 _detailRow(
                   FontAwesomeIcons.userGroup,
-                  'Key Figures',
+                  AppLocalizations.of(context).labelKeyFigures,
                   npcs.join(', '),
                 ),
               ],
@@ -497,7 +530,12 @@ class _GamePageState extends State<GamePage> {
                               child: GestureDetector(
                                 onTap: () => _showQuestDetails(context),
                                 child: Text(
-                                  widget.details['title'],
+                                  widget.details['id'] != null
+                                      ? localizedQuestTitle(
+                                          AppLocalizations.of(context),
+                                          widget.details['id'] as String,
+                                        )
+                                      : widget.details['title'],
                                   style: GoogleFonts.epilogue(
                                     color: const Color(0xFFE3D5B8),
                                     fontWeight: FontWeight.bold,
@@ -840,8 +878,8 @@ class _GamePageState extends State<GamePage> {
                                           _questCompleted = true;
                                         });
                                       },
-                                      child: const Text(
-                                        '⚔  QUEST COMPLETE  ⚔',
+                                      child: Text(
+                                        '⚔  ${AppLocalizations.of(context).questCompleteTitle}  ⚔',
                                         style: TextStyle(
                                           fontFamily: 'Georgia',
                                           fontSize: 16,
@@ -883,8 +921,8 @@ class _GamePageState extends State<GamePage> {
                                           _questFailed = true;
                                         });
                                       },
-                                      child: const Text(
-                                        '☠  QUEST FAILED  ☠',
+                                      child: Text(
+                                        '☠  ${AppLocalizations.of(context).questFailedTitle}  ☠',
                                         style: TextStyle(
                                           fontFamily: 'Georgia',
                                           fontSize: 16,
@@ -1032,7 +1070,12 @@ class _GamePageState extends State<GamePage> {
             // ── Quest complete overlay ──
             if (_questCompleted)
               QuestCompleteOverlay(
-                questTitle: widget.details['title'] ?? 'Quest',
+                questTitle: widget.details['id'] != null
+                    ? localizedQuestTitle(
+                        AppLocalizations.of(context),
+                        widget.details['id'] as String,
+                      )
+                    : (widget.details['title'] ?? 'Quest'),
                 totalGold: _totalGold,
                 totalXp: _totalXp,
                 itemsGained: List.unmodifiable(_itemsGained),
@@ -1053,7 +1096,12 @@ class _GamePageState extends State<GamePage> {
             // ── Quest failed overlay ──
             if (_questFailed)
               QuestFailedOverlay(
-                questTitle: widget.details['title'] ?? 'Quest',
+                questTitle: widget.details['id'] != null
+                    ? localizedQuestTitle(
+                        AppLocalizations.of(context),
+                        widget.details['id'] as String,
+                      )
+                    : (widget.details['title'] ?? 'Quest'),
                 onReturnToGuild: () {
                   // Penalise: reset completed quests in the current set.
                   if (widget.questId != null) {

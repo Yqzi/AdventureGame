@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:Questborne/colors.dart';
@@ -116,7 +117,7 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
                           Transform.translate(
                             offset: Offset(0, _titleSlide.value),
                             child: Text(
-                              'QUEST FAILED',
+                              AppLocalizations.of(context).questFailedTitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.cinzelDecorative(
                                 fontSize: 28,
@@ -151,7 +152,7 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
 
                           // Subtitle
                           Text(
-                            'The darkness claims another soul.',
+                            AppLocalizations.of(context).questFailedSubtitle,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.crimsonPro(
                               fontSize: 14,
@@ -164,7 +165,7 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
 
                           // Progression reset warning
                           Text(
-                            'Your quest set progress has been reset.',
+                            AppLocalizations.of(context).questFailedReset,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.crimsonPro(
                               fontSize: 13,
@@ -217,7 +218,7 @@ class _QuestFailedOverlayState extends State<QuestFailedOverlay>
           color: _bloodRed.withAlpha(20),
         ),
         child: Text(
-          'RETURN TO GUILD',
+          AppLocalizations.of(context).questFailedReturn,
           style: GoogleFonts.cinzel(
             fontSize: 14,
             fontWeight: FontWeight.w700,

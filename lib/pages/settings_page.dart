@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,7 @@ import 'package:Questborne/services/settings_service.dart';
 import 'package:Questborne/models/subscription.dart';
 import 'package:Questborne/services/purchase_service.dart';
 import 'package:Questborne/services/subscription_service.dart';
+import 'package:Questborne/main.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -60,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: _sectionBg,
       appBar: TopBar(
-        title: 'SETTINGS',
+        title: AppLocalizations.of(context).settingsTitle,
         textStyle: GoogleFonts.epilogue(
           color: _creamText,
           fontSize: 20,
@@ -78,11 +80,11 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
           // ── Profile ──────────────────────────────────────
-          _sectionHeader('PROFILE'),
+          _sectionHeader(AppLocalizations.of(context).settingsProfile),
           const SizedBox(height: 8),
           _settingsTile(
             icon: Icons.person_outline,
-            title: 'Character Name',
+            title: AppLocalizations.of(context).settingsCharacterName,
             subtitle: player.name,
             onTap: () => _showChangeNameDialog(player.name),
           ),
@@ -90,7 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _divider(),
             _settingsTile(
               icon: Icons.email_outlined,
-              title: 'Email',
+              title: AppLocalizations.of(context).settingsEmail,
               subtitle: _auth.currentUser!.email!,
               onTap: () {},
             ),
@@ -99,10 +101,10 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
 
           // ── AI Safety ────────────────────────────────────
-          _sectionHeader('AI SAFETY'),
+          _sectionHeader(AppLocalizations.of(context).settingsAiSafety),
           const SizedBox(height: 8),
           _safetyTile(
-            label: 'Hate Speech',
+            label: AppLocalizations.of(context).settingsHateSpeech,
             level: _settings.hateSpeechLevel,
             onChanged: (v) {
               setState(() => _settings.hateSpeechLevel = v);
@@ -111,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _divider(),
           _safetyTile(
-            label: 'Harassment',
+            label: AppLocalizations.of(context).settingsHarassment,
             level: _settings.harassmentLevel,
             onChanged: (v) {
               setState(() => _settings.harassmentLevel = v);
@@ -120,7 +122,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           _divider(),
           _safetyTile(
-            label: 'Dangerous Content',
+            label: AppLocalizations.of(context).settingsDangerousContent,
             level: _settings.dangerousContentLevel,
             onChanged: (v) {
               setState(() => _settings.dangerousContentLevel = v);
@@ -131,33 +133,43 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
 
           // ── General ──────────────────────────────────────
-          _sectionHeader('GENERAL'),
+          _sectionHeader(AppLocalizations.of(context).settingsGeneral),
           const SizedBox(height: 8),
           _divider(),
           _settingsTile(
             icon: Icons.workspace_premium_outlined,
-            title: 'Premium',
-            subtitle: 'View subscription options',
+            title: AppLocalizations.of(context).settingsPremium,
+            subtitle: AppLocalizations.of(context).settingsPremiumSubtitle,
             onTap: () => Navigator.pushNamed(context, AppRouter.subscription),
           ),
           _divider(),
           _settingsTile(
             icon: Icons.restore,
-            title: 'Restore Subscription',
-            subtitle: 'Already subscribed? Restore it here',
+            title: AppLocalizations.of(context).settingsRestoreSubscription,
+            subtitle: AppLocalizations.of(context).settingsRestoreSubtitle,
             onTap: () => _restoreSubscription(),
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.language,
+            title: AppLocalizations.of(context).settingsLanguage,
+            subtitle: AppLocalizations.of(context).settingsLanguageSubtitle,
+            onTap: () => _showLanguagePicker(),
           ),
 
           const SizedBox(height: 24),
 
           // ── Danger zone ──────────────────────────────────
-          _sectionHeader('ACCOUNT', color: redText),
+          _sectionHeader(
+            AppLocalizations.of(context).settingsAccount,
+            color: redText,
+          ),
           const SizedBox(height: 8),
 
           _settingsTile(
             icon: Icons.delete_forever,
-            title: 'Delete Account',
-            subtitle: 'Permanently delete your account and all data',
+            title: AppLocalizations.of(context).settingsDeleteAccount,
+            subtitle: AppLocalizations.of(context).settingsDeleteSubtitle,
             onTap: () => _confirmDeleteAccount(),
             iconColor: redText,
             titleColor: redText,
@@ -166,12 +178,12 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
 
           // ── Legal ────────────────────────────────────────
-          _sectionHeader('LEGAL'),
+          _sectionHeader(AppLocalizations.of(context).settingsLegal),
           const SizedBox(height: 8),
           _settingsTile(
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            subtitle: 'How we handle your data',
+            title: AppLocalizations.of(context).settingsPrivacyPolicy,
+            subtitle: AppLocalizations.of(context).settingsPrivacySubtitle,
             onTap: () => launchUrl(
               Uri.parse(
                 'https://yqzi.github.io/AdventureGame/privacy-policy.html',
@@ -182,8 +194,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _divider(),
           _settingsTile(
             icon: Icons.description_outlined,
-            title: 'Terms of Service',
-            subtitle: 'Rules and conditions of use',
+            title: AppLocalizations.of(context).settingsTermsOfService,
+            subtitle: AppLocalizations.of(context).settingsTermsSubtitle,
             onTap: () => launchUrl(
               Uri.parse('https://yqzi.github.io/AdventureGame/terms.html'),
               mode: LaunchMode.externalApplication,
@@ -361,7 +373,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'CHANGE NAME',
+                      AppLocalizations.of(context).settingsChangeName,
                       style: GoogleFonts.epilogue(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -371,7 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a new name for your character',
+                      AppLocalizations.of(context).settingsChangeNameDesc,
                       style: _sublabel(),
                     ),
                     const SizedBox(height: 20),
@@ -412,7 +424,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             width: 1.5,
                           ),
                         ),
-                        hintText: 'Enter new name',
+                        hintText: AppLocalizations.of(
+                          context,
+                        ).settingsEnterNewName,
                         hintStyle: GoogleFonts.epilogue(
                           color: Colors.white24,
                           fontSize: 18,
@@ -434,7 +448,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                               child: Text(
-                                'Cancel',
+                                AppLocalizations.of(context).buttonCancel,
                                 style: _label(size: 15, color: Colors.white54),
                               ),
                             ),
@@ -452,7 +466,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                     SnackBar(
                                       backgroundColor: _cardColor,
                                       content: Text(
-                                        '"Adventurer" is reserved — pick something unique!',
+                                        AppLocalizations.of(
+                                          context,
+                                        ).settingsNameReserved,
                                         style: GoogleFonts.epilogue(
                                           color: Colors.white,
                                         ),
@@ -472,7 +488,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 elevation: 0,
                               ),
                               child: Text(
-                                'Save',
+                                AppLocalizations.of(context).buttonSave,
                                 style: _label(size: 15, color: Colors.white),
                               ),
                             ),
@@ -497,7 +513,7 @@ class _SettingsPageState extends State<SettingsPage> {
           SnackBar(
             backgroundColor: _cardColor,
             content: Text(
-              'Name changed to $newName',
+              AppLocalizations.of(context).settingsNameChanged(newName),
               style: GoogleFonts.epilogue(color: Colors.white),
             ),
           ),
@@ -542,7 +558,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text('Choose a filtering level', style: _sublabel()),
+                  child: Text(
+                    AppLocalizations.of(context).settingsChooseFilterLevel,
+                    style: _sublabel(),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 for (int i = 1; i <= 3; i++)
@@ -587,6 +606,66 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  // ── Language picker ───────────────────────────────────────
+
+  void _showLanguagePicker() {
+    final l10n = AppLocalizations.of(context);
+    final settings = SettingsService();
+    final currentLocale = settings.locale;
+
+    final options = <({Locale? locale, String label})>[
+      (locale: null, label: l10n.settingsLanguageSystem),
+      (locale: const Locale('en'), label: 'English'),
+      (locale: const Locale('fr'), label: 'Français'),
+      (locale: const Locale('ru'), label: 'Русский'),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                l10n.settingsLanguage,
+                style: GoogleFonts.epilogue(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final opt in options)
+                ListTile(
+                  title: Text(
+                    opt.label,
+                    style: GoogleFonts.epilogue(color: Colors.white),
+                  ),
+                  trailing:
+                      (opt.locale == currentLocale ||
+                          (opt.locale == null && currentLocale == null))
+                      ? const Icon(Icons.check, color: Colors.white)
+                      : null,
+                  onTap: () {
+                    settings.locale = opt.locale;
+                    localeNotifier.value = opt.locale;
+                    Navigator.pop(ctx);
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   // ── Restore subscription ─────────────────────────────────
 
   Future<void> _restoreSubscription() async {
@@ -594,7 +673,7 @@ class _SettingsPageState extends State<SettingsPage> {
       SnackBar(
         backgroundColor: _cardColor,
         content: Text(
-          'Checking for existing subscription...',
+          AppLocalizations.of(context).settingsCheckingSubscription,
           style: GoogleFonts.epilogue(color: Colors.white),
         ),
       ),
@@ -620,8 +699,10 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: _cardColor,
           content: Text(
             isActive
-                ? 'Subscription restored! (${sub.effectiveTier.label})'
-                : 'No active subscription found.',
+                ? AppLocalizations.of(
+                    context,
+                  ).settingsSubscriptionRestored(sub.effectiveTier.label)
+                : AppLocalizations.of(context).settingsNoSubscription,
             style: GoogleFonts.epilogue(color: Colors.white),
           ),
         ),
@@ -632,7 +713,7 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: _cardColor,
           content: Text(
-            'Could not restore subscription. Try again later.',
+            AppLocalizations.of(context).settingsRestoreFailed,
             style: GoogleFonts.epilogue(color: Colors.white),
           ),
         ),
@@ -644,12 +725,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _confirmDeleteAccount() async {
     final confirmed = await _showConfirmDialog(
-      title: 'Delete Account',
-      message:
-          'This will permanently delete your account and all saved data. '
-          'Any active subscription will also be cancelled. '
-          'This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: AppLocalizations.of(context).settingsDeleteTitle,
+      message: AppLocalizations.of(context).settingsDeleteMessage,
+      confirmLabel: AppLocalizations.of(context).settingsDeleteConfirm,
     );
     if (confirmed != true || !mounted) return;
 
@@ -732,7 +810,7 @@ class _SettingsPageState extends State<SettingsPage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context).buttonCancel,
               style: _label(size: 14, color: Colors.white54),
             ),
           ),

@@ -6,11 +6,18 @@ import 'package:Questborne/services/settings_service.dart';
 import 'package:Questborne/services/purchase_service.dart';
 import 'package:Questborne/services/subscription_service.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:Questborne/l10n/app_localizations.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Questborne/services/ai_service.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Global notifier so any widget can trigger a locale change at runtime.
+final ValueNotifier<Locale?> localeNotifier = ValueNotifier<Locale?>(
+  SettingsService().locale,
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,14 +43,29 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => GameBloc(aiService: AIService())),
       ],
-      child: MaterialApp(
-        title: 'Questborne',
-        initialRoute: AppRouter.splash,
-        onGenerateRoute: AppRouter.onGenerateRoute,
-        builder: (context, child) {
-          return ScrollConfiguration(
-            behavior: const _NoStretchScrollBehavior(),
-            child: child!,
+      child: ValueListenableBuilder<Locale?>(
+        valueListenable: localeNotifier,
+        builder: (context, locale, _) {
+          return MaterialApp(
+            title: 'Questborne',
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localeResolutionCallback: (deviceLocale, supported) {
+              if (locale != null) return locale;
+              for (final s in supported) {
+                if (s.languageCode == deviceLocale?.languageCode) return s;
+              }
+              return const Locale('en');
+            },
+            initialRoute: AppRouter.splash,
+            onGenerateRoute: AppRouter.onGenerateRoute,
+            builder: (context, child) {
+              return ScrollConfiguration(
+                behavior: const _NoStretchScrollBehavior(),
+                child: child!,
+              );
+            },
           );
         },
       ),
