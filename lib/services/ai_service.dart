@@ -216,7 +216,8 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
   );
 
   /// Streaming response that calls the Supabase Edge Function which
-  /// proxies to Gemini, with server-side credit enforcement.
+  /// proxies to the configured AI model through OpenRouter, with server-side
+  /// credit enforcement.
   ///
   /// [conversationContext] is the formatted chat history (already trimmed
   /// by [ConversationMemoryManager] according to the user's tier).
@@ -353,7 +354,7 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
     } catch (_) {}
 
     // If the server already sent a friendly message, use it.
-    if (serverMsg != null && !serverMsg.startsWith('Gemini')) {
+    if (serverMsg != null && !serverMsg.startsWith('OpenRouter')) {
       return serverMsg;
     }
 

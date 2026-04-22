@@ -39,16 +39,23 @@ class SubscriptionService {
         return _cached;
       }
 
-      final res = await _client
-          .from('user_subscriptions')
-          .select()
-          .eq('user_id', user.id)
-          .maybeSingle();
+      final res =
+          await _client.rpc('refresh_daily_credits').maybeSingle()
+              as Map<String, dynamic>?;
 
-      if (res == null) {
-        _cached = UserSubscription.free();
-      } else {
+      if (res != null && res['updated'] == true) {
         _cached = UserSubscription.fromJson(res);
+      } else {
+        // Fallback: read directly from the table
+        final row = await _client
+            .from('user_subscriptions')
+            .select()
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        _cached = row == null
+            ? UserSubscription.free()
+            : UserSubscription.fromJson(row);
       }
     } catch (e) {
       debugPrint('SubscriptionService.fetch failed: $e');

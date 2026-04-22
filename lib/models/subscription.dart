@@ -90,26 +90,26 @@ extension SubscriptionTierX on SubscriptionTier {
   String get aiModel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'gemini-2.5-flash';
+        return 'openai/gpt-oss-120b:free';
       case SubscriptionTier.adventurer:
-        return 'gemini-2.5-pro';
+        return 'google/gemini-2.5-flash';
       case SubscriptionTier.champion:
-        return 'gemini-3-flash-preview';
+        return 'google/gemini-2.5-pro';
     }
   }
 
   String get aiModelLabel {
     switch (this) {
       case SubscriptionTier.free:
-        return 'Gemini 2.5 Flash';
+        return 'GPT OSS 120B';
       case SubscriptionTier.adventurer:
-        return 'Gemini 2.5 Pro';
+        return 'Gemini 2.5 Flash';
       case SubscriptionTier.champion:
-        return 'Gemini 3 Flash';
+        return 'Gemini 2.5 Pro';
     }
   }
 
-  /// Gemini generation temperature — higher = more creative prose.
+  /// Generation temperature — higher = more creative prose.
   double get temperature {
     switch (this) {
       case SubscriptionTier.free:
@@ -133,11 +133,11 @@ extension SubscriptionTierX on SubscriptionTier {
     }
   }
 
-  /// Maximum monthly credits for this tier.
+  /// Maximum credits for this tier (accumulation cap for free, monthly for paid).
   int get maxCredits {
     switch (this) {
       case SubscriptionTier.free:
-        return 25;
+        return 300;
       case SubscriptionTier.adventurer:
         return 150;
       case SubscriptionTier.champion:
