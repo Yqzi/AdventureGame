@@ -270,7 +270,12 @@ class _StartPageState extends State<StartPage> {
       if (name == null || !mounted) return;
       context.read<GameBloc>().add(SetPlayerNameEvent(name));
     }
-    if (mounted) {
+    if (!mounted) return;
+    // Check if character creation is needed.
+    final bloc = context.read<GameBloc>();
+    if (bloc.player.needsCharacterCreation) {
+      Navigator.pushReplacementNamed(context, AppRouter.characterCreation);
+    } else {
       Navigator.pushReplacementNamed(context, AppRouter.guild);
     }
   }

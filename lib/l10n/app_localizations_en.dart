@@ -399,6 +399,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHero => 'Hero';
 
   @override
+  String get navSheet => 'Sheet';
+
+  @override
   String get nameDialogAppTitle => 'Questborne';
 
   @override

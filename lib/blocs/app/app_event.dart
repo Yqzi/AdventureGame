@@ -1,5 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:Questborne/models/ability_scores.dart';
+import 'package:Questborne/models/background.dart';
+import 'package:Questborne/models/character_class.dart';
+import 'package:Questborne/models/character_race.dart';
 import 'package:Questborne/models/item.dart';
 
 abstract class AppEvent extends Equatable {
@@ -97,4 +101,32 @@ class QuestFailedPenaltyEvent extends GameEvent {
 class CastSpellEvent extends GameEvent {
   final Item spell;
   CastSpellEvent(this.spell);
+}
+
+/// Player completed the character creation wizard.
+class CompleteCharacterCreationEvent extends GameEvent {
+  final DndClass dndClass;
+  final DndRace dndRace;
+  final DndBackground background;
+  final AbilityScores abilityScores;
+  final List<String> skillProficiencies;
+
+  CompleteCharacterCreationEvent({
+    required this.dndClass,
+    required this.dndRace,
+    required this.background,
+    required this.abilityScores,
+    required this.skillProficiencies,
+  });
+}
+
+/// Player taps "Roll Death Save" when HP == 0 (isDying).
+class MakeDeathSavingThrowEvent extends GameEvent {}
+
+/// Dispatched by the [_DiceRollPrompt] overlay after the player taps the d20
+/// and the tumble animation settles. The [roll] value (1–20) was generated
+/// in the UI; the bloc applies it to whatever pending check is waiting.
+class PlayerRollDiceEvent extends GameEvent {
+  final int roll;
+  PlayerRollDiceEvent(this.roll);
 }

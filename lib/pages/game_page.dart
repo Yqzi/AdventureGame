@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +20,7 @@ import 'package:Questborne/router.dart';
 import 'package:Questborne/components/stat_bar.dart';
 import 'package:Questborne/components/typewriter_text.dart';
 import 'package:Questborne/models/chat_message.dart';
+import 'package:Questborne/components/cards.dart' show Rarity;
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/skill_check.dart';
@@ -68,6 +70,9 @@ class _GamePageState extends State<GamePage> {
 
   /// Currently showing dice roll notification (null = hidden).
   SkillCheckResult? _pendingDiceRoll;
+
+  /// Whether the spellbook overlay is open.
+  bool _showSpellbook = false;
 
   /// Whether the AI has signalled quest completion (player hasn't dismissed yet).
   bool _questDone = false;
@@ -187,7 +192,8 @@ class _GamePageState extends State<GamePage> {
       final currentState = context.read<GameBloc>().state;
       // Only allow sending command if the AI is not currently processing or streaming
       if (currentState is! GameLoading &&
-          currentState is! GameStreamingNarrative) {
+          currentState is! GameStreamingNarrative &&
+          currentState is! GameWaitingForDiceRoll) {
         // Check if the player is explicitly casting a spell.
         // Only intercept clear cast-intent phrases, not any mention of
         // a spell name (e.g. "shoot myself with a shard bolt" should NOT
@@ -438,6 +444,7 @@ class _GamePageState extends State<GamePage> {
       child: BlocListener<GameBloc, GameState>(
         listenWhen: (prev, curr) {
           if (curr is GameLoaded) return true;
+          if (curr is GameWaitingForDiceRoll) return true;
           // Only fire for the first streaming emit that carries a dice roll.
           if (curr is GameStreamingNarrative && curr.skillCheck != null) {
             final prevHadRoll =
@@ -555,36 +562,72 @@ class _GamePageState extends State<GamePage> {
                               buildWhen: (prev, curr) {
                                 final prevP = _playerFromState(prev);
                                 final currP = _playerFromState(curr);
-                                return prevP?.gold != currP?.gold;
+                                return prevP?.gold != currP?.gold ||
+                                    prevP?.hasInspiration !=
+                                        currP?.hasInspiration;
                               },
                               builder: (context, state) {
                                 final player = _playerFromState(state);
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.amber.withOpacity(0.25),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const FaIcon(
-                                        FontAwesomeIcons.coins,
-                                        color: Colors.amber,
-                                        size: 13,
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Inspiration badge
+                                    if (player?.hasInspiration == true) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.amber.withOpacity(
+                                              0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          '✦',
+                                          style: TextStyle(
+                                            color: Colors.amber,
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                       ),
-                                      const SizedBox(width: 5),
-                                      AnimatedCoinCounter(
-                                        targetValue: player?.gold ?? 0,
-                                      ),
+                                      const SizedBox(width: 6),
                                     ],
-                                  ),
+                                    // Gold counter
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: Colors.amber.withOpacity(0.25),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const FaIcon(
+                                            FontAwesomeIcons.coins,
+                                            color: Colors.amber,
+                                            size: 13,
+                                          ),
+                                          const SizedBox(width: 5),
+                                          AnimatedCoinCounter(
+                                            targetValue: player?.gold ?? 0,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 );
                               },
                             ),
@@ -592,28 +635,36 @@ class _GamePageState extends State<GamePage> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Row 2: HP + MP bars
+                        // Row 2: HP + MP bars + conditions
                         BlocBuilder<GameBloc, GameState>(
                           buildWhen: (prev, curr) {
                             final prevP = _playerFromState(prev);
                             final currP = _playerFromState(curr);
                             return prevP?.currentHealth !=
                                     currP?.currentHealth ||
-                                prevP?.currentMana != currP?.currentMana;
+                                prevP?.currentMana != currP?.currentMana ||
+                                prevP?.tempHp != currP?.tempHp ||
+                                prevP?.conditions != currP?.conditions ||
+                                prevP?.exhaustionLevel !=
+                                    currP?.exhaustionLevel ||
+                                prevP?.hasInspiration !=
+                                    currP?.hasInspiration ||
+                                prevP?.concentratingOnSpell !=
+                                    currP?.concentratingOnSpell ||
+                                prevP?.deathSaveSuccesses !=
+                                    currP?.deathSaveSuccesses ||
+                                prevP?.deathSaveFailures !=
+                                    currP?.deathSaveFailures;
                           },
                           builder: (context, state) {
                             final player = _playerFromState(state);
                             if (player == null) return const SizedBox.shrink();
 
                             return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildStatRow(
-                                  'HP',
-                                  player.currentHealth,
-                                  player.maxHealth,
-                                  player.healthConsumed,
-                                  const Color(0xFFCC3333),
-                                ),
+                                // HP bar (with temp HP layer)
+                                _buildHpStatRow(player),
                                 const SizedBox(height: 4),
                                 _buildStatRow(
                                   'MP',
@@ -622,53 +673,132 @@ class _GamePageState extends State<GamePage> {
                                   player.manaConsumed,
                                   const Color(0xFF3377CC),
                                 ),
-                                // Status effects
-                                if (player.statusEffects.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 6),
-                                    child: Row(
-                                      children: player.statusEffects
-                                          .map(
-                                            (e) => Container(
-                                              margin: const EdgeInsets.only(
-                                                right: 6,
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.05,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                                border: Border.all(
-                                                  color: Colors.white
-                                                      .withOpacity(0.12),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '${e.icon} ${e.label}',
-                                                style: GoogleFonts.epilogue(
-                                                  color: const Color(
-                                                    0xFFE3D5B8,
-                                                  ),
-                                                  fontSize: 10,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
-                                    ),
+                                // Concentration indicator
+                                if (player.concentratingOnSpell != null)
+                                  _ConcentrationPill(
+                                    spellName: player.concentratingOnSpell!,
                                   ),
+                                // Conditions + exhaustion chips
+                                if (player.conditions.isNotEmpty ||
+                                    player.exhaustionLevel > 0)
+                                  _ConditionChipsRow(player: player),
                               ],
                             );
                           },
                         ),
                       ],
                     ),
+                  ),
+
+                  // ═══════════════ ACTION STRIP ═══════════════
+                  BlocBuilder<GameBloc, GameState>(
+                    buildWhen: (prev, curr) {
+                      final prevP = _playerFromState(prev);
+                      final currP = _playerFromState(curr);
+                      return prevP?.inventory.length != currP?.inventory.length;
+                    },
+                    builder: (context, state) {
+                      final p = _playerFromState(state);
+                      final hasSpells = p?.spellItems.isNotEmpty ?? false;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                AppRouter.characterSheet,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 9,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 34, 24, 20),
+                                  border: Border(
+                                    bottom: const BorderSide(
+                                      color: Color.fromARGB(60, 255, 180, 100),
+                                      width: 0.5,
+                                    ),
+                                    right: hasSpells
+                                        ? const BorderSide(
+                                            color: Color.fromARGB(
+                                              40,
+                                              255,
+                                              180,
+                                              100,
+                                            ),
+                                            width: 0.5,
+                                          )
+                                        : BorderSide.none,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const FaIcon(
+                                      FontAwesomeIcons.scroll,
+                                      size: 11,
+                                      color: Color(0xFFBD8C4C),
+                                    ),
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      'PLAYER SHEET',
+                                      style: GoogleFonts.epilogue(
+                                        color: const Color(0xFFBD8C4C),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 2.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (hasSpells)
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    setState(() => _showSpellbook = true),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 9,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 26, 18, 34),
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Color.fromARGB(60, 139, 92, 246),
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const FaIcon(
+                                        FontAwesomeIcons.bookOpen,
+                                        size: 11,
+                                        color: Color(0xFF8B5CF6),
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Text(
+                                        'SPELLBOOK',
+                                        style: GoogleFonts.epilogue(
+                                          color: const Color(0xFF8B5CF6),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 2.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
 
                   // ═══════════════ NARRATIVE AREA ═══════════════
@@ -995,7 +1125,8 @@ class _GamePageState extends State<GamePage> {
                                 }
                                 final isActive =
                                     state is! GameLoading &&
-                                    state is! GameStreamingNarrative;
+                                    state is! GameStreamingNarrative &&
+                                    state is! GameWaitingForDiceRoll;
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                     top: 4,
@@ -1003,7 +1134,8 @@ class _GamePageState extends State<GamePage> {
                                   ),
                                   child: SpellHotbar(
                                     spells: spells,
-                                    currentMana: p.currentMana,
+                                    currentSpellSlots: p.currentSpellSlots,
+                                    maxSpellSlots: p.maxSpellSlots,
                                     enabled: isActive,
                                     onCast: (spell) {
                                       context.read<GameBloc>().add(
@@ -1026,7 +1158,9 @@ class _GamePageState extends State<GamePage> {
                                     !(context.watch<GameBloc>().state
                                             is GameLoading ||
                                         context.watch<GameBloc>().state
-                                            is GameStreamingNarrative),
+                                            is GameStreamingNarrative ||
+                                        context.watch<GameBloc>().state
+                                            is GameWaitingForDiceRoll),
                               ),
                             ),
                         ],
@@ -1035,6 +1169,40 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ],
               ),
+            ),
+
+            // ── Interactive dice roll prompt overlay ──
+            BlocBuilder<GameBloc, GameState>(
+              buildWhen: (prev, curr) =>
+                  curr is GameWaitingForDiceRoll ||
+                  prev is GameWaitingForDiceRoll,
+              builder: (context, state) {
+                if (state is! GameWaitingForDiceRoll) {
+                  return const SizedBox.shrink();
+                }
+                return _DiceRollPrompt(state: state);
+              },
+            ),
+
+            // ── Death Save Panel overlay ──
+            BlocBuilder<GameBloc, GameState>(
+              buildWhen: (prev, curr) {
+                final prevP = _playerFromState(prev);
+                final currP = _playerFromState(curr);
+                return prevP?.currentHealth != currP?.currentHealth ||
+                    prevP?.deathSaveSuccesses != currP?.deathSaveSuccesses ||
+                    prevP?.deathSaveFailures != currP?.deathSaveFailures;
+              },
+              builder: (context, state) {
+                final player = _playerFromState(state);
+                if (player == null) return const SizedBox.shrink();
+                if (!player.isDying &&
+                    !player.isStable &&
+                    player.deathSaveFailures < 3) {
+                  return const SizedBox.shrink();
+                }
+                return _DeathSavePanel(player: player);
+              },
             ),
 
             // ── Dice roll notification overlay ──
@@ -1064,6 +1232,19 @@ class _GamePageState extends State<GamePage> {
                       _pendingEffects = null;
                     });
                   }
+                },
+              ),
+
+            // ── Spellbook overlay ──
+            if (_showSpellbook)
+              BlocBuilder<GameBloc, GameState>(
+                builder: (context, state) {
+                  final p = _playerFromState(state);
+                  if (p == null) return const SizedBox.shrink();
+                  return _SpellbookOverlay(
+                    player: p,
+                    onClose: () => setState(() => _showSpellbook = false),
+                  );
                 },
               ),
 
@@ -1182,6 +1363,49 @@ class _GamePageState extends State<GamePage> {
         const SizedBox(width: 6),
         Text(
           '$current/$max',
+          style: GoogleFonts.epilogue(
+            color: color.withOpacity(0.7),
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── HP stat row (includes temp HP layer) ──
+  Widget _buildHpStatRow(Player player) {
+    const color = Color(0xFFCC3333);
+    final displayMax = player.effectiveMaxHp;
+    final displayText = player.tempHp > 0
+        ? '${player.currentHealth}/${displayMax} +${player.tempHp}'
+        : '${player.currentHealth}/$displayMax';
+    return Row(
+      children: [
+        SizedBox(
+          width: 26,
+          child: Text(
+            'HP',
+            style: GoogleFonts.epilogue(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        Expanded(
+          child: StatBar(
+            consumed: player.healthConsumed,
+            color: color,
+            height: 5,
+            tempHp: player.tempHp,
+            currentHp: player.currentHealth,
+            effectiveMaxHp: player.effectiveMaxHp,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          displayText,
           style: GoogleFonts.epilogue(
             color: color.withOpacity(0.7),
             fontSize: 10,
@@ -1419,6 +1643,879 @@ class GeminiTextField extends StatelessWidget {
           ),
         ),
         cursorColor: redText,
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONCENTRATION PILL
+// ═══════════════════════════════════════════════════════════════
+
+class _ConcentrationPill extends StatelessWidget {
+  const _ConcentrationPill({required this.spellName});
+  final String spellName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE65100).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE65100).withOpacity(0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⚡', style: TextStyle(fontSize: 10)),
+            const SizedBox(width: 4),
+            Text(
+              'Concentrating: $spellName',
+              style: GoogleFonts.epilogue(
+                color: const Color(0xFFFFCC80),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONDITION CHIPS ROW
+// ═══════════════════════════════════════════════════════════════
+
+class _ConditionChipsRow extends StatelessWidget {
+  const _ConditionChipsRow({required this.player});
+  final Player player;
+
+  Color _exhaustionColor(int level) {
+    if (level >= 5) return const Color(0xFFD32F2F);
+    if (level >= 4) return const Color(0xFFE53935);
+    if (level >= 3) return const Color(0xFFFF7043);
+    return const Color(0xFFFF8F00);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Exhaustion chip
+            if (player.exhaustionLevel > 0)
+              _Chip(
+                label: 'EXHAUSTION LV.${player.exhaustionLevel}',
+                color: _exhaustionColor(player.exhaustionLevel),
+              ),
+            // Condition chips
+            ...player.conditions.map(
+              (c) => _Chip(label: c.label, color: _conditionColor(c)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _conditionColor(DndCondition c) {
+    switch (c) {
+      case DndCondition.unconscious:
+      case DndCondition.paralyzed:
+      case DndCondition.petrified:
+        return const Color(0xFF7B1FA2);
+      case DndCondition.frightened:
+      case DndCondition.charmed:
+        return const Color(0xFF1976D2);
+      case DndCondition.poisoned:
+        return const Color(0xFF388E3C);
+      case DndCondition.blinded:
+      case DndCondition.deafened:
+        return const Color(0xFF616161);
+      case DndCondition.stunned:
+      case DndCondition.incapacitated:
+        return const Color(0xFFAD1457);
+      case DndCondition.restrained:
+      case DndCondition.grappled:
+        return const Color(0xFF5D4037);
+      case DndCondition.prone:
+        return const Color(0xFF455A64);
+      case DndCondition.invisible:
+        return const Color(0xFF0097A7);
+    }
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.epilogue(
+          color: color.withOpacity(0.9),
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DEATH SAVE PANEL
+// ═══════════════════════════════════════════════════════════════
+
+class _DeathSavePanel extends StatelessWidget {
+  const _DeathSavePanel({required this.player});
+  final Player player;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDead = player.deathSaveFailures >= 3;
+    final isStable = player.isStable;
+
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.78),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1010),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDead
+                    ? const Color(0xFF7B1FA2)
+                    : isStable
+                    ? const Color(0xFF388E3C)
+                    : const Color(0xFFD32F2F),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isDead
+                      ? '💀  DEAD'
+                      : isStable
+                      ? '💚  STABLE'
+                      : '☠  DYING',
+                  style: GoogleFonts.cinzelDecorative(
+                    color: isDead
+                        ? const Color(0xFFAB47BC)
+                        : isStable
+                        ? const Color(0xFF66BB6A)
+                        : const Color(0xFFEF5350),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Success / Failure circles
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      children: [
+                        Text(
+                          'SUCCESSES',
+                          style: GoogleFonts.epilogue(
+                            color: Colors.white38,
+                            fontSize: 9,
+                            letterSpacing: 1.5,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: List.generate(3, (i) {
+                            final filled = i < player.deathSaveSuccesses;
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: filled
+                                      ? const Color(0xFF388E3C)
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: filled
+                                        ? const Color(0xFF66BB6A)
+                                        : Colors.white24,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 24),
+                    Column(
+                      children: [
+                        Text(
+                          'FAILURES',
+                          style: GoogleFonts.epilogue(
+                            color: Colors.white38,
+                            fontSize: 9,
+                            letterSpacing: 1.5,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: List.generate(3, (i) {
+                            final filled = i < player.deathSaveFailures;
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: filled
+                                      ? const Color(0xFFD32F2F)
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: filled
+                                        ? const Color(0xFFEF5350)
+                                        : Colors.white24,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                if (!isStable && !isDead)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.read<GameBloc>().add(
+                          MakeDeathSavingThrowEvent(),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB71C1C),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: Text(
+                        'ROLL DEATH SAVE',
+                        style: GoogleFonts.epilogue(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                          fontSize: 13,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                if (isDead)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Your adventure ends here...',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.epilogue(
+                        color: Colors.white38,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+
+                if (isStable)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'You are stable but unconscious.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.epilogue(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INTERACTIVE DICE ROLL PROMPT
+// ═══════════════════════════════════════════════════════════════
+
+class _DiceRollPrompt extends StatefulWidget {
+  const _DiceRollPrompt({required this.state});
+  final GameWaitingForDiceRoll state;
+
+  @override
+  State<_DiceRollPrompt> createState() => _DiceRollPromptState();
+}
+
+class _DiceRollPromptState extends State<_DiceRollPrompt>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
+
+  int? _rolledValue;
+  bool _isRolling = false;
+  int _displayValue = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    if (_isRolling) return;
+    final result = Random().nextInt(20) + 1;
+    setState(() {
+      _isRolling = true;
+      _rolledValue = result;
+    });
+    _pulseController.stop();
+
+    // Tumble effect: rapidly cycle random values for 1100ms, then settle.
+    const tumbleDuration = Duration(milliseconds: 1100);
+    const stepInterval = Duration(milliseconds: 60);
+    final steps = tumbleDuration.inMilliseconds ~/ stepInterval.inMilliseconds;
+    int stepsDone = 0;
+
+    void step() {
+      if (!mounted) return;
+      stepsDone++;
+      if (stepsDone < steps) {
+        setState(() {
+          _displayValue = Random().nextInt(20) + 1;
+        });
+        Future.delayed(stepInterval, step);
+      } else {
+        setState(() {
+          _displayValue = result;
+        });
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            context.read<GameBloc>().add(PlayerRollDiceEvent(result));
+          }
+        });
+      }
+    }
+
+    Future.delayed(stepInterval, step);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Positioned.fill(
+        child: Container(
+          color: Colors.black.withOpacity(0.82),
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1410),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD32F2F), width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    'DEATH SAVING THROW',
+                    style: GoogleFonts.cinzelDecorative(
+                      color: const Color(0xFFEF5350),
+                      fontSize: 14,
+                      letterSpacing: 2.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Roll 10 or higher to succeed',
+                    style: GoogleFonts.epilogue(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // D20 icon — pulsing invitation to tap
+                  GestureDetector(
+                    onTap: _onTap,
+                    child: AnimatedBuilder(
+                      animation: _pulseAnim,
+                      builder: (context, child) {
+                        final scale = _isRolling ? 1.0 : _pulseAnim.value;
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const FaIcon(
+                                FontAwesomeIcons.diceD20,
+                                size: 110,
+                                color: Color(0xFFEF5350),
+                              ),
+                              Text(
+                                '$_displayValue',
+                                style: GoogleFonts.epilogue(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            _isRolling ? 'Rolling...' : 'TAP TO ROLL',
+                            style: GoogleFonts.epilogue(
+                              color: _isRolling
+                                  ? const Color(0xFFE3D5B8).withOpacity(0.6)
+                                  : const Color(0xFFE3D5B8),
+                              fontSize: 13,
+                              letterSpacing: 3,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PillBadge extends StatelessWidget {
+  const _PillBadge({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.6)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.epilogue(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SPELLBOOK OVERLAY
+// ────────────────────────────────────────────────────────────────────────────
+
+class _SpellbookOverlay extends StatelessWidget {
+  const _SpellbookOverlay({required this.player, required this.onClose});
+
+  final Player player;
+  final VoidCallback onClose;
+
+  static const _purple = Color(0xFF8B5CF6);
+
+  Color _rarityColor(Rarity r) {
+    switch (r) {
+      case Rarity.common:
+        return const Color(0xFFB0B0B0);
+      case Rarity.rare:
+        return const Color(0xFF56CCF2);
+      case Rarity.epic:
+        return const Color(0xFF8B5CF6);
+      case Rarity.mythic:
+        return const Color(0xFFE85D3A);
+    }
+  }
+
+  String _rarityLabel(Rarity r) {
+    switch (r) {
+      case Rarity.common:
+        return 'Common';
+      case Rarity.rare:
+        return 'Rare';
+      case Rarity.epic:
+        return 'Epic';
+      case Rarity.mythic:
+        return 'Mythic';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spells = player.spellItems;
+    return Material(
+      type: MaterialType.transparency,
+      child: Positioned.fill(
+        child: GestureDetector(
+          onTap: onClose,
+          child: Container(
+            color: Colors.black.withOpacity(0.88),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // ── Header ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Row(
+                      children: [
+                        const FaIcon(
+                          FontAwesomeIcons.bookOpen,
+                          color: _purple,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'SPELLBOOK',
+                          style: GoogleFonts.cinzelDecorative(
+                            color: _purple,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 3,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: onClose,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white54,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // ── Divider ──
+                  Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    color: _purple.withOpacity(0.35),
+                  ),
+                  const SizedBox(height: 8),
+                  // ── Spell list or empty state ──
+                  Expanded(
+                    child: spells.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const FaIcon(
+                                  FontAwesomeIcons.bookOpen,
+                                  color: Colors.white24,
+                                  size: 40,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Your spellbook is empty.',
+                                  style: GoogleFonts.epilogue(
+                                    color: Colors.white38,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Visit the shop to acquire spells.',
+                                  style: GoogleFonts.epilogue(
+                                    color: Colors.white24,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : GestureDetector(
+                            // Swallow taps on the list so backdrop-close doesn't fire
+                            onTap: () {},
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              itemCount: spells.length,
+                              itemBuilder: (context, i) {
+                                final spell = spells[i];
+                                final col = _rarityColor(spell.rarity);
+                                final canCast = player.canCastAtLevel(
+                                  spell.manaCost,
+                                );
+                                final slotsLeft =
+                                    spell.manaCost >= 1 && spell.manaCost <= 9
+                                    ? player.currentSpellSlots[spell.manaCost -
+                                          1]
+                                    : 0;
+                                return Opacity(
+                                  opacity: canCast ? 1.0 : 0.45,
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.04),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border(
+                                        left: BorderSide(color: col, width: 3),
+                                        top: BorderSide(
+                                          color: col.withOpacity(0.25),
+                                          width: 0.5,
+                                        ),
+                                        right: BorderSide(
+                                          color: col.withOpacity(0.25),
+                                          width: 0.5,
+                                        ),
+                                        bottom: BorderSide(
+                                          color: col.withOpacity(0.25),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        14,
+                                        12,
+                                        14,
+                                        12,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Name row
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  spell.name,
+                                                  style:
+                                                      GoogleFonts.cinzelDecorative(
+                                                        color: col,
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                ),
+                                              ),
+                                              // Mana cost / availability badge
+                                              if (spell.manaCost > 0)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 3,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: canCast
+                                                        ? _purple.withOpacity(
+                                                            0.18,
+                                                          )
+                                                        : const Color(
+                                                            0xFFD32F2F,
+                                                          ).withOpacity(0.18),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: canCast
+                                                          ? _purple.withOpacity(
+                                                              0.5,
+                                                            )
+                                                          : const Color(
+                                                              0xFFD32F2F,
+                                                            ).withOpacity(0.5),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    canCast
+                                                        ? 'Slot ${spell.manaCost}  •  $slotsLeft left'
+                                                        : 'NO SLOTS',
+                                                    style: GoogleFonts.epilogue(
+                                                      color: canCast
+                                                          ? _purple
+                                                          : const Color(
+                                                              0xFFEF5350,
+                                                            ),
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      decoration:
+                                                          TextDecoration.none,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          // Rarity + level row
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${_rarityLabel(spell.rarity)}  ·  Lv. ${spell.level}',
+                                            style: GoogleFonts.epilogue(
+                                              color: col.withOpacity(0.7),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.8,
+                                            ),
+                                          ),
+                                          // Effect text
+                                          if (spell.effect.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              spell.effect,
+                                              style: GoogleFonts.epilogue(
+                                                color: Colors.white70,
+                                                fontSize: 12,
+                                                height: 1.45,
+                                              ),
+                                            ),
+                                          ],
+                                          // Description (flavor text)
+                                          if (spell.description.isNotEmpty) ...[
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              spell.description,
+                                              style: GoogleFonts.epilogue(
+                                                color: Colors.white38,
+                                                fontSize: 11,
+                                                fontStyle: FontStyle.italic,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                  // ── Close button ──
+                  GestureDetector(
+                    onTap: onClose,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      decoration: BoxDecoration(
+                        color: _purple.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _purple.withOpacity(0.4)),
+                      ),
+                      child: Text(
+                        'CLOSE SPELLBOOK',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.epilogue(
+                          color: _purple,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

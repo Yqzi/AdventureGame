@@ -1,223 +1,311 @@
-import 'dart:math';
+﻿import 'dart:math';
 
+import 'package:Questborne/models/ability_scores.dart';
+import 'package:Questborne/models/character_class.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/skill_check.dart';
 
-/// Client-side D20 skill check engine.
+/// Client-side D20 skill check engine implementing D&D 5e rules.
 ///
-/// Rolls a real random die, applies stat modifiers and situational bonuses,
-/// compares against a difficulty class derived from quest difficulty, and
-/// produces a [SkillCheckResult] that is injected into the AI prompt.
+/// Each player action maps to a D&D ability score. The roll is:
+///   D20 + ability modifier + (proficiency bonus if proficient).
+/// Natural 1 = critical failure. Natural 20 = critical success.
+/// Advantage/disadvantage: roll 2d20, take highest/lowest.
 class SkillCheckEngine {
   static final Random _rng = Random();
 
-  // ─────────────────────────────────────────────────────────
-  //  STAT MODIFIERS
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
+  //  ABILITY SCORE MAPPING
+  // ──────────────────────────────────────────────────────────
 
-  /// Returns the stat modifier for a roll using **logarithmic scaling**.
-  ///
-  /// `log(stat) / log(1.3)` compresses exponential stat growth into a
-  /// manageable modifier range:
-  ///   stat 10 → ~8,  stat 42 → ~14,  stat 100 → ~18,
-  ///   stat 434 → ~23,  stat 21k → ~38.
-  ///
-  /// Two stats may be blended (primary weight 70%, secondary 30%).
-  static int _statModifier(int primary, [int? secondary]) {
-    final stat = secondary != null
-        ? (primary * 0.7 + secondary * 0.3).round()
-        : primary;
-    if (stat <= 0) return 0;
-    return (log(stat.clamp(1, 99999)) / log(1.3)).round();
-  }
-
-  /// Pick the modifier based on action type and player stats.
-  static int getStatModifier(ActionType action, Player player) {
+  /// Returns the primary D&D ability type for the given action.
+  static AbilityType _primaryAbility(ActionType action, Player player) {
     switch (action) {
       case ActionType.meleeAttack:
-        return _statModifier(player.attack, player.agility);
+        // Rogues/Monks/Rangers use DEX for finesse/unarmed; others use STR.
+        if (player.dndClass == DndClass.rogue ||
+            player.dndClass == DndClass.monk ||
+            player.dndClass == DndClass.ranger) {
+          return AbilityType.dexterity;
+        }
+        return AbilityType.strength;
       case ActionType.rangedAttack:
-        return _statModifier(player.agility, player.attack);
+        return AbilityType.dexterity;
       case ActionType.offensiveMagic:
-        return _statModifier(player.magic);
+        return player.dndClass?.data.spellcastingAbility ??
+            AbilityType.intelligence;
       case ActionType.defensiveMagic:
-        return _statModifier(player.magic);
+        return player.dndClass?.data.spellcastingAbility ?? AbilityType.wisdom;
       case ActionType.stealth:
-        return _statModifier(player.agility);
+        return AbilityType.dexterity;
       case ActionType.assassination:
-        return _statModifier(player.agility, player.attack);
+        return AbilityType.dexterity;
       case ActionType.dodge:
-        return _statModifier(player.agility, player.defense);
+        return AbilityType.dexterity;
       case ActionType.parry:
-        return _statModifier(player.defense, player.attack);
+        // Parry is a STR contest in D&D (opposing strength).
+        return AbilityType.strength;
       case ActionType.social:
-        // Social skill scales with level (experience / worldliness).
-        return _statModifier(player.level * 2);
+        return AbilityType.charisma;
       case ActionType.throwAttack:
-        return _statModifier(player.attack, player.agility);
+        return AbilityType.strength;
       case ActionType.dexterity:
-        return _statModifier(player.agility);
+        return AbilityType.dexterity;
       case ActionType.endurance:
-        return _statModifier(player.defense);
+        return AbilityType.constitution;
       case ActionType.flee:
-        return _statModifier(player.agility);
+        return AbilityType.dexterity;
       case ActionType.none:
-        return 0;
+        return AbilityType.dexterity;
     }
   }
 
-  /// Returns the primary stat value used for the given action (for display
-  /// in the skill check summary so the AI can see the player's power level).
-  static int _primaryStatValue(ActionType action, Player player) {
+  /// The D&D skill or save name for the action (for the summary string).
+  static String _skillName(ActionType action, Player player) {
     switch (action) {
       case ActionType.meleeAttack:
-      case ActionType.throwAttack:
-        return player.attack;
+        return player.dndClass == DndClass.rogue ||
+                player.dndClass == DndClass.monk
+            ? 'DEX Attack'
+            : 'STR Attack';
       case ActionType.rangedAttack:
-      case ActionType.stealth:
-      case ActionType.assassination:
-      case ActionType.dodge:
-      case ActionType.dexterity:
-      case ActionType.flee:
-        return player.agility;
+        return 'DEX Attack';
       case ActionType.offensiveMagic:
+        return 'Spell Attack';
       case ActionType.defensiveMagic:
-        return player.magic;
+        return 'Spell DC';
+      case ActionType.stealth:
+        return 'Stealth (DEX)';
+      case ActionType.assassination:
+        return 'Assassination (DEX)';
+      case ActionType.dodge:
+        return 'DEX Save';
       case ActionType.parry:
-      case ActionType.endurance:
-        return player.defense;
+        return 'Athletics (STR)';
       case ActionType.social:
-        return player.level * 2;
-      case ActionType.none:
-        return 0;
-    }
-  }
-
-  /// Label for the primary stat of the given action.
-  static String _primaryStatLabel(ActionType action) {
-    switch (action) {
-      case ActionType.meleeAttack:
+        return 'Persuasion (CHA)';
       case ActionType.throwAttack:
-        return 'ATK';
-      case ActionType.rangedAttack:
-      case ActionType.stealth:
-      case ActionType.assassination:
-      case ActionType.dodge:
+        return 'Athletics (STR)';
       case ActionType.dexterity:
-      case ActionType.flee:
-        return 'AGI';
-      case ActionType.offensiveMagic:
-      case ActionType.defensiveMagic:
-        return 'MAG';
-      case ActionType.parry:
+        return 'Acrobatics (DEX)';
       case ActionType.endurance:
-        return 'DEF';
-      case ActionType.social:
-        return 'SOC';
+        return 'CON Save';
+      case ActionType.flee:
+        return 'Acrobatics (DEX)';
       case ActionType.none:
         return '';
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  SITUATIONAL MODIFIERS
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
+  //  PROFICIENCY CHECK
+  // ──────────────────────────────────────────────────────────
 
-  /// Calculates bonus/penalty from status effects, HP level, etc.
-  static int getSituationalModifier(Player player, ActionType action) {
-    int mod = 0;
+  /// Returns true if the player has proficiency for this action type.
+  static bool _hasProficiency(ActionType action, Player player) {
+    final classData = player.dndClass?.data;
+    if (classData == null) return false;
 
-    // Status effects
-    if (player.hasStatus(StatusEffect.weakened)) mod -= 3;
-    if (player.hasStatus(StatusEffect.poisoned)) mod -= 2;
-    if (player.hasStatus(StatusEffect.frozen)) mod -= 4;
-    if (player.hasStatus(StatusEffect.burning)) mod -= 2;
-    if (player.hasStatus(StatusEffect.blessed)) mod += 3;
-    if (player.hasStatus(StatusEffect.shielded)) {
-      // Shield only helps defensive actions.
-      if (action == ActionType.dodge ||
-          action == ActionType.parry ||
-          action == ActionType.endurance ||
-          action == ActionType.defensiveMagic) {
-        mod += 2;
+    switch (action) {
+      // Attack rolls: always proficient (you're using your weapon).
+      case ActionType.meleeAttack:
+      case ActionType.rangedAttack:
+      case ActionType.throwAttack:
+      case ActionType.offensiveMagic:
+      case ActionType.defensiveMagic:
+        return true;
+      // Saving throws: check class save proficiencies.
+      case ActionType.dodge:
+        return classData.savingThrowProficiencies.contains(
+          AbilityType.dexterity,
+        );
+      case ActionType.endurance:
+        return classData.savingThrowProficiencies.contains(
+          AbilityType.constitution,
+        );
+      // Skills: check player skill proficiency list.
+      case ActionType.stealth:
+      case ActionType.assassination:
+      case ActionType.flee:
+        return player.skillProficiencies.any(
+          (s) =>
+              s.toLowerCase().contains('stealth') ||
+              s.toLowerCase().contains('acrobatics'),
+        );
+      case ActionType.parry:
+        return player.skillProficiencies.any(
+          (s) => s.toLowerCase().contains('athletics'),
+        );
+      case ActionType.social:
+        return player.skillProficiencies.any(
+          (s) =>
+              s.toLowerCase().contains('persuasion') ||
+              s.toLowerCase().contains('intimidation') ||
+              s.toLowerCase().contains('deception'),
+        );
+      case ActionType.dexterity:
+        return player.skillProficiencies.any(
+          (s) => s.toLowerCase().contains('acrobatics'),
+        );
+      case ActionType.none:
+        return false;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  //  TOTAL MODIFIER
+  // ──────────────────────────────────────────────────────────
+
+  /// Returns the total bonus to add to the D20 roll (ability mod + proficiency).
+  static int getStatModifier(ActionType action, Player player) {
+    if (action == ActionType.none) return 0;
+    final ability = _primaryAbility(action, player);
+    final abilityMod = player.abilityScores.getMod(ability);
+    final profBonus = _hasProficiency(action, player)
+        ? player.proficiencyBonus
+        : 0;
+    return abilityMod + profBonus;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  //  ADVANTAGE / DISADVANTAGE FROM CONDITIONS
+  // ──────────────────────────────────────────────────────────
+
+  /// Returns +1 for advantage, -1 for disadvantage, 0 for normal.
+  /// Advantage and disadvantage cancel out (D&D rule: they never stack).
+  static int _advantageState(ActionType action, Player player) {
+    bool hasAdvantage = false;
+    bool hasDisadvantage = false;
+
+    // Invisible: advantage on all attack rolls.
+    if (player.hasCondition(DndCondition.invisible)) {
+      if (action == ActionType.meleeAttack ||
+          action == ActionType.rangedAttack ||
+          action == ActionType.throwAttack ||
+          action == ActionType.assassination) {
+        hasAdvantage = true;
       }
     }
 
-    // Low HP penalty — you're injured and struggling.
+    // Blinded: disadvantage on attack rolls.
+    if (player.hasCondition(DndCondition.blinded)) {
+      if (action == ActionType.meleeAttack ||
+          action == ActionType.rangedAttack ||
+          action == ActionType.throwAttack ||
+          action == ActionType.offensiveMagic ||
+          action == ActionType.assassination) {
+        hasDisadvantage = true;
+      }
+    }
+
+    // Frightened: disadvantage on all checks.
+    if (player.hasCondition(DndCondition.frightened)) {
+      hasDisadvantage = true;
+    }
+
+    // Poisoned: disadvantage on attack rolls and ability checks.
+    if (player.hasCondition(DndCondition.poisoned)) {
+      hasDisadvantage = true;
+    }
+
+    // Prone: disadvantage on attack rolls.
+    if (player.hasCondition(DndCondition.prone)) {
+      if (action == ActionType.meleeAttack ||
+          action == ActionType.rangedAttack ||
+          action == ActionType.throwAttack) {
+        hasDisadvantage = true;
+      }
+    }
+
+    // Restrained: disadvantage on attack rolls and DEX saves.
+    if (player.hasCondition(DndCondition.restrained)) {
+      if (action == ActionType.dodge || action == ActionType.flee) {
+        hasDisadvantage = true;
+      } else if (action == ActionType.meleeAttack ||
+          action == ActionType.rangedAttack) {
+        hasDisadvantage = true;
+      }
+    }
+
+    // Exhaustion level 1+: disadvantage on ability checks.
+    if (player.exhaustionLevel >= 1) {
+      hasDisadvantage = true;
+    }
+
+    // Advantage and disadvantage cancel.
+    if (hasAdvantage && hasDisadvantage) return 0;
+    if (hasAdvantage) return 1;
+    if (hasDisadvantage) return -1;
+    return 0;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  //  SITUATIONAL MODIFIERS (no longer from conditions — advantage handles that)
+  // ──────────────────────────────────────────────────────────
+
+  static int getSituationalModifier(Player player, ActionType action) {
+    int mod = 0;
+
+    // Stunned: -2 to STR/DEX saves (simplified from full disadvantage rule).
+    if (player.hasCondition(DndCondition.stunned)) {
+      if (action == ActionType.dodge ||
+          action == ActionType.flee ||
+          action == ActionType.parry) {
+        mod -= 2;
+      }
+    }
+
+    // Low HP penalty (exhaustion-like effect, narrative rule).
     final hpPercent = player.maxHealth > 0
         ? player.currentHealth / player.maxHealth
         : 0.0;
     if (hpPercent <= 0.10) {
-      mod -= 4; // Near death.
+      mod -= 3; // Near death.
     } else if (hpPercent <= 0.25) {
-      mod -= 2; // Badly wounded.
-    }
-
-    // Low MP penalty for magic actions.
-    if (action == ActionType.offensiveMagic ||
-        action == ActionType.defensiveMagic) {
-      final mpPercent = player.maxMana > 0
-          ? player.currentMana / player.maxMana
-          : 0.0;
-      if (mpPercent <= 0.15) {
-        mod -= 2; // Magically exhausted.
-      }
+      mod -= 1; // Badly wounded.
     }
 
     return mod;
   }
 
-  /// Penalty for repeating the same action type multiple times in a row.
-  /// -2 per consecutive repeat after the first (repeat 2 = -2, 3 = -4, etc.).
+  /// Repetition penalty: -2 per consecutive repeat (same action, no variety).
   static int getRepetitionPenalty(int repeatCount) {
     if (repeatCount < 2) return 0;
     return -2 * (repeatCount - 1);
   }
 
-  /// Penalty for attempting ranged or magic actions while under melee pressure.
-  /// Enemies closing in makes it hard to aim or concentrate.
-  static int getMeleePressurePenalty(
-    ActionType action,
-    bool underMeleePressure,
-  ) {
-    if (!underMeleePressure) return 0;
-    if (action == ActionType.rangedAttack ||
-        action == ActionType.offensiveMagic ||
-        action == ActionType.defensiveMagic) {
-      return -3;
-    }
-    return 0;
-  }
-
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
   //  DIFFICULTY CLASS
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
 
-  /// DC scales with player level: `baseDC + playerLevel ~/ 3`.
-  ///
-  /// This keeps checks meaningful at all levels rather than becoming
-  /// trivial once stat modifiers outgrow fixed DCs.
+  /// Fixed D&D-style DCs based on quest difficulty.
+  /// DCs do not scale with player level — the player's growing
+  /// proficiency bonus and ability scores make them better over time.
   static int getDC(String? questDifficulty, {int playerLevel = 1}) {
-    final base = switch (questDifficulty?.toLowerCase()) {
-      'routine' => 6,
-      'dangerous' => 10,
-      'perilous' => 14,
-      'suicidal' => 18,
-      _ => 10,
+    return switch (questDifficulty?.toLowerCase()) {
+      'routine' => 10,
+      'dangerous' => 15,
+      'perilous' => 20,
+      'suicidal' => 25,
+      _ => 15,
     };
-    return base + (playerLevel ~/ 3);
   }
 
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
   //  ROLL & RESOLVE
-  // ─────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
 
-  /// Roll a D20 (1–20 inclusive).
   static int rollD20() => _rng.nextInt(20) + 1;
 
-  /// Performs a full skill check for the given player action.
-  ///
-  /// Returns `null` if the action is [ActionType.none] (no check needed).
+  /// Roll with advantage (2d20, take highest) or disadvantage (take lowest).
+  static int rollD20WithAdvantage(int advantageState) {
+    if (advantageState == 0) return rollD20();
+    final r1 = rollD20();
+    final r2 = rollD20();
+    return advantageState > 0 ? max(r1, r2) : min(r1, r2);
+  }
+
+  /// Performs a full D&D skill check.
   static SkillCheckResult? performCheck({
     required String playerInput,
     required Player player,
@@ -229,16 +317,26 @@ class SkillCheckEngine {
   }) {
     if (action == ActionType.none) return null;
 
-    final roll = rollD20();
+    final advState = _advantageState(action, player);
+    final roll = rollD20WithAdvantage(advState);
     final statMod = getStatModifier(action, player);
     final sitMod = getSituationalModifier(player, action);
     final repPenalty = getRepetitionPenalty(repeatCount);
-    final pressurePenalty = getMeleePressurePenalty(action, underMeleePressure);
+
+    // Melee pressure: -2 to ranged/magic concentration (narrative rule).
+    final pressurePenalty =
+        underMeleePressure &&
+            (action == ActionType.rangedAttack ||
+                action == ActionType.offensiveMagic ||
+                action == ActionType.defensiveMagic)
+        ? -2
+        : 0;
+
     final dc = getDC(questDifficulty, playerLevel: player.level);
     final total = roll + statMod + sitMod + repPenalty + pressurePenalty;
 
-    // Determine outcome.
-    late final CheckOutcome outcome;
+    // Determine outcome (natural 1/20 override as per D&D rules).
+    final CheckOutcome outcome;
     if (roll == 1) {
       outcome = CheckOutcome.criticalFailure;
     } else if (roll == 20) {
@@ -251,28 +349,39 @@ class SkillCheckEngine {
       outcome = CheckOutcome.failure;
     }
 
-    // Build human-readable summary for the AI prompt.
-    // Includes the player's primary stat value so the AI can gauge power.
-    final statLabel = _primaryStatLabel(action);
-    final statValue = _primaryStatValue(action, player);
+    // Human-readable summary for the AI prompt.
+    final skillName = _skillName(action, player);
+    final ability = _primaryAbility(action, player);
+    final abilityScore = player.abilityScores.getScore(ability);
+    final abilityMod = player.abilityScores.getMod(ability);
+    final profBonus = _hasProficiency(action, player)
+        ? player.proficiencyBonus
+        : 0;
+
     final modParts = <String>[];
-    if (statMod != 0) {
-      modParts.add('stat ${statMod >= 0 ? "+$statMod" : "$statMod"}');
+    if (abilityMod != 0) {
+      modParts.add(
+        '${ability.shortName} ${abilityMod >= 0 ? "+$abilityMod" : "$abilityMod"}',
+      );
     }
+    if (profBonus != 0) modParts.add('prof +$profBonus');
     if (sitMod != 0) {
-      modParts.add('situational ${sitMod >= 0 ? "+$sitMod" : "$sitMod"}');
+      modParts.add('situation ${sitMod >= 0 ? "+$sitMod" : "$sitMod"}');
     }
-    if (repPenalty != 0) {
-      modParts.add('repetition $repPenalty');
-    }
-    if (pressurePenalty != 0) {
-      modParts.add('melee pressure $pressurePenalty');
-    }
+    if (repPenalty != 0) modParts.add('repetition $repPenalty');
+    if (pressurePenalty != 0) modParts.add('melee pressure $pressurePenalty');
+
+    final advNote = advState > 0
+        ? ' [ADV]'
+        : advState < 0
+        ? ' [DIS]'
+        : '';
     final modStr = modParts.isEmpty ? '' : ' (${modParts.join(", ")})';
 
     final summary =
-        '${action.label} check ($statLabel $statValue) — '
-        'D20 rolled $roll$modStr = $total vs DC $dc → '
+        '$skillName check — '
+        '${ability.shortName} $abilityScore · '
+        'D20$advNote rolled $roll$modStr = $total vs DC $dc → '
         '${outcome.label.toUpperCase()}';
 
     return SkillCheckResult(
@@ -285,4 +394,154 @@ class SkillCheckEngine {
       summary: summary,
     );
   }
+
+  // ──────────────────────────────────────────────────────────
+  //  INTERACTIVE DICE ROLL SUPPORT
+  // ──────────────────────────────────────────────────────────
+
+  /// Computes everything needed for a skill check EXCEPT the actual d20 roll.
+  /// Returns null when the action is [ActionType.none] (no check needed).
+  /// Use [resolveCheck] to finish the check once the player has rolled.
+  static PendingSkillCheck? preparePendingCheck({
+    required String playerInput,
+    required Player player,
+    required String? questDifficulty,
+    required ActionType action,
+    int repeatCount = 0,
+    bool underMeleePressure = false,
+  }) {
+    if (action == ActionType.none) return null;
+
+    final advState = _advantageState(action, player);
+    final statMod = getStatModifier(action, player);
+    final sitMod = getSituationalModifier(player, action);
+    final repPenalty = getRepetitionPenalty(repeatCount);
+    final pressurePenalty =
+        underMeleePressure &&
+            (action == ActionType.rangedAttack ||
+                action == ActionType.offensiveMagic ||
+                action == ActionType.defensiveMagic)
+        ? -2
+        : 0;
+    final dc = getDC(questDifficulty, playerLevel: player.level);
+    final skillName = _skillName(action, player);
+
+    return PendingSkillCheck(
+      action: action,
+      player: player,
+      playerInput: playerInput,
+      questDifficulty: questDifficulty,
+      statModifier: statMod,
+      situationalModifier: sitMod,
+      repetitionPenalty: repPenalty,
+      pressurePenalty: pressurePenalty,
+      advantageState: advState,
+      dc: dc,
+      skillName: skillName,
+    );
+  }
+
+  /// Finish a [PendingSkillCheck] using a player-supplied d20 roll value.
+  static SkillCheckResult resolveCheck(PendingSkillCheck pending, int roll) {
+    final action = pending.action;
+    final player = pending.player;
+    final statMod = pending.statModifier;
+    final sitMod = pending.situationalModifier;
+    final repPenalty = pending.repetitionPenalty;
+    final pressurePenalty = pending.pressurePenalty;
+    final dc = pending.dc;
+
+    final total = roll + statMod + sitMod + repPenalty + pressurePenalty;
+
+    final CheckOutcome outcome;
+    if (roll == 1) {
+      outcome = CheckOutcome.criticalFailure;
+    } else if (roll == 20) {
+      outcome = CheckOutcome.criticalSuccess;
+    } else if (total >= dc) {
+      outcome = CheckOutcome.success;
+    } else if (total >= dc - 3) {
+      outcome = CheckOutcome.partialSuccess;
+    } else {
+      outcome = CheckOutcome.failure;
+    }
+
+    final ability = _primaryAbility(action, player);
+    final abilityScore = player.abilityScores.getScore(ability);
+    final abilityMod = player.abilityScores.getMod(ability);
+    final profBonus = _hasProficiency(action, player)
+        ? player.proficiencyBonus
+        : 0;
+
+    final modParts = <String>[];
+    if (abilityMod != 0) {
+      modParts.add(
+        '${ability.shortName} ${abilityMod >= 0 ? "+$abilityMod" : "$abilityMod"}',
+      );
+    }
+    if (profBonus != 0) modParts.add('prof +$profBonus');
+    if (sitMod != 0) {
+      modParts.add('situation ${sitMod >= 0 ? "+$sitMod" : "$sitMod"}');
+    }
+    if (repPenalty != 0) modParts.add('repetition $repPenalty');
+    if (pressurePenalty != 0) modParts.add('melee pressure $pressurePenalty');
+
+    final advNote = pending.advantageState > 0
+        ? ' [ADV]'
+        : pending.advantageState < 0
+        ? ' [DIS]'
+        : '';
+    final modStr = modParts.isEmpty ? '' : ' (${modParts.join(", ")})';
+
+    final summary =
+        '${pending.skillName} check — '
+        '${ability.shortName} $abilityScore · '
+        'D20$advNote rolled $roll$modStr = $total vs DC $dc → '
+        '${outcome.label.toUpperCase()}';
+
+    return SkillCheckResult(
+      actionType: action,
+      naturalRoll: roll,
+      statModifier: statMod,
+      situationalModifier: sitMod + repPenalty + pressurePenalty,
+      dc: dc,
+      outcome: outcome,
+      summary: summary,
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+//  PENDING SKILL CHECK
+// ──────────────────────────────────────────────────────────
+
+/// Holds all pre-computed state for a skill check that is awaiting
+/// a player-supplied d20 roll. Created by [SkillCheckEngine.preparePendingCheck]
+/// and resolved by [SkillCheckEngine.resolveCheck].
+class PendingSkillCheck {
+  final ActionType action;
+  final Player player;
+  final String playerInput;
+  final String? questDifficulty;
+  final int statModifier;
+  final int situationalModifier;
+  final int repetitionPenalty;
+  final int pressurePenalty;
+  final int advantageState;
+  final int dc;
+  final String skillName;
+
+  const PendingSkillCheck({
+    required this.action,
+    required this.player,
+    required this.playerInput,
+    required this.questDifficulty,
+    required this.statModifier,
+    required this.situationalModifier,
+    required this.repetitionPenalty,
+    required this.pressurePenalty,
+    required this.advantageState,
+    required this.dc,
+    required this.skillName,
+  });
 }

@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/story_event.dart';
@@ -6,11 +6,12 @@ import 'package:Questborne/models/item.dart';
 
 /// Takes the current player and the AI-generated effects,
 /// returns a record with the updated player and the effects corrected
-/// to reflect actual values (e.g. damage after defense reduction).
+/// to reflect actual values (e.g. actual damage dealt).
 ///
-/// AI damage/heal numbers are treated as **severity percentages (1-100)**
-/// of the player's max HP. The engine converts them to actual HP values,
-/// then applies stat-based formulas (defense reduction, magic scaling, etc.).
+/// AI damage/heal numbers are treated as severity percentages (1-100)
+/// of the player's max HP. In D&D 5e, damage is applied flat (no
+/// defence mitigation — the AC-based attack roll already determined
+/// the hit). Healing is also flat per D&D rules.
 ({Player player, StoryEffects effects}) applyStoryEffects(
   Player player,
   StoryEffects effects, {
@@ -28,14 +29,14 @@ import 'package:Questborne/models/item.dart';
     correctedEffects = correctedEffects.copyWith(damage: actualDamage);
   }
 
-  // ── Healing (AI value = % of max HP, then magic-scaled in heal()) ──
+  // ── Healing (AI value = % of max HP) ──
   if (effects.heal > 0) {
     final severity = effects.heal.clamp(1, 100);
     final scaledHeal = (severity * player.maxHealth / 100).round();
     player = player.heal(scaledHeal);
   }
 
-  // ── Mana ──
+  // ── Spell Slot Spending (manaSpent = number of slots to consume) ──
   if (effects.manaSpent > 0) {
     player = player.spendMana(effects.manaSpent);
   }
@@ -65,50 +66,34 @@ import 'package:Questborne/models/item.dart';
     }
   }
 
-  // ── Status Effects ──
+  // ── Conditions (D&D 5e) ──
   if (effects.statusAdded != null) {
-    final status = _parseStatus(effects.statusAdded!);
-    if (status != null) {
-      player = player.addStatus(status);
+    final condition = _parseCondition(effects.statusAdded!);
+    if (condition != null) {
+      player = player.addCondition(condition);
     }
   }
   if (effects.statusRemoved != null) {
-    final status = _parseStatus(effects.statusRemoved!);
-    if (status != null) {
-      player = player.removeStatus(status);
+    final condition = _parseCondition(effects.statusRemoved!);
+    if (condition != null) {
+      player = player.removeCondition(condition);
     }
   }
 
-  // ── Status Effect Tick Damage ──
-  // Poisoned: 3% of max HP per turn.  Burning: 5% of max HP per turn.
-  // Applied after all other effects so newly-added statuses tick immediately.
-  if (player.hasStatus(StatusEffect.poisoned)) {
+  // ── Condition Tick Damage ──
+  // Poisoned: 3% of max HP per turn (bypasses AC — it's a CON save failure).
+  // Burning is removed as a distinct status; use poisoned-style for fire DOT.
+  if (player.hasCondition(DndCondition.poisoned)) {
     final tick = math.max(1, (player.maxHealth * 0.03).round());
     final hpBefore = player.currentHealth;
-    // Bypass takeDamage — ticks ignore armor.
     player = player.copyWith(
       currentHealth: (player.currentHealth - tick).clamp(0, player.maxHealth),
     );
     final tickDamage = hpBefore - player.currentHealth;
     correctedEffects = correctedEffects.copyWith(
-      damage: (correctedEffects.damage) + tickDamage,
+      damage: correctedEffects.damage + tickDamage,
     );
   }
-  if (player.hasStatus(StatusEffect.burning)) {
-    final tick = math.max(1, (player.maxHealth * 0.05).round());
-    final hpBefore = player.currentHealth;
-    player = player.copyWith(
-      currentHealth: (player.currentHealth - tick).clamp(0, player.maxHealth),
-    );
-    final tickDamage = hpBefore - player.currentHealth;
-    correctedEffects = correctedEffects.copyWith(
-      damage: (correctedEffects.damage) + tickDamage,
-    );
-  }
-
-  // ── Items are disabled — players acquire items only from the shop. ──
-  // AI may narrate finding objects (torches, keys) as story flavor,
-  // but itemGained / itemLost in EFFECTS are intentionally ignored.
 
   // ── Location ──
   if (effects.newLocation != null) {
@@ -118,21 +103,50 @@ import 'package:Questborne/models/item.dart';
   return (player: player, effects: correctedEffects);
 }
 
-/// Converts a status name string from the AI into a [StatusEffect] enum.
-StatusEffect? _parseStatus(String name) {
-  switch (name.toLowerCase()) {
+/// Converts a condition name string from the AI into a [DndCondition].
+/// Accepts both the D&D condition names and the legacy status effect names.
+DndCondition? _parseCondition(String name) {
+  final lower = name.toLowerCase().trim();
+  switch (lower) {
+    case 'blinded':
+      return DndCondition.blinded;
+    case 'charmed':
+      return DndCondition.charmed;
+    case 'deafened':
+      return DndCondition.deafened;
+    case 'frightened':
+      return DndCondition.frightened;
+    case 'grappled':
+      return DndCondition.grappled;
+    case 'incapacitated':
+      return DndCondition.incapacitated;
+    case 'invisible':
+      return DndCondition.invisible;
+    case 'paralyzed':
+      return DndCondition.paralyzed;
+    case 'petrified':
+      return DndCondition.petrified;
     case 'poisoned':
-      return StatusEffect.poisoned;
+      return DndCondition.poisoned;
+    case 'prone':
+      return DndCondition.prone;
+    case 'restrained':
+      return DndCondition.restrained;
+    case 'stunned':
+      return DndCondition.stunned;
+    case 'unconscious':
+      return DndCondition.unconscious;
+    // Legacy name mappings for backward compatibility with old AI prompts.
     case 'burning':
-      return StatusEffect.burning;
+      return DndCondition.poisoned; // Map burning to poisoned (tick damage)
     case 'frozen':
-      return StatusEffect.frozen;
+      return DndCondition.restrained;
     case 'blessed':
-      return StatusEffect.blessed;
+      return null; // No direct D&D equivalent; AI handles as narrative
     case 'shielded':
-      return StatusEffect.shielded;
+      return null; // Not a D&D condition; handle as narrative AC boost
     case 'weakened':
-      return StatusEffect.weakened;
+      return DndCondition.stunned;
     default:
       return null;
   }

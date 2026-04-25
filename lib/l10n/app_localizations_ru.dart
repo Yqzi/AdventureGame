@@ -400,6 +400,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navHero => 'Герой';
 
   @override
+  String get navSheet => 'Лист';
+
+  @override
   String get nameDialogAppTitle => 'Questborne';
 
   @override

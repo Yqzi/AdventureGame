@@ -13,6 +13,7 @@ import 'package:Questborne/components/experience_bar.dart';
 import 'package:Questborne/components/containers.dart';
 import 'package:Questborne/components/top_bar.dart';
 import 'package:Questborne/models/item.dart';
+import 'package:Questborne/models/player.dart';
 import 'package:Questborne/utils/localized_enums.dart';
 import 'package:Questborne/utils/localized_items.dart';
 
@@ -39,6 +40,12 @@ class InventoryPage extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_outline),
+            color: const Color(0xFFE3D5B8),
+            onPressed: () => Navigator.pushNamed(context, '/characterSheet'),
+            tooltip: 'Character Sheet',
+          ),
+          IconButton(
             icon: const Icon(Icons.diamond_outlined),
             color: const Color(0xFFE3D5B8),
             onPressed: () => Navigator.pushNamed(context, '/subscription'),
@@ -55,7 +62,10 @@ class InventoryPage extends StatelessWidget {
           final player = context.read<GameBloc>().player;
 
           final equipment = player.equipment;
-          final inventory = player.inventory;
+          // Non-spell items in inventory (spells live in the Spellbook section)
+          final inventory = player.inventory
+              .where((i) => i.type != ItemType.spell)
+              .toList();
 
           return Container(
             decoration: const BoxDecoration(
@@ -115,15 +125,6 @@ class InventoryPage extends StatelessWidget {
                               item: equipment.relic,
                               slotType: ItemType.relic,
                             ),
-                            const SizedBox(height: 14),
-                            _EquippedSlotTile(
-                              icon: FontAwesomeIcons.wandMagicSparkles,
-                              slotLabel: AppLocalizations.of(
-                                context,
-                              ).itemTypeSpell,
-                              item: equipment.spell,
-                              slotType: ItemType.spell,
-                            ),
                           ],
                         ),
                       ),
@@ -179,9 +180,11 @@ class InventoryPage extends StatelessWidget {
                                         crossAxisSpacing: 12,
                                         childAspectRatio: 1,
                                       ),
-                                  itemCount: inventory.length < 8
+                                  itemCount: inventory.isEmpty
                                       ? 8 // extra empty slots
-                                      : inventory.length,
+                                      : (inventory.length < 8
+                                            ? 8
+                                            : inventory.length),
                                   itemBuilder: (context, index) {
                                     if (index < inventory.length) {
                                       final item = inventory[index];
@@ -217,6 +220,9 @@ class InventoryPage extends StatelessWidget {
                   ),
                 ),
 
+                // ─── Spellbook section ───
+                _SpellbookSection(player: player),
+
                 // ─── XP bar ───
                 Padding(
                   padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -228,6 +234,7 @@ class InventoryPage extends StatelessWidget {
                   height: 2,
                   color: const Color.fromARGB(239, 88, 61, 53),
                 ),
+                // Row 1: Ability modifiers
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -237,39 +244,84 @@ class InventoryPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _StatTile(
-                        icon: FontAwesomeIcons.crosshairs,
-                        label: 'ATK',
-                        value: player.baseAttack,
-                        bonus: equipment.totalBonus('attack'),
-                      ),
-                      _StatTile(
-                        icon: FontAwesomeIcons.shieldHalved,
-                        label: 'DEF',
-                        value: player.baseDefense,
-                        bonus: equipment.totalBonus('defense'),
-                      ),
-                      _StatTile(
-                        icon: FontAwesomeIcons.wandSparkles,
-                        label: 'MAG',
-                        value: player.baseMagic,
-                        bonus: equipment.totalBonus('magic'),
+                        icon: FontAwesomeIcons.dumbbell,
+                        label: 'STR',
+                        value: player.strMod,
+                        isModifier: true,
                       ),
                       _StatTile(
                         icon: FontAwesomeIcons.boltLightning,
-                        label: 'AGI',
-                        value: player.baseAgility,
-                        bonus: equipment.totalBonus('agility'),
+                        label: 'DEX',
+                        value: player.dexMod,
+                        isModifier: true,
                       ),
                       _StatTile(
-                        icon: FontAwesomeIcons.heartPulse,
-                        label: 'HP',
-                        value: player.baseHealth,
-                        bonus: equipment.totalBonus('health'),
+                        icon: FontAwesomeIcons.heart,
+                        label: 'CON',
+                        value: player.conMod,
+                        isModifier: true,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.book,
+                        label: 'INT',
+                        value: player.intMod,
+                        isModifier: true,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.eye,
+                        label: 'WIS',
+                        value: player.wisMod,
+                        isModifier: true,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.star,
+                        label: 'CHA',
+                        value: player.chaMod,
+                        isModifier: true,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                // Thin divider between rows
+                Container(
+                  height: 1,
+                  color: const Color.fromARGB(80, 88, 61, 53),
+                ),
+                // Row 2: Combat stats
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _StatTile(
+                        icon: FontAwesomeIcons.shieldHalved,
+                        label: 'AC',
+                        value: player.armorClass,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.plus,
+                        label: 'PROF',
+                        value: player.proficiencyBonus,
+                        isModifier: true,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.magnifyingGlass,
+                        label: 'PERC',
+                        value: player.passivePerception,
+                      ),
+                      _StatTile(
+                        icon: FontAwesomeIcons.dice,
+                        label: 'HD',
+                        value: player.hitDiceRemaining,
+                        maxValue: player.level,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           );
@@ -354,6 +406,124 @@ class _EquippedSlotTile extends StatelessWidget {
           context.read<GameBloc>().add(UnequipSlotEvent(slotType));
           Navigator.pop(context);
         },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SPELLBOOK SECTION — all owned spells, always available
+// ═══════════════════════════════════════════════════════════════
+
+class _SpellbookSection extends StatelessWidget {
+  const _SpellbookSection({required this.player});
+  final Player player;
+
+  static const _rarityColors = {
+    Rarity.common: Color(0xFFB0B0B0),
+    Rarity.rare: Color(0xFF56CCF2),
+    Rarity.epic: Color(0xFF8B5CF6),
+    Rarity.mythic: Color(0xFFE85D3A),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final spells = player.spellItems;
+    if (spells.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(40, 139, 92, 246),
+        border: const Border(
+          top: BorderSide(color: Color.fromARGB(120, 139, 92, 246)),
+          bottom: BorderSide(color: Color.fromARGB(120, 139, 92, 246)),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const FaIcon(
+                FontAwesomeIcons.bookOpen,
+                size: 11,
+                color: Color(0xFF8B5CF6),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'SPELLBOOK',
+                style: GoogleFonts.epilogue(
+                  color: const Color(0xFF8B5CF6),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${spells.length} spell${spells.length == 1 ? '' : 's'}',
+                style: GoogleFonts.epilogue(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.55),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 58,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: spells.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, i) {
+                final spell = spells[i];
+                final color =
+                    _rarityColors[spell.rarity] ?? const Color(0xFFB0B0B0);
+                return Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 90,
+                    maxWidth: 130,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: color.withOpacity(0.35)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        spell.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.epilogue(
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Slot ${spell.manaCost}  ·  Lv.${spell.level}',
+                        style: GoogleFonts.epilogue(
+                          color: color.withOpacity(0.55),
+                          fontSize: 9,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -590,59 +760,57 @@ class _StatTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final int value;
-  final int bonus;
+
+  /// When true, displays value as +N / -N modifier format.
+  final bool isModifier;
+
+  /// When > 0, shows "value/maxValue" (used for hit dice).
+  final int maxValue;
 
   const _StatTile({
     required this.icon,
     required this.label,
     required this.value,
-    this.bonus = 0,
+    this.isModifier = false,
+    this.maxValue = 0,
   });
+
+  String get _displayValue {
+    if (maxValue > 0) return '$value/$maxValue';
+    if (isModifier) return value >= 0 ? '+$value' : '$value';
+    return '$value';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 12),
-      width: 64,
+      margin: const EdgeInsets.only(top: 8, bottom: 8),
+      width: 52,
       child: Column(
         children: [
           FaIcon(
             icon,
             color: const Color.fromARGB(180, 255, 255, 255),
-            size: 20,
+            size: 16,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             label,
             style: GoogleFonts.epilogue(
               color: const Color.fromARGB(180, 255, 255, 255),
               fontWeight: FontWeight.bold,
               letterSpacing: 1,
-              fontSize: 10,
+              fontSize: 9,
             ),
           ),
           const SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$value',
-                style: GoogleFonts.epilogue(
-                  color: const Color.fromARGB(220, 255, 255, 255),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              if (bonus > 0)
-                Text(
-                  ' +$bonus',
-                  style: GoogleFonts.epilogue(
-                    color: const Color.fromARGB(200, 100, 220, 100),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-            ],
+          Text(
+            _displayValue,
+            style: GoogleFonts.epilogue(
+              color: const Color.fromARGB(220, 255, 255, 255),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ],
       ),

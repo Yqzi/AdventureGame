@@ -9,6 +9,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:Questborne/config/supabase_config.dart';
 import 'package:Questborne/models/item.dart';
 import 'package:Questborne/models/lore_codex.dart';
+import 'package:Questborne/models/background.dart';
+import 'package:Questborne/models/character_class.dart';
+import 'package:Questborne/models/character_race.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/subscription.dart';
 import 'package:Questborne/services/settings_service.dart';
@@ -129,7 +132,7 @@ Always exactly 2. Each 3-8 words, concrete, meaningfully different, story-advanc
 After OPTIONS, append on the very last line:
 <!--EFFECTS:{"damage":0,"heal":0,"manaSpent":0,"manaRestored":0,"goldGained":0,"goldLost":0,"xpGained":0,"statusAdded":null,"statusRemoved":null,"itemGained":null,"itemLost":null,"newLocation":null,"questCompleted":false,"questFailed":false}-->
 
-The player has 100 HP at level 1. Damage values are SEVERITY PERCENTAGES (1-100) representing how much of the player's max HP is lost before armor. The game engine converts these to actual HP and applies defense reduction — you just set the severity number. Damage must be MEANINGFUL.
+Damage values are SEVERITY PERCENTAGES (1-100) representing how much of the player's max HP is lost. In D&D 5e, whether an attack hits is determined by the attack roll vs AC (reflected in the [SKILL CHECK] result). If the roll succeeded, the hit lands — set damage accordingly. The game engine applies it flat. You just set the severity number. Damage must be MEANINGFUL.
 Damage severity by difficulty (ABSOLUTE MINIMUM 5 — never output damage 1-4):
 ROUTINE: glancing=5-8, solid=10-18, heavy=20-30.
 DANGEROUS: light=8-12, solid=15-25, brutal=28-40.
@@ -137,30 +140,32 @@ PERILOUS: grazing=10-15, direct=20-35, devastating=38-55.
 SUICIDAL: any=15-30, solid=30-50, crushing=50-75.
 Match damage to narrated severity: a clean stab/slash/direct hit is ALWAYS "solid" or higher. A described wound with blood is NEVER below 15. If you narrate a devastating blow, damage MUST be in the heavy/brutal/devastating range. Lowballing damage that contradicts the narrative is a critical error.
 
-Healing values are also severity percentages (1-100) of max HP. The game engine applies magic-stat scaling on top. A healing potion = 15-25. A powerful healing spell = 25-40. Full rest = 50-80.
+Healing values are also severity percentages (1-100) of max HP. A healing potion = 15-25. A powerful healing spell = 25-40. Full rest = 50-80.
 
 XP: Base (level 1): explore/dialogue=5-15, minor combat=15-30, major=30-60, boss/completion=80-150. Multiply by max(1, floor(level/2)). Scale up with difficulty.
 
-heal: Only from rest/potions/magic/NPC aid. manaSpent: 0 if cast via hotbar (already deducted); >0 only if typed. statusAdded/Removed: one of poisoned/burning/frozen/blessed/shielded/weakened or null. goldGained/Lost: realistic amounts. itemGained: ALWAYS null — players cannot acquire items during quests. itemLost: ALWAYS null — players cannot lose items during quests. If the story involves finding a torch, key, or similar object, describe it narratively only — never set itemGained or itemLost. newLocation: short name or null.
+heal: Only from rest/potions/magic/NPC aid. manaSpent: number of spell slots consumed (0 if cast via hotbar, >0 only if typed). statusAdded/Removed: one of the D&D 5e conditions — blinded/charmed/deafened/frightened/grappled/incapacitated/invisible/paralyzed/petrified/poisoned/prone/restrained/stunned/unconscious — or null. goldGained/Lost: realistic amounts. itemGained: ALWAYS null. itemLost: ALWAYS null. newLocation: short name or null.
 
 CRITICAL: Effects MUST match narrative. Narrated hit = damage > 0. Found gold = goldGained > 0. A described wound with visible blood = damage >= 18. A clean direct hit = "solid" tier minimum. Both tags mandatory on EVERY response with valid JSON. If response is long, shorten narrative — never sacrifice tags.
 
 Dice→Effects: CRIT FAIL=self-damage/status. FAIL=enemy counterattack damage. PARTIAL=reduced effect, minor damage. SUCCESS=full effect. CRIT SUCCESS=enhanced, possibly no counterattack, bonus XP.
 
-=== EQUIPMENT & STATUS ===
-"Current Player State" is ALWAYS source of truth — trust it over story history. If equipment differs from previous turns, the player changed gear between turns — trust the current state. Stat bonuses from equipment are already included in the player's total stats — use TOTALS, not base. Stats already factor into [SKILL CHECK] results; use stats to color narration (high-ATK=brutal, low-ATK=scrappy). Item special effects are real — mentally roll chances ("10% poison on hit" = 1 in 10), narrate naturally, NEVER mention percentages or "triggered."
+=== EQUIPMENT & CONDITIONS ===
+"Current Player State" is ALWAYS source of truth — trust it over story history. Item special effects are real — mentally roll chances ("10% poison on hit" = 1 in 10), narrate naturally, NEVER mention percentages or "triggered."
 
-OUTGOING DAMAGE SCALING: The player's ATK and MAG stats represent their combat power. The [SKILL CHECK] tag includes the player's relevant stat value (e.g., ATK 42). Use this to scale your narration of the player's attacks:
-- Low stats (≤20): player struggles, enemies shrug off hits, combat is scrappy.
-- Mid stats (50-100): competent, matched fights, solid impact.
-- High stats (200+): player is fearsome — enemies reel, armor cracks, limbs break.
-- Extreme stats (500+): player is legendary — lesser enemies are obliterated, bosses respect them.
-This is purely narrative — the EFFECTS damage field only represents damage TO the player, not FROM the player.
+OUTGOING DAMAGE SCALING: The player's ability scores and proficiency bonus represent their combat power. The [SKILL CHECK] tag includes the relevant modifier (e.g., STR +4 or DEX +6). Use this to scale your narration:
+- Total modifier ≤+2: player struggles, enemies barely flinch, combat is scrappy.
+- +3 to +5: competent, matched fights, solid impact.
+- +6 to +8: player is formidable — enemies are pushed back, armor dents.
+- +9+: player is legendary — lesser enemies are obliterated, bosses take notice.
+This is purely narrative — the EFFECTS damage field only represents damage TO the player.
 
-Status effects narrated as physical experience: POISONED=nausea/trembling. BURNING=pain/distraction. FROZEN=stiff/sluggish. BLESSED=luckier/resilient. SHIELDED=invisible deflection. WEAKENED=diminished. Never name them as "status effects."
+D&D CONDITIONS narrated as physical experience: POISONED=nausea/trembling. BLINDED=darkness/disorientation. FRIGHTENED=panic/fleeing. RESTRAINED=grappled/bound. STUNNED=dazed/reeling. CHARMED=compelled/friendly. PARALYZED=frozen/helpless. UNCONSCIOUS=collapsed. PRONE=on the ground. Never name conditions as mechanical terms.
+
+AC (Armor Class): When enemies attack, frame hits as penetrating defenses (getting through gaps in armor, feinting past a shield). A miss is a deflection, dodge, or near-miss. Never say "AC" or "armor class."
 
 === SPELLS ===
-Narrate with vivid sensory detail. Power scales with MAG stat. Respect spell power tiers (light→cataclysmic). Low-level spells are WEAK against bosses — an annoyance, not lethal. Healing spells set heal/statusRemoved. Defensive spells may add shielded. Out of MP = fizzle. Spell-boosting equipment amplifies effectiveness. NEVER mention MP/stats/mechanics.
+Narrate with vivid sensory detail. Respect spell power tiers (cantrip/low→cataclysmic). Low-level spells are WEAK against bosses — an annoyance, not lethal. Healing spells set heal/statusRemoved. Out of spell slots = fizzle or desperate improvisation. Spellcasting ability (INT/WIS/CHA per class) determines spell potency — high modifier means precise, powerful casting. NEVER mention spell slots, DCs, or mechanics.
 
 === ENEMY ADAPTATION ===
 Repeated same action: 2nd use=enemy starts adapting. 3rd+=fully adapted (diminished effect even on SUCCESS, punished hard on FAILURE). Enemies fight back EVERY combat turn. Set damage when they counterattack.
@@ -411,17 +416,19 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
     return parts.join('; ');
   }
 
-  /// Basic player context for the free tier — name, level, HP/MP, location,
-  /// equipped items, and inventory.
+  /// Basic player context for the free tier — name, class/race, level, HP,
+  /// AC, ability scores, location, equipped items, and inventory.
   String _formatBasicPlayerContext(Player player) {
     final parts = <String>[
       'Name: ${player.name}',
-      'Level: ${player.level}',
-      'HP: ${player.currentHealth}/${player.maxHealth}',
-      'MP: ${player.currentMana}/${player.maxMana}',
+      'Class: ${player.dndClass?.displayName ?? "Unknown"} | Race: ${player.dndRace?.displayName ?? "Unknown"}',
+      'Level: ${player.level} | Proficiency Bonus: +${player.proficiencyBonus}',
+      'HP: ${player.currentHealth}/${player.maxHealth} | AC: ${player.armorClass}',
+      if (player.isSpellcaster)
+        'Spell Slots: ${player.totalCurrentSpellSlots}/${player.totalMaxSpellSlots} | Spell Save DC: ${player.spellSaveDC}',
+      'Ability Scores: ${player.abilitySummary}',
       'Location: ${player.currentLocation}',
     ];
-    parts.add('Total Stats (base + equipment): ${player.statSummary}');
     final eq = player.equipment;
     final equipped = <String>[];
     for (final entry in {
@@ -447,31 +454,39 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
     if (player.inventory.isNotEmpty) {
       parts.add('Inventory: ${player.inventory.map((i) => i.name).join(', ')}');
     }
-    if (player.statusEffects.isNotEmpty) {
+    if (player.conditions.isNotEmpty) {
       parts.add(
-        'Status: ${player.statusEffects.map((e) => e.label).join(', ')}',
+        'Active Conditions: ${player.conditions.map((e) => e.label).join(", ")}',
       );
     }
     final spells = player.spellItems;
     if (spells.isNotEmpty) {
-      parts.add(
-        'Known Spells: ${spells.map((s) => '${s.name} (${s.manaCost} MP)').join(', ')}',
-      );
+      parts.add('Known Spells: ${spells.map((s) => s.name).join(", ")}');
     }
     return parts.join('\n');
   }
 
-  /// Full player context for paid tiers — stats, equipment details with
-  /// effects, inventory, gold, and status effects.
+  /// Full player context for paid tiers — full D&D stats, equipment, conditions.
   String _formatFullPlayerContext(Player player) {
     final parts = <String>[
       'Name: ${player.name}',
-      'Level: ${player.level}',
-      'HP: ${player.currentHealth}/${player.maxHealth}',
-      'MP: ${player.currentMana}/${player.maxMana}',
+      'Class: ${player.dndClass?.displayName ?? "Unknown"} | Race: ${player.dndRace?.displayName ?? "Unknown"} | Background: ${player.background?.displayName ?? "Unknown"}',
+      'Level: ${player.level} | Proficiency Bonus: +${player.proficiencyBonus}',
+      'HP: ${player.currentHealth}/${player.maxHealth}${player.tempHp > 0 ? ' (+${player.tempHp} temp)' : ''} | AC: ${player.armorClass} | Passive Perception: ${player.passivePerception}',
+      if (player.isSpellcaster)
+        'Spell Slots: ${_formatSpellSlots(player)} | Spell Save DC: ${player.spellSaveDC} | Spell Attack: +${player.spellAttackBonus}',
+      'Ability Scores: ${player.abilitySummary}',
+      'Saving Throws: ${player.savingThrowSummary}',
+      'Skill Proficiencies: ${player.skillProficiencies.isEmpty ? "none" : player.skillProficiencies.join(", ")}',
       'Gold: ${player.gold}',
-      'Total Stats (base + equipment): ${player.statSummary}',
       'Location: ${player.currentLocation}',
+      if (player.exhaustionLevel > 0)
+        'Exhaustion: Level ${player.exhaustionLevel}${player.exhaustionLevel >= 4 ? ' (HP max halved)' : ''}',
+      if (player.hasInspiration) 'Inspiration: Yes',
+      if (player.concentratingOnSpell != null)
+        'Concentrating on: ${player.concentratingOnSpell}',
+      if (player.isDying)
+        'Status: DYING — Death saves: ${player.deathSaveSuccesses} successes / ${player.deathSaveFailures} failures',
     ];
 
     // Equipment detail — slot, name, stats, and critically the effect text
@@ -497,22 +512,35 @@ Adaptation speed by difficulty: ROUTINE=3+ repeats. DANGEROUS=2. PERILOUS=1st re
     }
     parts.add('Equipment: ${equipped.join(' | ')}');
 
-    if (player.statusEffects.isNotEmpty) {
+    if (player.conditions.isNotEmpty) {
       parts.add(
-        'Active Status Effects: ${player.statusEffects.map((e) => e.label).join(', ')}',
+        'Active Conditions: ${player.conditions.map((e) => e.label).join(", ")}',
       );
     }
     if (player.inventory.isNotEmpty) {
       parts.add(
-        'Inventory: ${player.inventory.map((i) => '${i.name} (${i.type.label})').join(', ')}',
+        'Inventory: ${player.inventory.map((i) => '${i.name} (${i.type.label})').join(", ")}',
       );
     }
     final spells = player.spellItems;
     if (spells.isNotEmpty) {
       parts.add(
-        'Known Spells: ${spells.map((s) => '${s.name} (${s.manaCost} MP — ${s.effect})').join(' | ')}',
+        'Known Spells: ${spells.map((s) => '${s.name} — ${s.effect}').join(' | ')}',
       );
     }
     return parts.join('\n');
+  }
+
+  /// Format current spell slots per level for the AI context.
+  static String _formatSpellSlots(Player player) {
+    final current = player.currentSpellSlots;
+    final max = player.maxSpellSlots;
+    final parts = <String>[];
+    for (int i = 0; i < 9; i++) {
+      if (max[i] > 0) {
+        parts.add('L${i + 1}: ${current[i]}/${max[i]}');
+      }
+    }
+    return parts.isEmpty ? 'none' : parts.join(' ');
   }
 }

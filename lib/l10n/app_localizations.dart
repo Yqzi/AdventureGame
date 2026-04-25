@@ -802,6 +802,12 @@ abstract class AppLocalizations {
   /// **'Hero'**
   String get navHero;
 
+  /// No description provided for @navSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet'**
+  String get navSheet;
+
   /// No description provided for @nameDialogAppTitle.
   ///
   /// In en, this message translates to:

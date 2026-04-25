@@ -1,3 +1,5 @@
+import 'package:Questborne/pages/character_creation_page.dart';
+import 'package:Questborne/pages/character_sheet_page.dart';
 import 'package:Questborne/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:Questborne/pages/game_page.dart';
@@ -19,6 +21,8 @@ class AppRouter {
   static const worldExplore = '/worldExplore';
   static const settingsPage = '/settings';
   static const subscription = '/subscription';
+  static const characterCreation = '/characterCreation';
+  static const characterSheet = '/characterSheet';
 
   static Route<dynamic> _noAnim(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
@@ -59,6 +63,10 @@ class AppRouter {
         return _noAnim(const SettingsPage(), settings);
       case subscription:
         return _noAnim(const SubscriptionPage(), settings);
+      case characterCreation:
+        return _noAnim(const CharacterCreationPage(), settings);
+      case characterSheet:
+        return _noAnim(const CharacterSheetPage(), settings);
       default:
         return _noAnim(
           const Scaffold(body: Center(child: Text('404 – Page not found'))),

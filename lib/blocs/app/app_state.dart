@@ -4,6 +4,7 @@ import 'package:Questborne/models/chat_message.dart';
 import 'package:Questborne/models/player.dart';
 import 'package:Questborne/models/skill_check.dart';
 import 'package:Questborne/models/story_event.dart';
+import 'package:Questborne/utils/skill_check_engine.dart';
 
 abstract class AppState extends Equatable {
   const AppState();
@@ -93,6 +94,14 @@ class GameError extends GameState {
   GameError(this.message, {required this.player});
 }
 
+/// Emitted when the player hasn't completed character creation yet.
+/// The UI should navigate to the character creation wizard.
+class GameNeedsCharacterCreation extends GameState {
+  @override
+  final Player player;
+  GameNeedsCharacterCreation({required this.player});
+}
+
 /// Recoverable error — the failed turn is rolled back so the player can retry.
 /// The UI shows a dialog with the error message, restores the text field input,
 /// and re-displays the previous turn's option buttons.
@@ -111,5 +120,42 @@ class GameErrorRecoverable extends GameState {
     required this.player,
     this.previousOptions = const [],
     this.pendingInput,
+  });
+}
+
+/// Emitted when the action requires a dice roll but we want the player
+/// to tap and animate it rather than auto-rolling. The UI shows the
+/// [_DiceRollPrompt] overlay; the player taps → roll animates →
+/// [PlayerRollDiceEvent] is dispatched with the settled value.
+class GameWaitingForDiceRoll extends GameState {
+  final List<ChatMessage> messages;
+  final Map<String, dynamic> activeQuest;
+  @override
+  final Player player;
+
+  /// The action being attempted (drives the label shown to the player).
+  final ActionType actionType;
+
+  /// Total stat modifier (ability mod + proficiency) to display.
+  final int statModifier;
+
+  /// Difficulty class the roll is against.
+  final int dc;
+
+  /// +1 = advantage, -1 = disadvantage, 0 = normal.
+  final int advantageState;
+
+  /// True when this is a death saving throw (no action label needed).
+  final bool isDeathSave;
+
+  GameWaitingForDiceRoll({
+    required this.messages,
+    required this.activeQuest,
+    required this.player,
+    required this.actionType,
+    required this.statModifier,
+    required this.dc,
+    required this.advantageState,
+    this.isDeathSave = false,
   });
 }
